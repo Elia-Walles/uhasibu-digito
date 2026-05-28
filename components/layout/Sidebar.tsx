@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -89,9 +90,14 @@ export function Sidebar() {
     <nav className={cn("h-full flex flex-col text-white dark-scrollbar", width, "transition-[width] duration-200")}>
       {/* Brand */}
       <div className={cn("flex items-center gap-3 px-5 h-16 border-b border-white/5 flex-shrink-0", sidebarCollapsed && !isMobile && "px-3 justify-center")}>
-        <div className="w-9 h-9 rounded-xl gradient-teal flex items-center justify-center flex-shrink-0 shadow-gold-glow">
-          <span className="font-display font-extrabold text-base text-white">UD</span>
-        </div>
+        <Image
+          src="/images/uhasibu-digito-circle.png"
+          alt="Uhasibu Digito"
+          width={36}
+          height={36}
+          priority
+          className="w-9 h-9 rounded-xl flex-shrink-0 shadow-gold-glow"
+        />
         {!sidebarCollapsed && (
           <div className="min-w-0">
             <div className="font-display font-bold text-sm leading-tight">Uhasibu Digito</div>
@@ -126,7 +132,7 @@ export function Sidebar() {
                     href={item.href}
                     onClick={() => isMobile && setSidebarOpen(false)}
                     className={cn(
-                      "relative flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors group",
+                      "relative flex items-center gap-3 px-3 py-2.5 md:py-2 rounded-xl text-sm font-medium transition-colors group",
                       isActive
                         ? "text-white"
                         : "text-white/65 hover:text-white hover:bg-white/5"

@@ -168,23 +168,25 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between px-4 py-3 border-t border-ud-border text-xs text-ud-text-muted bg-ud-surface-2/40">
-        <div>
+      <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-3 border-t border-ud-border text-xs text-ud-text-muted bg-ud-surface-2/40">
+        <div className="truncate">
           Showing <span className="font-medium text-ud-text-primary">{start + 1}</span>–
           <span className="font-medium text-ud-text-primary">{Math.min(start + pageSize, total)}</span> of{" "}
           <span className="font-medium text-ud-text-primary">{total}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             size="sm"
             variant="outline"
             disabled={page === 0}
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             icon={<ChevronLeft className="w-3 h-3" />}
+            className="min-h-[44px] sm:min-h-0"
+            aria-label="Previous page"
           >
-            Previous
+            <span className="hidden sm:inline">Previous</span>
           </Button>
-          <span className="font-medium text-ud-text-primary">
+          <span className="font-medium text-ud-text-primary whitespace-nowrap">
             {page + 1} / {pageCount}
           </span>
           <Button
@@ -192,8 +194,10 @@ export function DataTable<T>({
             variant="outline"
             disabled={page >= pageCount - 1}
             onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            className="min-h-[44px] sm:min-h-0"
+            aria-label="Next page"
           >
-            Next
+            <span className="hidden sm:inline">Next</span>
             <ChevronRight className="w-3 h-3" />
           </Button>
         </div>

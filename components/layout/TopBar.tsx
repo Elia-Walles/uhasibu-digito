@@ -61,7 +61,7 @@ export function TopBar() {
               <DropdownMenu.Content
                 align="end"
                 sideOffset={8}
-                className="z-50 w-80 bg-white rounded-2xl shadow-elevated border border-ud-border overflow-hidden"
+                className="z-50 w-[min(20rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-elevated border border-ud-border overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-ud-border flex items-center justify-between">
                   <span className="font-display font-bold text-sm">Notifications</span>

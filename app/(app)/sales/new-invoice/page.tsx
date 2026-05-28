@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, X, Save, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -91,7 +92,7 @@ export default function NewInvoicePage() {
         <div className="space-y-4">
           <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
             <h3 className="font-display font-bold mb-4">Invoice details</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
                 label="Customer"
                 value={customerId}
@@ -114,12 +115,12 @@ export default function NewInvoicePage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="grid grid-cols-12 gap-2 items-start p-2.5 rounded-xl bg-ud-surface-2"
+                    className="flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-2 items-stretch sm:items-start p-2.5 rounded-xl bg-ud-surface-2"
                   >
-                    <div className="col-span-5"><Input value={l.description} onChange={(e) => updateLine(l.id, { description: e.target.value })} placeholder="Description" /></div>
-                    <div className="col-span-2"><Input type="number" value={l.quantity || ""}  onChange={(e) => updateLine(l.id, { quantity:  Number(e.target.value) || 0 })} placeholder="Qty" className="text-right" /></div>
-                    <div className="col-span-3"><Input type="number" value={l.unitPrice || ""} onChange={(e) => updateLine(l.id, { unitPrice: Number(e.target.value) || 0 })} placeholder="Unit Price" className="text-right font-mono" /></div>
-                    <div className="col-span-2 flex items-center gap-1">
+                    <div className="sm:col-span-5"><Input value={l.description} onChange={(e) => updateLine(l.id, { description: e.target.value })} placeholder="Description" /></div>
+                    <div className="sm:col-span-2"><Input type="number" value={l.quantity || ""}  onChange={(e) => updateLine(l.id, { quantity:  Number(e.target.value) || 0 })} placeholder="Qty" className="text-right" /></div>
+                    <div className="sm:col-span-3"><Input type="number" value={l.unitPrice || ""} onChange={(e) => updateLine(l.id, { unitPrice: Number(e.target.value) || 0 })} placeholder="Unit Price" className="text-right font-mono" /></div>
+                    <div className="sm:col-span-2 flex items-center gap-1">
                       <span className="font-mono text-sm tabular-nums">{formatTZS(l.lineTotal, true).replace("TSh ", "")}</span>
                       {lines.length > 1 && (
                         <button onClick={() => setLines((p) => p.filter((x) => x.id !== l.id))} className="ml-auto p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label="Remove">
@@ -146,9 +147,13 @@ export default function NewInvoicePage() {
         <div className="bg-white border border-ud-border rounded-2xl p-8 shadow-card aspect-[1/1.4] overflow-auto">
           <div className="flex justify-between mb-8">
             <div>
-              <div className="w-12 h-12 rounded-xl gradient-teal flex items-center justify-center mb-2">
-                <span className="font-display font-extrabold text-white">UD</span>
-              </div>
+              <Image
+                src="/images/uhasibu-digito-circle.png"
+                alt="Uhasibu Digito"
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-xl mb-2"
+              />
               <div className="font-display font-bold">{COMPANY.shortName}</div>
               <div className="text-xs text-ud-text-muted">{COMPANY.address}</div>
               <div className="text-xs text-ud-text-muted">TIN: {COMPANY.tin} · VAT: {COMPANY.vatNumber}</div>

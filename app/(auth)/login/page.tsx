@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, Lock, ShieldCheck, Sparkles, TrendingUp, FileBarChart } from "lucide-react";
@@ -33,9 +34,14 @@ export default function LoginPage() {
         <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-ud-gold opacity-10 blur-3xl" />
 
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl gradient-teal flex items-center justify-center shadow-gold-glow">
-            <span className="font-display font-extrabold text-lg text-white">UD</span>
-          </div>
+          <Image
+            src="/images/uhasibu-digito-circle.png"
+            alt="Uhasibu Digito"
+            width={44}
+            height={44}
+            priority
+            className="w-11 h-11 rounded-xl shadow-gold-glow"
+          />
           <div>
             <div className="font-display font-bold text-base leading-tight">Uhasibu Digito</div>
             <div className="text-xs text-white/55 tracking-wider">AKAUNTI YAKO • NGUVU YAKO</div>
@@ -83,9 +89,13 @@ export default function LoginPage() {
       <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-16 bg-ud-surface">
         <div className="w-full max-w-sm mx-auto">
           <div className="md:hidden mb-6 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-teal flex items-center justify-center">
-              <span className="font-display font-extrabold text-white">UD</span>
-            </div>
+            <Image
+              src="/images/uhasibu-digito-circle.png"
+              alt="Uhasibu Digito"
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-xl"
+            />
             <div className="font-display font-bold text-base">Uhasibu Digito</div>
           </div>
 

@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Uhasibu Digito — Tanzania's Intelligent Financial Platform",
   description: "Akaunti yako, nguvu yako. 20 modules for accounting, payroll, tax compliance, and financial intelligence.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [{ url: "/images/uhasibu-digito-circle.png", type: "image/png", sizes: "any" }],
+    shortcut: "/images/uhasibu-digito-circle.png",
+    apple: { url: "/images/uhasibu-digito-circle.png", sizes: "180x180", type: "image/png" },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

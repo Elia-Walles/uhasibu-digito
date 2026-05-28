@@ -51,39 +51,43 @@ export default function COAPage() {
       />
 
       <div className="bg-white border border-ud-border rounded-2xl overflow-hidden shadow-card">
-        <div className="grid grid-cols-[1fr_120px_140px_140px_140px] px-4 py-3 bg-ud-surface-2 border-b border-ud-border text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary">
-          <div>Account</div>
-          <div>Type</div>
-          <div className="text-right">Opening</div>
-          <div className="text-right">Movement</div>
-          <div className="text-right">Closing</div>
-        </div>
-        <div>
-          {COA.filter(isVisible).map((account) => {
-            const hasChildren = COA.some((a) => a.parentCode === account.code);
-            const isExpanded = expanded.has(account.code);
-            return (
-              <button
-                key={account.code}
-                onClick={() => hasChildren && toggle(account.code)}
-                className={cn(
-                  "w-full grid grid-cols-[1fr_120px_140px_140px_140px] px-4 py-2.5 items-center text-left border-b border-ud-border last:border-b-0 hover:bg-ud-surface-2 transition-colors",
-                  account.level === 0 && "bg-ud-primary-50/40 font-semibold"
-                )}
-                style={{ paddingLeft: 16 + account.level * 24 }}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  {hasChildren ? (isExpanded ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />) : <span className="w-3.5" />}
-                  <span className="font-mono text-xs text-ud-text-muted w-12">{account.code}</span>
-                  <span className="truncate">{account.name}</span>
-                </div>
-                <div><Badge variant={TYPE_COLOR[account.type]} size="sm">{account.type}</Badge></div>
-                <CurrencyDisplay amount={account.openingBalance} showSymbol={false} className="text-right text-ud-text-muted" />
-                <CurrencyDisplay amount={account.movement}       showSymbol={false} className="text-right" />
-                <CurrencyDisplay amount={account.closingBalance} showSymbol={false} className="text-right font-medium" />
-              </button>
-            );
-          })}
+        <div className="overflow-x-auto">
+          <div className="min-w-[640px]">
+            <div className="grid grid-cols-[1fr_120px_140px_140px_140px] px-4 py-3 bg-ud-surface-2 border-b border-ud-border text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary">
+              <div>Account</div>
+              <div>Type</div>
+              <div className="text-right">Opening</div>
+              <div className="text-right">Movement</div>
+              <div className="text-right">Closing</div>
+            </div>
+            <div>
+              {COA.filter(isVisible).map((account) => {
+                const hasChildren = COA.some((a) => a.parentCode === account.code);
+                const isExpanded = expanded.has(account.code);
+                return (
+                  <button
+                    key={account.code}
+                    onClick={() => hasChildren && toggle(account.code)}
+                    className={cn(
+                      "w-full grid grid-cols-[1fr_120px_140px_140px_140px] px-4 py-2.5 items-center text-left border-b border-ud-border last:border-b-0 hover:bg-ud-surface-2 transition-colors",
+                      account.level === 0 && "bg-ud-primary-50/40 font-semibold"
+                    )}
+                    style={{ paddingLeft: 16 + account.level * 24 }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      {hasChildren ? (isExpanded ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />) : <span className="w-3.5" />}
+                      <span className="font-mono text-xs text-ud-text-muted w-12">{account.code}</span>
+                      <span className="truncate">{account.name}</span>
+                    </div>
+                    <div><Badge variant={TYPE_COLOR[account.type]} size="sm">{account.type}</Badge></div>
+                    <CurrencyDisplay amount={account.openingBalance} showSymbol={false} className="text-right text-ud-text-muted" />
+                    <CurrencyDisplay amount={account.movement}       showSymbol={false} className="text-right" />
+                    <CurrencyDisplay amount={account.closingBalance} showSymbol={false} className="text-right font-medium" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </PageWrapper>

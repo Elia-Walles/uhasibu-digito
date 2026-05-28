@@ -66,7 +66,7 @@ export default function EmployeesPage() {
       >
         {selected && (
           <div className="space-y-4 text-sm">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Employee #">{selected.employeeNumber}</Field>
               <Field label="Department">{selected.department}</Field>
               <Field label="Start date">{selected.startDate}</Field>
@@ -75,7 +75,7 @@ export default function EmployeesPage() {
               <Field label="TIN">{selected.tin}</Field>
             </div>
             <div className="divider-hairline" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Basic salary"><CurrencyDisplay amount={selected.basicSalary} /></Field>
               <Field label="Housing"><CurrencyDisplay amount={selected.housingAllowance} /></Field>
               <Field label="Transport"><CurrencyDisplay amount={selected.transportAllowance} /></Field>

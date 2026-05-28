@@ -8,7 +8,9 @@
   "theme_color": "#0F7B5E",
   "orientation": "any",
   "icons": [
-    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "/images/uhasibu-digito-circle.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/images/uhasibu-digito-circle.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/images/uhasibu-digito-circle.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     { "name": "New Invoice", "url": "/sales/new-invoice" },

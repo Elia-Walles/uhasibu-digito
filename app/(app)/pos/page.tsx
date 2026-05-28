@@ -99,7 +99,7 @@ export default function POSPage() {
           </div>
         </div>
 
-        <div className="flex gap-2 mb-4 overflow-x-auto dark-scrollbar -mx-1 px-1 pb-1">
+        <div className="flex flex-wrap gap-2 mb-4 sm:flex-nowrap sm:overflow-x-auto sm:dark-scrollbar sm:-mx-1 sm:px-1 sm:pb-1">
           {categories.map((c) => (
             <button
               key={c}
