@@ -1,0 +1,18 @@
+{
+  "name": "Uhasibu Digito",
+  "short_name": "Uhasibu",
+  "description": "Tanzania's Intelligent Financial Platform — Akaunti yako, nguvu yako",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0A1F16",
+  "theme_color": "#0F7B5E",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "New Invoice", "url": "/sales/new-invoice" },
+    { "name": "Dashboard",   "url": "/dashboard" },
+    { "name": "AI Assistant","url": "/ai-assistant" }
+  ]
+}

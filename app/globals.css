@@ -1,0 +1,195 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* Brand teal */
+  --color-ud-primary: #0F7B5E;
+  --color-ud-primary-hover: #0D6B52;
+  --color-ud-primary-light: #14A87E;
+  --color-ud-primary-glow: #1DD4A2;
+  --color-ud-primary-50: #E8F7F2;
+  --color-ud-primary-100: #C8EDE2;
+
+  /* Obsidian (sidebar / dark zones) */
+  --color-ud-obsidian: #0A1F16;
+  --color-ud-obsidian-2: #0D2B1E;
+  --color-ud-obsidian-3: #112D22;
+
+  /* Gold accents */
+  --color-ud-gold: #F5C842;
+  --color-ud-gold-dark: #C47B2A;
+  --color-ud-gold-50: #FFFBEB;
+
+  /* Status */
+  --color-ud-success: #059669;
+  --color-ud-success-bg: #ECFDF5;
+  --color-ud-warning: #D97706;
+  --color-ud-warning-bg: #FFFBEB;
+  --color-ud-danger: #DC2626;
+  --color-ud-danger-bg: #FEF2F2;
+  --color-ud-info: #2563EB;
+  --color-ud-info-bg: #EFF6FF;
+
+  /* Surfaces */
+  --color-ud-surface: #FFFFFF;
+  --color-ud-surface-2: #F8FFFE;
+  --color-ud-surface-3: #F0FDF8;
+  --color-ud-border: #E5F0EC;
+
+  /* Text */
+  --color-ud-text-primary: #0A2318;
+  --color-ud-text-secondary: #374151;
+  --color-ud-text-muted: #6B7280;
+  --color-ud-text-faint: #9CA3AF;
+
+  /* Fonts */
+  --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Extended breakpoint */
+  --breakpoint-3xl: 1920px;
+
+  /* Premium shadows */
+  --shadow-card: 0 1px 3px rgba(10,35,24,0.04), 0 8px 24px -12px rgba(10,35,24,0.06);
+  --shadow-card-hover: 0 4px 12px rgba(10,35,24,0.06), 0 16px 40px -16px rgba(10,35,24,0.10);
+  --shadow-elevated: 0 8px 32px -8px rgba(10,35,24,0.12), 0 24px 64px -24px rgba(10,35,24,0.16);
+  --shadow-gold-glow: 0 0 24px rgba(245,200,66,0.35);
+}
+
+/* ===== Base ===== */
+* { box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body {
+  font-family: var(--font-sans);
+  background: var(--color-ud-surface-3);
+  color: var(--color-ud-text-primary);
+  text-rendering: optimizeLegibility;
+}
+
+/* ===== Typography helpers ===== */
+.font-display { font-family: var(--font-display); }
+.font-sans    { font-family: var(--font-sans); }
+.font-mono    { font-family: var(--font-mono); }
+
+/* ===== Custom utilities ===== */
+.text-balance { text-wrap: balance; }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+.shadow-card        { box-shadow: var(--shadow-card); }
+.shadow-card-hover  { box-shadow: var(--shadow-card-hover); }
+.shadow-elevated    { box-shadow: var(--shadow-elevated); }
+.shadow-gold-glow   { box-shadow: var(--shadow-gold-glow); }
+
+.gradient-teal {
+  background: linear-gradient(135deg, var(--color-ud-primary) 0%, var(--color-ud-primary-light) 100%);
+}
+.gradient-teal-soft {
+  background: linear-gradient(135deg, #E8F7F2 0%, #F0FDF8 100%);
+}
+.gradient-gold {
+  background: linear-gradient(135deg, var(--color-ud-gold) 0%, #E6B532 100%);
+}
+.gradient-obsidian {
+  background: linear-gradient(180deg, var(--color-ud-obsidian) 0%, #051410 100%);
+}
+.gradient-emerald {
+  background: linear-gradient(135deg, #047857 0%, #10B981 100%);
+}
+.gradient-blue {
+  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+}
+.gradient-amber {
+  background: linear-gradient(135deg, #B45309 0%, #F59E0B 100%);
+}
+.glass-light {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.glass-dark {
+  background: rgba(10, 31, 22, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.divider-hairline {
+  border-top: 1px solid var(--color-ud-border);
+}
+
+/* ===== Skeleton ===== */
+@keyframes shimmer {
+  0%   { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-ud-primary-50) 25%,
+    var(--color-ud-primary-100) 50%,
+    var(--color-ud-primary-50) 75%
+  );
+  background-size: 936px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* ===== Animations ===== */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+.animate-pulse-soft { animation: pulse-soft 2.2s ease-in-out infinite; }
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+.animate-float-y { animation: float-y 4s ease-in-out infinite; }
+
+@keyframes draw-check {
+  0%   { stroke-dashoffset: 60; }
+  100% { stroke-dashoffset: 0; }
+}
+.animate-draw-check { animation: draw-check 0.55s ease-out forwards; }
+
+@keyframes radial-pulse {
+  0%   { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.animate-radial-pulse { animation: radial-pulse 1.4s ease-out infinite; }
+
+/* ===== Scrollbars ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-ud-surface-2); }
+::-webkit-scrollbar-thumb { background: var(--color-ud-primary-100); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ud-primary); }
+
+/* Dark scrollbars inside obsidian zones */
+.dark-scrollbar::-webkit-scrollbar-track { background: var(--color-ud-obsidian); }
+.dark-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); }
+.dark-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--color-ud-primary-glow); }
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton { animation: none; }
+}
+
+/* ===== Focus-visible default ===== */
+:focus-visible {
+  outline: 2px solid var(--color-ud-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
