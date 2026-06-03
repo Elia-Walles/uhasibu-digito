@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { Footer } from "@/components/layout/Footer";
+import { AppInitializer } from "@/components/AppInitializer";
 import { useAuthStore } from "@/lib/store/authStore";
 import { useAppStore } from "@/lib/store/appStore";
 import { cn } from "@/lib/utils/cn";
@@ -37,6 +39,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-ud-surface-3">
+      <AppInitializer />
       <Sidebar />
       <TopBar />
       <main
@@ -46,6 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       >
         <div className="px-4 md:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto">{children}</div>
+        <Footer />
       </main>
       <MobileNav />
     </div>

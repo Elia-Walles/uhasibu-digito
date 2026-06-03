@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { Plus, Mail, Phone } from "lucide-react";
+import Link from "next/link";
+import { Plus, Mail, Phone, Network } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -10,20 +11,29 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { Modal } from "@/components/ui/Modal";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
+import { useDataStore } from "@/lib/store/dataStore";
 import { EMPLOYEES } from "@/lib/mock-data/employees";
 import type { Employee } from "@/types";
 
 export default function EmployeesPage() {
   const loading = useLoadingSimulation(800);
   const [selected, setSelected] = useState<Employee | null>(null);
+  const departments = useDataStore((s) => s.departments);
 
   return (
     <PageWrapper>
       <PageHeader
         title="Employees"
-        subtitle={`${EMPLOYEES.length} active employees across all departments`}
+        subtitle={`${EMPLOYEES.length} active employees · ${departments.length} departments configured`}
         breadcrumbs={[{ label: "Payroll", href: "/payroll" }, { label: "Employees" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />}>Add employee</Button>}
+        actions={
+          <>
+            <Link href="/settings/organisation">
+              <Button variant="outline" icon={<Network className="w-4 h-4" />}>Manage departments</Button>
+            </Link>
+            <Button variant="primary" icon={<Plus className="w-4 h-4" />}>Add employee</Button>
+          </>
+        }
       />
 
       {loading ? <CardGridSkeleton count={12} cols={3} /> : (

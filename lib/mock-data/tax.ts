@@ -11,6 +11,12 @@ export const TAX_FILINGS: TaxFiling[] = [
   { id: "tx_011", type: "VAT",  period: "September 2024", dueDate: "2024-10-20", amount: 21_840_000, status: "Filed", filedAt: "2024-10-18" },
   { id: "tx_012", type: "PAYE", period: "September 2024", dueDate: "2024-10-07", amount: 29_900_000, status: "Filed", filedAt: "2024-10-06" },
   { id: "tx_021", type: "VAT",  period: "August 2024",    dueDate: "2024-09-20", amount: 19_440_000, status: "Filed", filedAt: "2024-09-19" },
+
+  // Forward-dated mock filings (today is 2026-06-03) so the 5-day reminder pipeline is demonstrable.
+  { id: "tx_101", type: "PAYE", period: "May 2026",       dueDate: "2026-06-07", amount: 32_100_000, status: "Pending"  },
+  { id: "tx_102", type: "SDL",  period: "May 2026",       dueDate: "2026-06-07", amount: 7_640_000,  status: "Pending"  },
+  { id: "tx_103", type: "WCF",  period: "May 2026",       dueDate: "2026-06-07", amount: 955_000,    status: "Pending"  },
+  { id: "tx_104", type: "VAT",  period: "May 2026",       dueDate: "2026-06-20", amount: 25_700_000, status: "Upcoming" },
 ];
 
 const OUTPUT_TX: VATTransaction[] = [

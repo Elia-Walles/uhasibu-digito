@@ -12,9 +12,15 @@ export default function TaxCalendarPage() {
     <PageWrapper>
       <PageHeader
         title="Tax Calendar"
-        subtitle="All filings, deadlines, and status — chronological"
+        subtitle="All filings, deadlines, and status — per TRA filing requirements (chronological)"
         breadcrumbs={[{ label: "Tax", href: "/tax" }, { label: "Calendar" }]}
       />
+      <div className="mb-4 px-4 py-3 rounded-xl bg-ud-primary-50/60 border border-ud-primary/15 text-xs text-ud-text-secondary leading-relaxed">
+        Filing cadence reflects current Tanzania Revenue Authority requirements: VAT (20th of the
+        following month), PAYE / SDL / WCF (7th of the following month), CIT provisional
+        (quarter-end), Withholding Tax (mid-month). Reminders for filings due within five days
+        appear in your notifications automatically.
+      </div>
       <div className="bg-white border border-ud-border rounded-2xl shadow-card overflow-hidden">
         <div className="divide-y divide-ud-border">
           {sorted.map((t) => {

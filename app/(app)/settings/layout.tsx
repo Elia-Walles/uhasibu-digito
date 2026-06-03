@@ -1,16 +1,18 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Users, Activity, Settings as SettingsIcon } from "lucide-react";
+import { Building2, Users, Activity, Settings as SettingsIcon, Network, Scale } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils/cn";
 
 const TABS = [
-  { href: "/settings/company",     label: "Company",     icon: Building2 },
-  { href: "/settings/users",       label: "Users",       icon: Users },
-  { href: "/settings/audit-trail", label: "Audit trail", icon: Activity },
-  { href: "/settings/preferences", label: "Preferences", icon: SettingsIcon },
+  { href: "/settings/company",      label: "Company",      icon: Building2 },
+  { href: "/settings/organisation", label: "Organisation", icon: Network },
+  { href: "/settings/users",        label: "Users",        icon: Users },
+  { href: "/settings/audit-trail",  label: "Audit trail",  icon: Activity },
+  { href: "/settings/preferences",  label: "Preferences",  icon: SettingsIcon },
+  { href: "/legal/terms-of-service", label: "Legal",       icon: Scale },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

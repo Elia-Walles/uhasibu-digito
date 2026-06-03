@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Landmark, RefreshCw } from "lucide-react";
+import { Landmark, RefreshCw, ChevronRight } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -24,14 +24,18 @@ export default function BankingPage() {
         actions={<Link href="/banking/reconciliation"><Button variant="primary" icon={<RefreshCw className="w-4 h-4" />}>Reconcile</Button></Link>}
       />
 
-      {loading ? <StatRowSkeleton count={3} /> : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      {loading ? <StatRowSkeleton count={4} /> : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
           {BANK_ACCOUNTS.map((a) => (
-            <div key={a.id} className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
+            <Link
+              key={a.id}
+              href={`/banking/accounts/${a.id}`}
+              className="group bg-white border border-ud-border rounded-2xl p-5 shadow-card hover:border-ud-primary hover:shadow-card-hover transition-all"
+            >
               <div className="flex items-start justify-between mb-3">
-                <div>
+                <div className="min-w-0">
                   <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{a.bankName}</div>
-                  <div className="text-sm font-medium mt-1">{a.accountName}</div>
+                  <div className="text-sm font-medium mt-1 truncate">{a.accountName}</div>
                   <div className="text-xs text-ud-text-muted font-mono mt-0.5">{a.accountNumber}</div>
                 </div>
                 <Badge variant={a.currency === "USD" ? "info" : "teal"} size="sm">{a.currency}</Badge>
@@ -39,8 +43,13 @@ export default function BankingPage() {
               <div className="font-display font-extrabold text-2xl tabular-nums">
                 {a.currency === "USD" ? `$${a.balance.toLocaleString()}` : <CurrencyDisplay amount={a.balance} compact />}
               </div>
-              <div className="mt-2 text-xs text-ud-text-muted">{a.transactions.length} recent transactions</div>
-            </div>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-ud-text-muted">{a.transactions.length} transactions</span>
+                <span className="text-ud-primary font-medium inline-flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
+                  View <ChevronRight className="w-3 h-3" />
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
       )}

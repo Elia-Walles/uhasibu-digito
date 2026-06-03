@@ -3,10 +3,11 @@ import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DepreciationChart } from "@/components/charts/DepreciationChart";
-import { FIXED_ASSETS } from "@/lib/mock-data/assets";
+import { useDataStore } from "@/lib/store/dataStore";
 
 export default function DepreciationPage() {
-  const active = FIXED_ASSETS.filter((a) => a.status === "Active");
+  const assets = useDataStore((s) => s.assets);
+  const active = assets.filter((a) => a.status === "Active");
 
   return (
     <PageWrapper>

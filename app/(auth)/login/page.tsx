@@ -81,7 +81,7 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} Kilimanjaro Trading Co. Ltd · Made in 🇹🇿
+          © {new Date().getFullYear()} Uhasibu Digito&trade;. All rights reserved · Made in Tanzania
         </div>
       </div>
 

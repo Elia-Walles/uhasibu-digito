@@ -3,8 +3,10 @@ import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Uhasibu Digito — Tanzania's Intelligent Financial Platform",
-  description: "Akaunti yako, nguvu yako. 20 modules for accounting, payroll, tax compliance, and financial intelligence.",
+  title: "Uhasibu Digito™ — Tanzania's Intelligent Financial Platform",
+  description: "Uhasibu Digito™ — Akaunti yako, nguvu yako. 20 modules for accounting, payroll, tax compliance, and financial intelligence.",
+  applicationName: "Uhasibu Digito",
+  authors: [{ name: "AfyaLead" }],
   manifest: "/manifest.json",
   icons: {
     icon: [{ url: "/images/uhasibu-digito-circle.png", type: "image/png", sizes: "any" }],
@@ -14,7 +16,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Uhasibu Digito",
+    title: "Uhasibu Digito™",
   },
 };
 

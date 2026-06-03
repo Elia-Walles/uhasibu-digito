@@ -308,6 +308,15 @@ export interface FixedAsset {
   accumulatedDepreciation: number;
   netBookValue: number;
   status: AssetStatus;
+  disposalDate?: string | undefined;
+  disposalProceeds?: number | undefined;
+  gainLoss?: number | undefined;
+}
+
+// ---------- Organisation ----------
+export interface Department {
+  id: string;
+  name: string;
 }
 
 // ---------- Banking ----------

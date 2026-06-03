@@ -60,4 +60,13 @@ export const BANK_ACCOUNTS: BankAccount[] = [
     balanceUSD: 45_600,
     transactions: generateTransactions(43_200, 30, "USD"),
   },
+  {
+    id: "ba_004",
+    bankName: "NBC Bank",
+    accountName: "Kilimanjaro Trading — Collections",
+    accountNumber: "4400-7788-2211-6",
+    currency: "TZS",
+    balance: 54_780_000,
+    transactions: generateTransactions(48_900_000, 30, "TZS"),
+  },
 ];
