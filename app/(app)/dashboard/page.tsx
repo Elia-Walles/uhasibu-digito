@@ -15,7 +15,7 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { ExpenseDonut } from "@/components/charts/ExpenseDonut";
 import { HealthGauge } from "@/components/charts/HealthGauge";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { INVOICES } from "@/lib/mock-data/invoices";
+import { useDataStore } from "@/lib/store/dataStore";
 import { TAX_FILINGS } from "@/lib/mock-data/tax";
 import { formatDate, daysUntil } from "@/lib/utils/dates";
 
@@ -34,9 +34,13 @@ const ALERTS = [
 
 export default function DashboardPage() {
   const loading = useLoadingSimulation(900);
+  const invoices = useDataStore((s) => s.invoices);
   if (loading) return <PageWrapper><DashboardSkeleton /></PageWrapper>;
 
-  const recentInvoices = INVOICES.slice(0, 6);
+  const recentInvoices = invoices.slice(0, 6);
+  const totalSalesToDate = invoices
+    .filter((i) => i.status !== "Cancelled" && i.status !== "Draft")
+    .reduce((s, i) => s + i.total, 0);
 
   return (
     <PageWrapper>
@@ -50,13 +54,14 @@ export default function DashboardPage() {
         initial="hidden"
         animate="show"
         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+        className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6"
       >
         {[
-          { label: "Revenue MTD",     value: 84_700_000,  trend: 12.4, icon: <TrendingUp />,       variant: "teal" as const,    prefix: "TSh" },
-          { label: "Net Profit MTD",  value: 27_500_000,  trend: 8.1,  icon: <Wallet />,           variant: "emerald" as const, prefix: "TSh" },
-          { label: "Cash Position",   value: 312_800_000, trend: -3.2, icon: <ArrowDownToLine />,  variant: "blue" as const,    prefix: "TSh" },
-          { label: "Receivables",     value: 89_450_000,  trend: 5.3,  icon: <AlertCircle />,      variant: "amber" as const,   prefix: "TSh", invert: true },
+          { label: "Revenue MTD",     value: 84_700_000,    trend: 12.4, icon: <TrendingUp />,       variant: "teal" as const,    prefix: "TSh" },
+          { label: "Total sales to date", value: totalSalesToDate, trend: 9.7, icon: <TrendingUp />, variant: "emerald" as const, prefix: "TSh" },
+          { label: "Net Profit MTD",  value: 27_500_000,    trend: 8.1,  icon: <Wallet />,           variant: "emerald" as const, prefix: "TSh" },
+          { label: "Cash Position",   value: 312_800_000,   trend: -3.2, icon: <ArrowDownToLine />,  variant: "blue" as const,    prefix: "TSh" },
+          { label: "Receivables",     value: 89_450_000,    trend: 5.3,  icon: <AlertCircle />,      variant: "amber" as const,   prefix: "TSh", invert: true },
         ].map((kpi) => {
           const invert = "invert" in kpi ? (kpi as { invert: boolean }).invert : undefined;
           return (

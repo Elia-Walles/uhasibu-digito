@@ -153,6 +153,11 @@ export interface Customer {
   status: CustomerStatus;
   paymentTerms: string;
   totalRevenue: number;
+  country?: string | undefined;
+  swiftBic?: string | undefined;
+  beneficiaryBank?: string | undefined;
+  iban?: string | undefined;
+  isInternational?: boolean | undefined;
 }
 
 // ---------- Inventory ----------
@@ -196,6 +201,13 @@ export interface StockMovement {
 export type EmploymentType = "Permanent" | "Contract";
 export type EmployeeStatus = "Active" | "Inactive";
 
+export interface AllowanceLine {
+  id: string;
+  label: string;
+  amount: number;
+  taxable: boolean;
+}
+
 export interface Employee {
   id: string;
   employeeNumber: string;
@@ -220,6 +232,9 @@ export interface Employee {
   status: EmployeeStatus;
   leaveBalance: number;
   hasHeslb: boolean;
+  allowances?: AllowanceLine[] | undefined;
+  overtimeRate?: number | undefined;
+  overtimeHoursDefault?: number | undefined;
 }
 
 export interface PayrollDeductions {
@@ -536,4 +551,60 @@ export interface AppNotification {
   timestamp: string;
   read: boolean;
   link?: string;
+}
+
+// ---------- Sent log (invoice send simulation) ----------
+export type SendChannel = "Email" | "WhatsApp" | "Both";
+export type SendStatus = "Queued" | "Delivered" | "Failed";
+
+export interface SendLogEntry {
+  id: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  customerName: string;
+  channel: SendChannel;
+  recipient: string;
+  sentAt: string;
+  status: SendStatus;
+}
+
+// ---------- Financial model assumptions ----------
+export type ModelScenario = "Base" | "Upside" | "Downside";
+
+export interface ModelAssumptions {
+  scenario: ModelScenario;
+  inflationRate: number;
+  fxTzsPerUsd: number;
+  revenueGrowth: number;
+  grossMarginTarget: number;
+  opexGrowth: number;
+  capexAnnual: number;
+  taxRate: number;
+  primaryProducts: string;
+}
+
+// ---------- Audit ----------
+export type AuditProcedure = "Expenses" | "Purchases" | "Sales";
+export type AuditStepStatus = "Pending" | "Passed" | "Exception";
+
+export interface AuditStep {
+  key: string;
+  title: string;
+  description: string;
+  evidence: { label: string; href?: string | undefined }[];
+}
+
+export interface AuditStepResult {
+  status: AuditStepStatus;
+  notes: string;
+}
+
+export interface AuditProcedureState {
+  results: Record<string, AuditStepResult>;
+}
+
+export interface AuditEngagement {
+  name: string;
+  period: string;
+  auditorName: string;
 }

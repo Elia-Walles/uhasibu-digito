@@ -7,14 +7,31 @@ import toast from "react-hot-toast";
 interface ExportMenuProps {
   onApplyStamp?: () => void;
   fileLabel?: string;
+  /** When provided, the "Export as Excel" item invokes this real Excel builder instead of the fake toast. */
+  onExportExcel?: () => Promise<void> | void;
 }
 
-export function ExportMenu({ onApplyStamp, fileLabel = "report" }: ExportMenuProps) {
+export function ExportMenu({ onApplyStamp, fileLabel = "report", onExportExcel }: ExportMenuProps) {
   function fakeExport(kind: string) {
     const t = toast.loading(`Generating ${kind} export…`);
     setTimeout(() => {
       toast.success(`${fileLabel} exported as ${kind.toUpperCase()}`, { id: t });
     }, 1100);
+  }
+
+  async function runExcelExport() {
+    if (!onExportExcel) {
+      fakeExport("Excel");
+      return;
+    }
+    const t = toast.loading("Generating Excel workbook…");
+    try {
+      await onExportExcel();
+      toast.success(`${fileLabel} exported as XLSX`, { id: t });
+    } catch (err) {
+      console.error(err);
+      toast.error("Excel export failed", { id: t });
+    }
   }
 
   return (
@@ -33,7 +50,7 @@ export function ExportMenu({ onApplyStamp, fileLabel = "report" }: ExportMenuPro
           <Item icon={<FileText className="w-3.5 h-3.5" />} onClick={() => fakeExport("PDF")}>
             Export as PDF
           </Item>
-          <Item icon={<FileSpreadsheet className="w-3.5 h-3.5" />} onClick={() => fakeExport("Excel")}>
+          <Item icon={<FileSpreadsheet className="w-3.5 h-3.5" />} onClick={() => { void runExcelExport(); }}>
             Export as Excel
           </Item>
           <Item icon={<FileJson className="w-3.5 h-3.5" />} onClick={() => fakeExport("CSV")}>

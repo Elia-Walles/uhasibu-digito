@@ -18,6 +18,11 @@ import {
 const rnd = rngFromSeed(20251101);
 const statusBuckets = ["Active","Active","Active","Active","Active","Inactive","Blocked"] as const;
 
+const INTERNATIONAL_SEEDS: Partial<Record<number, { country: string; swiftBic: string; beneficiaryBank: string; iban: string }>> = {
+  3:  { country: "Kenya",          swiftBic: "KCBLKENX", beneficiaryBank: "Kenya Commercial Bank, Nairobi", iban: "KE12 3456 7890 1234 5678" },
+  11: { country: "United Kingdom", swiftBic: "BARCGB22", beneficiaryBank: "Barclays Bank, London",          iban: "GB29 NWBK 6016 1331 9268 19" },
+};
+
 export const CUSTOMERS: Customer[] = range(45, (i) => {
   const prefix = TZ_COMPANY_PREFIX[i % TZ_COMPANY_PREFIX.length] ?? "Trading Co";
   const suffix = pick(TZ_COMPANY_SUFFIX, rnd);
@@ -32,6 +37,7 @@ export const CUSTOMERS: Customer[] = range(45, (i) => {
   const tin = tinFormat(rnd);
   const totalRevenue = randomTZS(8_000_000, 220_000_000, rnd);
 
+  const intl = INTERNATIONAL_SEEDS[i];
   return {
     id: `cust_${String(i + 1).padStart(3, "0")}`,
     name: `${prefix} ${suffix}`,
@@ -46,6 +52,13 @@ export const CUSTOMERS: Customer[] = range(45, (i) => {
     status,
     paymentTerms: pick(PAYMENT_TERMS, rnd),
     totalRevenue,
+    ...(intl && {
+      country: intl.country,
+      swiftBic: intl.swiftBic,
+      beneficiaryBank: intl.beneficiaryBank,
+      iban: intl.iban,
+      isInternational: true,
+    }),
   };
 });
 

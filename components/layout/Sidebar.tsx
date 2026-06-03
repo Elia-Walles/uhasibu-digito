@@ -7,7 +7,7 @@ import {
   LayoutDashboard, BookOpen, FileBarChart, BarChart3, TrendingUp,
   ShoppingCart, Boxes, Users, Truck, MonitorSmartphone,
   Wallet, FileSpreadsheet, ShieldCheck, Target, Landmark,
-  Sparkles, FolderOpen, Settings, X, ChevronLeft,
+  Sparkles, FolderOpen, Settings, X, ChevronLeft, ClipboardCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
@@ -56,6 +56,7 @@ const NAV: NavSection[] = [
       { label: "Payroll",       href: "/payroll",       icon: Wallet },
       { label: "Tax",           href: "/tax",           icon: FileSpreadsheet, badge: { value: "3", color: "warning" } },
       { label: "Fixed Assets",  href: "/fixed-assets",  icon: ShieldCheck },
+      { label: "Audit",         href: "/audit",         icon: ClipboardCheck },
       { label: "Budgeting",     href: "/budgeting",     icon: Target },
       { label: "Banking",       href: "/banking",       icon: Landmark },
     ],

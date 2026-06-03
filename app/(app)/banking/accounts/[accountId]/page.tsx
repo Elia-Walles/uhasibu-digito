@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
+import { useDataStore } from "@/lib/store/dataStore";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
 import type { BankTransaction } from "@/types";
@@ -22,7 +22,8 @@ type Direction = "all" | "in" | "out";
 export default function BankAccountDetailPage() {
   const params = useParams<{ accountId: string }>();
   const loading = useLoadingSimulation(800);
-  const account = BANK_ACCOUNTS.find((a) => a.id === params.accountId);
+  const bankAccounts = useDataStore((s) => s.bankAccounts);
+  const account = bankAccounts.find((a) => a.id === params.accountId);
 
   const [search, setSearch] = useState("");
   const [direction, setDirection] = useState<Direction>("all");

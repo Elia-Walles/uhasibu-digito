@@ -1,7 +1,8 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Mail } from "lucide-react";
+import toast from "react-hot-toast";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -11,10 +12,13 @@ import { Badge } from "@/components/ui/Badge";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ExportMenu } from "@/components/ui/ExportMenu";
+import { Modal } from "@/components/ui/Modal";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useDataStore } from "@/lib/store/dataStore";
+import { useAppStore } from "@/lib/store/appStore";
 import { formatDate, isOverdue } from "@/lib/utils/dates";
+import { formatTZS } from "@/lib/utils/currency";
 import type { Invoice, InvoiceStatus } from "@/types";
 
 const COLS: Column<Invoice>[] = [
@@ -36,12 +40,16 @@ const COLS: Column<Invoice>[] = [
 ];
 
 type TabKey = "All" | "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
+const ALL_STATUSES: InvoiceStatus[] = ["Draft", "Sent", "Paid", "Overdue", "Cancelled"];
 
 export default function InvoicesPage() {
   const loading = useLoadingSimulation(800);
-  const { invoices } = useDataStore();
+  const { invoices, updateInvoiceStatus } = useDataStore();
+  const emailPrefs = useAppStore((s) => s.emailNotifications);
+  const addNotification = useAppStore((s) => s.addNotification);
   const [tab, setTab] = useState<TabKey>("All");
   const [search, setSearch] = useState("");
+  const [editTarget, setEditTarget] = useState<Invoice | null>(null);
 
   const filtered = useMemo(() => {
     let data = invoices;
@@ -62,6 +70,29 @@ export default function InvoicesPage() {
     { value: "Cancelled", label: "Cancelled" },
   ], [invoices]);
 
+  function applyStatus(invoice: Invoice, status: InvoiceStatus) {
+    if (invoice.status === status) {
+      setEditTarget(null);
+      return;
+    }
+    updateInvoiceStatus(invoice.id, status);
+    if (emailPrefs[status]) {
+      addNotification({
+        id: `inv-status-${invoice.id}-${status}-${Date.now()}`,
+        type: status === "Paid" ? "success" : status === "Overdue" || status === "Cancelled" ? "warning" : "info",
+        title: `${invoice.number} → ${status}`,
+        message: `${invoice.customerName} · ${formatTZS(invoice.total, true)} · email notification simulated`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        link: "/sales/invoices",
+      });
+      toast.success(`Status updated · email notification sent (simulated)`);
+    } else {
+      toast.success("Status updated");
+    }
+    setEditTarget(null);
+  }
+
   return (
     <PageWrapper>
       <PageHeader
@@ -70,6 +101,7 @@ export default function InvoicesPage() {
         breadcrumbs={[{ label: "Sales", href: "/sales" }, { label: "Invoices" }]}
         actions={
           <>
+            <Link href="/sales/sent-log"><Button variant="outline" icon={<Mail className="w-4 h-4" />}>Sent log</Button></Link>
             <ExportMenu fileLabel="Invoices" />
             <Link href="/sales/new-invoice"><Button variant="primary" icon={<Plus className="w-4 h-4" />}>New invoice</Button></Link>
           </>
@@ -83,8 +115,49 @@ export default function InvoicesPage() {
       <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search invoice # or customer…" />
 
       {loading ? <TableSkeleton rows={10} columns={6} /> :
-        <DataTable data={filtered} columns={COLS} pageSize={15} initialSortKey="issueDate" initialSortDir="desc" rowKey={(r) => r.id} />
+        <DataTable
+          data={filtered}
+          columns={COLS}
+          pageSize={15}
+          initialSortKey="issueDate"
+          initialSortDir="desc"
+          rowKey={(r) => r.id}
+          onRowClick={(r) => setEditTarget(r)}
+        />
       }
+
+      <Modal
+        open={editTarget !== null}
+        onOpenChange={(o) => !o && setEditTarget(null)}
+        title={editTarget ? `Update ${editTarget.number}` : ""}
+        description={editTarget ? `${editTarget.customerName} · ${formatTZS(editTarget.total, true)}` : ""}
+        size="md"
+      >
+        {editTarget && (
+          <div className="space-y-3">
+            <div className="text-xs text-ud-text-muted mb-2">Pick a new status. Email notifications fire for statuses you enabled in Settings → Preferences.</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {ALL_STATUSES.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => applyStatus(editTarget, s)}
+                  className={`p-3 rounded-xl border transition-all text-sm font-medium min-h-[64px] ${
+                    editTarget.status === s
+                      ? "border-ud-primary bg-ud-primary-50/60 text-ud-primary shadow-sm"
+                      : "border-ud-border hover:border-ud-primary/40"
+                  }`}
+                >
+                  {s}
+                  {emailPrefs[s] && (
+                    <div className="text-[10px] text-ud-text-muted mt-1 inline-flex items-center gap-0.5"><Mail className="w-2.5 h-2.5" />Notify</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </Modal>
     </PageWrapper>
   );
 }

@@ -1,58 +1,306 @@
 "use client";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
+import { useMemo } from "react";
+import {
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
+} from "recharts";
+import { motion } from "framer-motion";
+import { Download, TrendingUp, FileSpreadsheet, AlertTriangle } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Badge } from "@/components/ui/Badge";
+import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
+import { useDataStore } from "@/lib/store/dataStore";
+import { exportFinancialModel } from "@/lib/utils/model-export";
 import { formatTZS } from "@/lib/utils/currency";
+import type { ModelScenario } from "@/types";
+import toast from "react-hot-toast";
 
-const FORECAST = [
-  { year: "2023",  revenue: 739_600_000, profit: 69_160_000  },
-  { year: "2024",  revenue: 847_230_000, profit: 80_500_000  },
-  { year: "2025F", revenue: 945_000_000, profit: 92_300_000  },
-  { year: "2026F", revenue: 1_058_400_000, profit: 106_100_000 },
-  { year: "2027F", revenue: 1_185_400_000, profit: 122_200_000 },
-  { year: "2028F", revenue: 1_328_000_000, profit: 140_500_000 },
-];
+const HIST = {
+  revenueFY2023: 739_600_000,
+  revenueFY2024: 847_230_000,
+  cogsFY2024:    418_820_000,
+  opexFY2024:    303_850_000,
+  cashFY2024:    312_800_000,
+  equityFY2024:  586_950_000,
+  ppeFY2024:     312_500_000,
+};
+
+const SCENARIO_ADJ: Record<ModelScenario, { growth: number; margin: number }> = {
+  Base:     { growth:  0,    margin:  0 },
+  Upside:   { growth:  0.03, margin:  0.01 },
+  Downside: { growth: -0.03, margin: -0.02 },
+};
 
 export default function FinancialModelingPage() {
+  const assumptions = useDataStore((s) => s.modelAssumptions);
+  const updateAssumptions = useDataStore((s) => s.updateAssumptions);
+
+  const adj = SCENARIO_ADJ[assumptions.scenario];
+  const effectiveGrowth = assumptions.revenueGrowth + adj.growth;
+  const effectiveMargin = assumptions.grossMarginTarget + adj.margin;
+
+  const projections = useMemo(() => {
+    const years = [2025, 2026, 2027];
+    const data: {
+      year: string;
+      revenue: number;
+      cogs: number;
+      gross: number;
+      opex: number;
+      operating: number;
+      tax: number;
+      net: number;
+      ppe: number;
+      cash: number;
+      equity: number;
+    }[] = [];
+
+    let prevRev = HIST.revenueFY2024;
+    let prevOpex = HIST.opexFY2024;
+    let prevCash = HIST.cashFY2024;
+    let prevEquity = HIST.equityFY2024;
+    let prevPpe = HIST.ppeFY2024;
+
+    for (const y of years) {
+      const revenue = prevRev * (1 + effectiveGrowth);
+      const cogs = revenue * (1 - effectiveMargin);
+      const gross = revenue - cogs;
+      const opex = prevOpex * (1 + assumptions.opexGrowth);
+      const operating = gross - opex;
+      const tax = Math.max(0, operating * assumptions.taxRate);
+      const net = operating - tax;
+      const ppe = prevPpe + assumptions.capexAnnual;
+      const cash = prevCash + net - assumptions.capexAnnual;
+      const equity = prevEquity + net;
+      data.push({ year: `${y}F`, revenue, cogs, gross, opex, operating, tax, net, ppe, cash, equity });
+      prevRev = revenue;
+      prevOpex = opex;
+      prevCash = cash;
+      prevEquity = equity;
+      prevPpe = ppe;
+    }
+    return data;
+  }, [effectiveGrowth, effectiveMargin, assumptions.opexGrowth, assumptions.capexAnnual, assumptions.taxRate]);
+
+  const chartData = useMemo(() => ([
+    { year: "2023",  revenue: HIST.revenueFY2023, profit: 69_160_000 },
+    { year: "2024",  revenue: HIST.revenueFY2024, profit: 80_500_000 },
+    ...projections.map((p) => ({ year: p.year, revenue: p.revenue, profit: p.net })),
+  ]), [projections]);
+
+  const cagr = useMemo(() => {
+    const last = projections[projections.length - 1];
+    if (!last) return 0;
+    return Math.pow(last.revenue / HIST.revenueFY2024, 1 / projections.length) - 1;
+  }, [projections]);
+
+  async function handleExport() {
+    try {
+      await exportFinancialModel(assumptions);
+      toast.success("Model workbook downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Excel export failed");
+    }
+  }
+
   return (
     <PageWrapper>
-      <PageHeader title="Financial Modeling" subtitle="Forecasts, projections, sensitivity analysis" />
+      <PageHeader
+        title="Financial Modeling"
+        subtitle="Driver-based projections, scenarios, Excel export"
+        actions={
+          <Button variant="primary" icon={<Download className="w-4 h-4" />} onClick={handleExport}>
+            Export model to Excel
+          </Button>
+        }
+      />
+
+      <div className="mb-4 flex items-start gap-3 p-4 rounded-2xl border border-ud-warning/30 bg-ud-warning-bg">
+        <AlertTriangle className="w-5 h-5 text-ud-warning flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-ud-text-secondary leading-relaxed">
+          <Badge variant="warning" size="sm" className="mb-1">Model hygiene</Badge>
+          <p>
+            Exported workbook follows the standard layout: <span className="font-semibold text-ud-text-primary">Cover · Dashboard · Assumptions · Historicals · IS / BS / CF projections</span>.
+            Inputs are <span className="font-semibold text-blue-600">blue</span>, formulas <span className="font-semibold text-green-600">green</span>. No hard-coded values inside formulas — every driver flows through Assumptions.
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="5-year CAGR (revenue)" value={9.4} suffix="%" variant="teal" format="raw" />
-        <StatCard label="Forecast 2025 revenue" value={945_000_000} prefix="TSh" variant="emerald" format="compact" />
-        <StatCard label="Break-even sales"      value={612_000_000} prefix="TSh" variant="amber"   format="compact" />
-        <StatCard label="DSCR (interest cover)" value={9.7} suffix="x" variant="blue" format="raw" />
+        <StatCard label="Revenue CAGR (FY24→27)" value={cagr * 100} suffix="%" variant="teal" format="raw" />
+        <StatCard label={`Revenue FY ${projections[projections.length - 1]?.year ?? ""}`}
+                  value={projections[projections.length - 1]?.revenue ?? 0} prefix="TSh" variant="emerald" format="compact" />
+        <StatCard label="Projected net profit" value={projections[projections.length - 1]?.net ?? 0} prefix="TSh" variant="amber" format="compact" />
+        <StatCard label="Projected cash" value={projections[projections.length - 1]?.cash ?? 0} prefix="TSh" variant="blue" format="compact" />
       </div>
 
-      <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">
-        <h3 className="font-display font-bold text-base mb-3">Revenue & profit projections — 5 year</h3>
-        <ResponsiveContainer width="100%" height={340}>
-          <LineChart data={FORECAST} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5F0EC" vertical={false} />
-            <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} tickFormatter={(v) => formatTZS(Number(v), true).replace("TSh ", "")} />
-            <Tooltip formatter={(v) => formatTZS(Number(v))} contentStyle={{ borderRadius: 12, border: "1px solid #E5F0EC", fontSize: 12 }} />
-            <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
-            <Line type="monotone" dataKey="revenue" name="Revenue" stroke="#0F7B5E" strokeWidth={3} dot={{ r: 4 }} animationDuration={1300} />
-            <Line type="monotone" dataKey="profit"  name="Net profit" stroke="#F5C842" strokeWidth={3} dot={{ r: 4 }} animationDuration={1300} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { title: "Break-even analysis", description: "Fixed costs / contribution margin" },
-          { title: "Sensitivity", description: "Revenue ±10% impact on operating profit" },
-          { title: "Scenarios", description: "Base / upside / downside" },
-        ].map((c) => (
-          <div key={c.title} className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-            <div className="font-display font-bold text-base">{c.title}</div>
-            <p className="text-xs text-ud-text-muted mt-1">{c.description}</p>
-            <div className="mt-4 h-2 bg-gradient-to-r from-ud-primary to-ud-primary-light rounded-full" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        {/* Assumptions panel */}
+        <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-bold text-base">Assumptions</h3>
+            <Badge variant="info" size="sm">{assumptions.scenario}</Badge>
           </div>
-        ))}
+
+          <div className="mb-4">
+            <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted mb-2">Scenario</div>
+            <div className="inline-flex items-center p-1 rounded-xl bg-ud-surface-2 border border-ud-border">
+              {(["Base", "Upside", "Downside"] as ModelScenario[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => updateAssumptions({ scenario: s })}
+                  className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition-colors min-h-[36px] ${
+                    assumptions.scenario === s ? "text-white" : "text-ud-text-secondary"
+                  }`}
+                  aria-pressed={assumptions.scenario === s}
+                >
+                  {assumptions.scenario === s && (
+                    <motion.span layoutId="model-scenario-pill" className="absolute inset-0 rounded-lg bg-ud-primary -z-0" transition={{ type: "spring", stiffness: 380, damping: 30 }} />
+                  )}
+                  <span className="relative z-10">{s}</span>
+                </button>
+              ))}
+            </div>
+            {adj.growth !== 0 && (
+              <div className="mt-2 text-[11px] text-ud-text-muted">
+                Scenario adjustment: growth {adj.growth > 0 ? "+" : ""}{(adj.growth * 100).toFixed(0)}pp · margin {adj.margin > 0 ? "+" : ""}{(adj.margin * 100).toFixed(0)}pp
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <PctInput label="Inflation"      value={assumptions.inflationRate} onChange={(v) => updateAssumptions({ inflationRate: v })} />
+            <PctInput label="Revenue growth" value={assumptions.revenueGrowth} onChange={(v) => updateAssumptions({ revenueGrowth: v })} />
+            <PctInput label="Gross margin"   value={assumptions.grossMarginTarget} onChange={(v) => updateAssumptions({ grossMarginTarget: v })} />
+            <PctInput label="Opex growth"    value={assumptions.opexGrowth} onChange={(v) => updateAssumptions({ opexGrowth: v })} />
+            <PctInput label="Tax rate"       value={assumptions.taxRate} onChange={(v) => updateAssumptions({ taxRate: v })} />
+            <Input
+              label="TZS / USD"
+              type="number"
+              value={String(assumptions.fxTzsPerUsd)}
+              onChange={(e) => updateAssumptions({ fxTzsPerUsd: Number(e.target.value) || 0 })}
+            />
+            <Input
+              label="CapEx (annual TZS)"
+              type="number"
+              value={String(assumptions.capexAnnual)}
+              onChange={(e) => updateAssumptions({ capexAnnual: Number(e.target.value) || 0 })}
+            />
+            <Input
+              label="Primary products"
+              value={assumptions.primaryProducts}
+              onChange={(e) => updateAssumptions({ primaryProducts: e.target.value })}
+            />
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display font-bold text-base">Revenue & net profit — historical + forecast</h3>
+            <span className="text-xs text-ud-text-muted inline-flex items-center gap-1"><TrendingUp className="w-3 h-3" />Driven by assumptions</span>
+          </div>
+          <ResponsiveContainer width="100%" height={340}>
+            <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5F0EC" vertical={false} />
+              <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} tickFormatter={(v) => formatTZS(Number(v), true).replace("TSh ", "")} />
+              <Tooltip formatter={(v) => formatTZS(Number(v))} contentStyle={{ borderRadius: 12, border: "1px solid #E5F0EC", fontSize: 12 }} />
+              <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" />
+              <Line type="monotone" dataKey="revenue" name="Revenue" stroke="#0F7B5E" strokeWidth={3} dot={{ r: 4 }} animationDuration={900} />
+              <Line type="monotone" dataKey="profit"  name="Net profit" stroke="#F5C842" strokeWidth={3} dot={{ r: 4 }} animationDuration={900} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Projection tables */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <ProjectionTable title="Income Statement" rows={[
+          { label: "Revenue",            values: projections.map((p) => p.revenue) },
+          { label: "Cost of sales",      values: projections.map((p) => -p.cogs) },
+          { label: "Gross profit",       values: projections.map((p) => p.gross), total: true },
+          { label: "Operating expenses", values: projections.map((p) => -p.opex) },
+          { label: "Operating profit",   values: projections.map((p) => p.operating), total: true },
+          { label: "Income tax",         values: projections.map((p) => -p.tax) },
+          { label: "Net profit",         values: projections.map((p) => p.net), total: true },
+        ]} years={projections.map((p) => p.year)} />
+        <ProjectionTable title="Balance Sheet (extract)" rows={[
+          { label: "PPE (net)",     values: projections.map((p) => p.ppe) },
+          { label: "Cash & bank",   values: projections.map((p) => p.cash) },
+          { label: "Total equity",  values: projections.map((p) => p.equity), total: true },
+        ]} years={projections.map((p) => p.year)} />
+        <ProjectionTable title="Cash Flow (extract)" rows={[
+          { label: "Net profit",        values: projections.map((p) => p.net) },
+          { label: "Less: CapEx",       values: projections.map((p) => -assumptions.capexAnnual) },
+          { label: "Net change in cash", values: projections.map((p) => p.net - assumptions.capexAnnual), total: true },
+        ]} years={projections.map((p) => p.year)} />
+      </div>
+
+      <div className="mt-6 flex items-center gap-2 p-4 rounded-2xl bg-ud-primary-50 border border-ud-primary-100">
+        <FileSpreadsheet className="w-5 h-5 text-ud-primary" />
+        <div className="text-sm text-ud-text-secondary">
+          Need the full workbook? The <span className="font-semibold text-ud-primary">Export model to Excel</span> button generates the 7-sheet model with assumptions, historicals, IS / BS / CF projections, dashboard, and a styled cover.
+        </div>
       </div>
     </PageWrapper>
+  );
+}
+
+function PctInput({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <Input
+      label={`${label} (%)`}
+      type="number"
+      step="0.1"
+      value={(value * 100).toFixed(2)}
+      onChange={(e) => onChange(Number(e.target.value) / 100)}
+    />
+  );
+}
+
+function ProjectionTable({ title, rows, years }: {
+  title: string;
+  rows: { label: string; values: number[]; total?: boolean }[];
+  years: string[];
+}) {
+  return (
+    <div className="bg-white border border-ud-border rounded-2xl shadow-card overflow-hidden">
+      <div className="px-4 py-3 bg-ud-surface-2 border-b border-ud-border">
+        <h3 className="font-display font-bold text-sm">{title}</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-ud-border text-xs uppercase tracking-[0.06em] text-ud-text-muted">
+              <th className="text-left px-4 py-2" scope="col">Line</th>
+              {years.map((y) => (
+                <th key={y} className="text-right px-4 py-2" scope="col">{y}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className={r.total ? "bg-ud-primary-50/40 font-semibold" : i % 2 ? "bg-ud-surface-2/50" : ""}>
+                <td className="px-4 py-2 text-ud-text-secondary">{r.label}</td>
+                {r.values.map((v, j) => (
+                  <td key={j} className="px-4 py-2 text-right">
+                    {v < 0
+                      ? <span className="text-ud-danger font-mono tabular-nums">(<CurrencyDisplay amount={Math.abs(v)} showSymbol={false} />)</span>
+                      : <CurrencyDisplay amount={v} showSymbol={false} className="font-mono tabular-nums" />
+                    }
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }

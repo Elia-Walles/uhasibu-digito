@@ -1,8 +1,8 @@
 "use client";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Save } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Plus, X, Save, Pencil } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -18,18 +18,42 @@ const ACCOUNT_OPTIONS = COA.filter((a) => a.level >= 1).map((a) => ({ value: a.c
 
 export default function JournalEntryPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editRef = searchParams.get("ref");
   const addJournalEntry = useDataStore((s) => s.addJournalEntry);
+  const editJournalEntry = useDataStore((s) => s.editJournalEntry);
+  const glEntries = useDataStore((s) => s.glEntries);
   const uid = useId();
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]!);
   // Derive a stable demo reference from useId — no Math.random in render
   const initialRef = `JV-2024-${uid.replace(/[^0-9]/g, "").padStart(5, "0").slice(-5)}`;
-  const [reference, setReference] = useState(initialRef);
+  const [reference, setReference] = useState(editRef ?? initialRef);
   const [narration, setNarration] = useState("");
   const [shake, setShake] = useState(false);
   const [lines, setLines] = useState<JournalEntryLine[]>([
     { id: "1", accountCode: "", accountName: "", description: "", debit: 0, credit: 0 },
     { id: "2", accountCode: "", accountName: "", description: "", debit: 0, credit: 0 },
   ]);
+  const isEdit = editRef !== null;
+
+  useEffect(() => {
+    if (!editRef) return;
+    const matched = glEntries.filter((e) => e.reference === editRef);
+    if (matched.length === 0) return;
+    setReference(editRef);
+    setNarration(matched[0]?.narration ?? "");
+    setDate(matched[0]?.date ?? new Date().toISOString().split("T")[0]!);
+    setLines(matched.map((m, i) => ({
+      id: `e_${i}`,
+      accountCode: m.accountCode,
+      accountName: m.account,
+      description: "",
+      debit: m.debit,
+      credit: m.credit,
+    })));
+    // run once on mount with editRef
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editRef]);
 
   function updateLine(id: string, patch: Partial<JournalEntryLine>) {
     setLines((prev) => prev.map((l) => {
@@ -67,17 +91,22 @@ export default function JournalEntryPage() {
       toast.error("Need at least 2 valid lines");
       return;
     }
-    addJournalEntry(validLines, narration || "Manual journal entry", reference);
-    toast.success("Journal entry posted");
+    if (isEdit) {
+      editJournalEntry(reference, validLines, narration || "Manual journal entry");
+      toast.success("Journal entry updated · bank balances auto-adjusted");
+    } else {
+      addJournalEntry(validLines, narration || "Manual journal entry", reference);
+      toast.success("Journal entry posted · bank balances auto-adjusted");
+    }
     router.push("/general-ledger");
   }
 
   return (
     <PageWrapper>
       <PageHeader
-        title="New Journal Entry"
-        subtitle="Record a manual journal — debits must equal credits"
-        breadcrumbs={[{ label: "General Ledger", href: "/general-ledger" }, { label: "New Entry" }]}
+        title={isEdit ? "Edit Journal Entry" : "New Journal Entry"}
+        subtitle={isEdit ? `Editing ${reference} — debits must equal credits. Bank-side balances update automatically.` : "Record a manual journal — debits must equal credits. Entries on bank accounts update bank balances automatically."}
+        breadcrumbs={[{ label: "General Ledger", href: "/general-ledger" }, { label: isEdit ? "Edit Entry" : "New Entry" }]}
       />
 
       <div className="bg-white border border-ud-border rounded-2xl p-6 shadow-card">
@@ -168,7 +197,7 @@ export default function JournalEntryPage() {
           <Button variant="ghost" onClick={addLine} icon={<Plus className="w-4 h-4" />}>Add line</Button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-            <Button variant="primary" onClick={save} icon={<Save className="w-4 h-4" />}>Post entry</Button>
+            <Button variant="primary" onClick={save} icon={isEdit ? <Pencil className="w-4 h-4" /> : <Save className="w-4 h-4" />}>{isEdit ? "Update entry" : "Post entry"}</Button>
           </div>
         </div>
       </div>

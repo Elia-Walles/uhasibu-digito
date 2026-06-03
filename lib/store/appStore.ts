@@ -1,17 +1,29 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { AppNotification } from "@/types";
+import type { AppNotification, InvoiceStatus } from "@/types";
+
+export type EmailNotificationPrefs = Record<InvoiceStatus, boolean>;
+
+const DEFAULT_EMAIL_PREFS: EmailNotificationPrefs = {
+  Draft: false,
+  Sent: true,
+  Paid: true,
+  Overdue: true,
+  Cancelled: false,
+};
 
 interface AppState {
   sidebarOpen: boolean;
   sidebarCollapsed: boolean;
   notifications: AppNotification[];
+  emailNotifications: EmailNotificationPrefs;
   setSidebarOpen: (v: boolean) => void;
   toggleSidebar: () => void;
   toggleCollapse: () => void;
   addNotification: (n: AppNotification) => void;
   markRead: (id: string) => void;
   clearAll: () => void;
+  setEmailNotification: (status: InvoiceStatus, enabled: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -48,6 +60,7 @@ export const useAppStore = create<AppState>()(
           link: "/inventory/items",
         },
       ],
+      emailNotifications: DEFAULT_EMAIL_PREFS,
       setSidebarOpen: (v) => set({ sidebarOpen: v }),
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       toggleCollapse: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -60,7 +73,15 @@ export const useAppStore = create<AppState>()(
           ),
         })),
       clearAll: () => set({ notifications: [] }),
+      setEmailNotification: (status, enabled) =>
+        set((s) => ({ emailNotifications: { ...s.emailNotifications, [status]: enabled } })),
     }),
-    { name: "ud-app", partialize: (s) => ({ sidebarCollapsed: s.sidebarCollapsed }) }
+    {
+      name: "ud-app",
+      partialize: (s) => ({
+        sidebarCollapsed: s.sidebarCollapsed,
+        emailNotifications: s.emailNotifications,
+      }),
+    }
   )
 );

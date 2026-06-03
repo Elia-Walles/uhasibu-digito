@@ -65,6 +65,83 @@ export const AI_RESPONSES: AIResponse[] = [
     language: "sw",
     response: `Hadi sasa mwaka huu, gharama za uendeshaji ziko **asilimia 96.3 ya bajeti** — ndani ya kikomo. Sehemu zinazohitaji uangalizi: gharama za usafiri (asilimia 104) na vifaa vya ofisi (asilimia 108).`,
   },
+
+  // ============ Audit checkpoints ============
+  {
+    triggers: ["validity", "valid source", "valid document", "uthibitisho"],
+    language: "en",
+    response: `**Audit checkpoint — Validity**
+A transaction is valid if it has a real, fiscalised supporting document.
+For invoice **INV-2024-01007** (Arusha Merchants, TZS 8,400,000 net):
+- Customer TIN on file ✅
+- EFD receipt issued (EFD-2024-XXXXXXXX) ✅
+- VAT 18% applied correctly (1,512,000) ✅
+- Goods delivered, DN signed ✅
+**Conclusion: VALID.** Sample more transactions for the same vendor to confirm pattern.`,
+    swahili: `**Uthibitisho:** Muamala una hati ya msingi halali (EFD, TIN, DN). Inathibitishwa.`,
+  },
+  {
+    triggers: ["authorisation", "authorization", "approval", "idhini", "ruhusa"],
+    language: "en",
+    response: `**Audit checkpoint — Authorisation**
+Every committed expenditure must be approved at the right level.
+Approval matrix in use:
+- ≤ TZS 500k — Department head
+- ≤ TZS 5M — Finance Manager
+- > TZS 5M — CFO + board chair
+Test: payment voucher **PV-2024-00214** (TZS 6.2M, generator service) — signed by Finance Manager only. **Exception** — required CFO co-sign.
+Action: flag for management letter and confirm controls have been tightened.`,
+    swahili: `**Idhini:** Kiwango cha idhini lazima kilingane na thamani. Hii ndiyo udhibiti muhimu wa kuzuia hasara.`,
+  },
+  {
+    triggers: ["accuracy", "recompute", "recalculate", "usahihi"],
+    language: "en",
+    response: `**Audit checkpoint — Accuracy**
+Recomputation of October 2024 PAYE deductions:
+- 12 employees · Gross **TZS 18,000,000** · PAYE **TZS 3,200,000** posted
+- Manual recompute using TRA 2024 bands (0% / 8% / 20% / 25% / 30%) yields TZS 3,184,500 — variance of **+15,500 (0.5%)** within rounding tolerance.
+- NSSF (10% + 10%), SDL (4%), WCF (0.5%) all tie back to the gross.
+**Conclusion: arithmetically accurate, within tolerance.** Flag only if variance >1%.`,
+  },
+  {
+    triggers: ["documentation", "supporting documents", "evidence", "nyaraka"],
+    language: "en",
+    response: `**Audit checkpoint — Proper documentation**
+For a procurement at TZS 6M, required documents (Tanzania purchase cycle):
+1. Purchase Requisition (PR), approved
+2. ≥ 3 proforma quotes
+3. Supplier (tax) invoice — fiscalised, TIN, VAT #
+4. Delivery Note (DN) — signed by receiving officer
+5. Goods Received Note (GRN) — physical count
+6. Payment Voucher (PV) — referencing PR, PO, GRN
+7. EFD receipt from supplier
+Missing any one of these is an **exception**. Walk this through Audit → Purchases for the live checklist.`,
+    swahili: `**Nyaraka:** Manunuzi yanahitaji PR, proforma 3, ankara ya kodi, DN, GRN, PV, na EFD. Bila moja ni kasoro.`,
+  },
+  {
+    triggers: ["tax compliance", "tra compliance", "uzingatiaji kodi"],
+    language: "en",
+    response: `**Audit checkpoint — Tax compliance**
+For October 2024:
+- VAT 18% applied on all taxable supplies ✅
+- Output VAT TZS 24.0M reconciles to sales register ✅
+- Input VAT TZS 6.1M supported by EFD receipts ✅
+- PAYE filed by 7 Nov ✅ · SDL by 7 Nov ✅ · WCF by 7 Nov ✅
+- VAT return due 20 Nov — **not yet filed** ⚠️
+- TINs verified on top 10 customers — 10/10 valid
+**Conclusion: compliant pending VAT filing in the next 4 days.** Reminder sent via in-app notification.`,
+    swahili: `**Uzingatiaji wa kodi:** Filings za PAYE, NSSF, SDL, WCF zimewasilishwa. VAT inakaribia (Nov 20).`,
+  },
+  {
+    triggers: ["recording", "classification", "coa", "chart of accounts", "uainishaji"],
+    language: "en",
+    response: `**Audit checkpoint — Correct recording**
+A vehicle service expense of TZS 1.2M should hit account **5210 Motor Vehicle — Running** (Expense). Sample:
+- Journal **JV-2024-00427**: debited **5210** correctly ✅
+- But journal **JV-2024-00489** (similar transaction): debited **5240 Office Supplies** ❌ — **misclassification exception**.
+Recommend a posting-rules sheet for the bookkeeper and consider account-pattern validation on the GL form.`,
+    swahili: `**Uainishaji:** Akaunti ya GL lazima ilingane na asili ya muamala. Misclassification ni kasoro.`,
+  },
 ];
 
 export const AI_SUGGESTIONS_EN = [
@@ -77,6 +154,15 @@ export const AI_SUGGESTIONS_EN = [
   "What's our financial health score?",
   "Inventory items below reorder level",
   "Summarize October payroll",
+];
+
+export const AI_AUDIT_SUGGESTIONS = [
+  "Is this transaction supported by a valid source document?",
+  "Was this expenditure authorised at the right level?",
+  "Recompute the totals and VAT for this transaction",
+  "What documents are required for a TZS 6M procurement?",
+  "Are PAYE and VAT filings up to date?",
+  "Is the journal entry classified to the correct COA account?",
 ];
 
 export const AI_SUGGESTIONS_SW = [

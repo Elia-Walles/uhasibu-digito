@@ -1,11 +1,31 @@
 "use client";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingCart, X, Plus, Minus, Smartphone, Banknote, CheckCircle2 } from "lucide-react";
+import { Search, ShoppingCart, X, Plus, Minus, Smartphone, Banknote, CheckCircle2, FileText } from "lucide-react";
 import { INVENTORY } from "@/lib/mock-data/inventory";
 import { formatTZS, formatAmount } from "@/lib/utils/currency";
 import { cn } from "@/lib/utils/cn";
+import { useDataStore } from "@/lib/store/dataStore";
+import { useAppStore } from "@/lib/store/appStore";
 import toast from "react-hot-toast";
+import type { Invoice, InvoiceLine, Customer } from "@/types";
+
+const WALK_IN_CUSTOMER: Customer = {
+  id: "cust_pos_walkin",
+  name: "Walk-in customer (POS)",
+  contactPerson: "—",
+  tin: "000-000-000",
+  phone: "—",
+  email: "—",
+  city: "Dar es Salaam",
+  address: "Point of Sale",
+  creditLimit: 0,
+  outstandingBalance: 0,
+  status: "Active",
+  paymentTerms: "Cash",
+  totalRevenue: 0,
+};
 
 interface CartLine {
   itemId: string;
@@ -26,6 +46,11 @@ export default function POSPage() {
   const [cashGiven, setCashGiven] = useState("");
   const [phone, setPhone] = useState("+255 712 345 678");
   const [efdNumber, setEfdNumber] = useState("");
+  const [postedInvoiceId, setPostedInvoiceId] = useState<string | null>(null);
+  const customers = useDataStore((s) => s.customers);
+  const addCustomer = useDataStore((s) => s.addCustomer);
+  const addInvoice = useDataStore((s) => s.addInvoice);
+  const addNotification = useAppStore((s) => s.addNotification);
 
   const categories = useMemo(() => ["All", ...Array.from(new Set(INVENTORY.map((i) => i.category)))], []);
   const filtered = useMemo(() => {
@@ -62,14 +87,64 @@ export default function POSPage() {
   async function processPayment() {
     setPaymentStatus("waiting");
     await new Promise((r) => setTimeout(r, paymentMethod === "mpesa" ? 3000 : 1500));
-    setEfdNumber(`EFD-2024-${String(Math.floor(Math.random() * 90000000 + 10000000))}`);
+    const efd = `EFD-2024-${String(Math.floor(Math.random() * 90000000 + 10000000))}`;
+    setEfdNumber(efd);
+
+    // Ensure walk-in POS customer exists in the data store
+    if (!customers.some((c) => c.id === WALK_IN_CUSTOMER.id)) {
+      addCustomer(WALK_IN_CUSTOMER);
+    }
+
+    // Build a paid invoice from the cart and post it to the sales pipeline
+    const stamp = new Date();
+    const dateKey = stamp.toISOString().split("T")[0]!.replace(/-/g, "");
+    const seq = String(Math.floor(Math.random() * 900) + 100);
+    const invoiceLines: InvoiceLine[] = cart.map((l, i) => ({
+      id: `pos_${stamp.getTime()}_${i}`,
+      description: l.name,
+      quantity: l.quantity,
+      unitPrice: l.unitPrice,
+      discountPct: 0,
+      vatPct: 18,
+      lineTotal: l.unitPrice * l.quantity,
+    }));
+    const invoice: Invoice = {
+      id: `inv_pos_${stamp.getTime()}`,
+      number: `INV-POS-${dateKey}-${seq}`,
+      customerId: WALK_IN_CUSTOMER.id,
+      customerName: WALK_IN_CUSTOMER.name,
+      issueDate: stamp.toISOString().split("T")[0]!,
+      dueDate:   stamp.toISOString().split("T")[0]!,
+      lines: invoiceLines,
+      subtotal,
+      discount: 0,
+      vatAmount: vat,
+      total,
+      status: "Paid",
+      efdNumber: efd,
+      notes: `Point of Sale cash sale (${paymentMethod.toUpperCase()})`,
+      paidAt: stamp.toISOString(),
+    };
+    addInvoice(invoice);
+    setPostedInvoiceId(invoice.id);
+
+    addNotification({
+      id: `pos-${invoice.id}`,
+      type: "success",
+      title: "POS sale recorded",
+      message: `${invoice.number} · ${formatTZS(total, true)} · ${paymentMethod.toUpperCase()}`,
+      timestamp: stamp.toISOString(),
+      read: false,
+      link: "/sales/invoices",
+    });
+
     setPaymentStatus("success");
-    await new Promise((r) => setTimeout(r, 2200));
+    await new Promise((r) => setTimeout(r, 2400));
     setPaymentOpen(false);
     setPaymentStatus("idle");
     setCart([]);
     setCashGiven("");
-    toast.success("Sale completed · EFD receipt issued");
+    toast.success("Sale completed · EFD issued · invoice posted");
   }
 
   return (
@@ -250,6 +325,15 @@ export default function POSPage() {
                     <div className="flex justify-between"><span className="text-white/45">Total</span><span className="font-bold">{formatTZS(total)}</span></div>
                     <div className="flex justify-between"><span className="text-white/45">Method</span><span className="uppercase">{paymentMethod}</span></div>
                   </div>
+                  {postedInvoiceId && (
+                    <Link
+                      href="/sales/invoices"
+                      className="mt-5 inline-flex items-center justify-center gap-1.5 w-full px-3 py-2.5 rounded-xl bg-ud-primary text-white text-sm font-medium hover:bg-ud-primary-hover transition-colors"
+                    >
+                      <FileText className="w-4 h-4" />
+                      View invoice in Sales
+                    </Link>
+                  )}
                 </div>
               ) : paymentStatus === "waiting" ? (
                 <div className="text-center py-6">

@@ -8,12 +8,13 @@ import { Badge } from "@/components/ui/Badge";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
+import { useDataStore } from "@/lib/store/dataStore";
 import { CashFlowChart } from "@/components/charts/CashFlowChart";
 import { formatDate } from "@/lib/utils/dates";
 
 export default function BankingPage() {
   const loading = useLoadingSimulation(800);
+  const BANK_ACCOUNTS = useDataStore((s) => s.bankAccounts);
   const totalTZS = BANK_ACCOUNTS.filter((a) => a.currency === "TZS").reduce((s, a) => s + a.balance, 0);
 
   return (

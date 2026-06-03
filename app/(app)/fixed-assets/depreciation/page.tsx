@@ -1,21 +1,79 @@
 "use client";
+import { AlertTriangle } from "lucide-react";
+import toast from "react-hot-toast";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
+import { Badge } from "@/components/ui/Badge";
+import { ExportMenu } from "@/components/ui/ExportMenu";
 import { DepreciationChart } from "@/components/charts/DepreciationChart";
 import { useDataStore } from "@/lib/store/dataStore";
+import { STANDARD_RATES } from "@/lib/utils/depreciation-rates";
+import { exportDepreciationSchedule } from "@/lib/utils/depreciation-export";
+import type { AssetCategory } from "@/types";
+
+const CLASSES: AssetCategory[] = ["Building", "Vehicle", "Equipment", "Computer", "Furniture"];
 
 export default function DepreciationPage() {
   const assets = useDataStore((s) => s.assets);
   const active = assets.filter((a) => a.status === "Active");
 
+  async function handleExport() {
+    try {
+      await exportDepreciationSchedule(assets);
+      toast.success("Depreciation schedule exported");
+    } catch (err) {
+      console.error(err);
+      toast.error("Excel export failed");
+    }
+  }
+
   return (
     <PageWrapper>
       <PageHeader
         title="Depreciation Schedule"
-        subtitle="Straight-line depreciation over useful life"
+        subtitle="Straight-line and reducing-balance methods per Tanzania classes"
         breadcrumbs={[{ label: "Fixed Assets", href: "/fixed-assets" }, { label: "Depreciation" }]}
+        actions={<ExportMenu fileLabel="Depreciation schedule" onExportExcel={handleExport} />}
       />
+
+      <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display font-bold text-base">Standard rates by asset class</h3>
+          <Badge variant="info" size="sm">TRA / NBAA-aligned defaults</Badge>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
+            <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
+              <tr>
+                <th className="text-left px-4 py-2.5" scope="col">Class</th>
+                <th className="text-right px-4 py-2.5" scope="col">Straight-line</th>
+                <th className="text-right px-4 py-2.5" scope="col">Reducing balance</th>
+                <th className="text-right px-4 py-2.5" scope="col">Useful life</th>
+                <th className="text-left px-4 py-2.5" scope="col">Basis</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CLASSES.map((cls) => {
+                const r = STANDARD_RATES[cls];
+                return (
+                  <tr key={cls} className="border-t border-ud-border">
+                    <td className="px-4 py-2.5 font-medium">{cls}</td>
+                    <td className="px-4 py-2.5 text-right font-mono">{(r.slPct * 100).toFixed(1)}%</td>
+                    <td className="px-4 py-2.5 text-right font-mono">{(r.rbPct * 100).toFixed(1)}%</td>
+                    <td className="px-4 py-2.5 text-right font-mono">{r.usefulLife} yr</td>
+                    <td className="px-4 py-2.5 text-xs text-ud-text-muted">{r.basis}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-3 flex items-start gap-2 text-xs text-ud-text-muted">
+          <AlertTriangle className="w-3.5 h-3.5 text-ud-warning flex-shrink-0 mt-0.5" />
+          Rates are TRA / NBAA defaults shown for reference. Verify with your tax advisor for each engagement; specific classes (e.g. heavy machinery vs office equipment) may have different rates.
+        </div>
+      </div>
 
       <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">
         <h3 className="font-display font-bold text-base mb-3">Total NBV — historical & forecast</h3>
@@ -24,7 +82,7 @@ export default function DepreciationPage() {
 
       <div className="bg-white border border-ud-border rounded-2xl shadow-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
               <tr>
                 <th className="text-left px-4 py-3" scope="col">Asset</th>

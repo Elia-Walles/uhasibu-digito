@@ -2,20 +2,23 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Save, Send } from "lucide-react";
+import { Plus, X, Save, Send, Mail, MessageCircle, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { Modal } from "@/components/ui/Modal";
 import { COMPANY } from "@/lib/mock-data/company";
 import { useDataStore } from "@/lib/store/dataStore";
 import { formatTZS } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/dates";
 import { efdFormat } from "@/lib/mock-data/generators";
 import toast from "react-hot-toast";
-import type { InvoiceLine, Invoice } from "@/types";
+import type { InvoiceLine, Invoice, SendChannel, SendLogEntry } from "@/types";
+
+type SendChoice = "Email" | "WhatsApp" | "Both" | "JustSave";
 
 type LineDraft = InvoiceLine;
 
@@ -27,7 +30,7 @@ function computeDueDate(issued: string): string {
 
 export default function NewInvoicePage() {
   const router = useRouter();
-  const { customers, addInvoice } = useDataStore();
+  const { customers, addInvoice, addSendLog } = useDataStore();
   const today = new Date().toISOString().split("T")[0]!;
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? "");
   const [issueDate, setIssueDate] = useState(today);
@@ -35,6 +38,9 @@ export default function NewInvoicePage() {
   const [lines, setLines] = useState<LineDraft[]>([
     { id: "1", description: "", quantity: 1, unitPrice: 0, discountPct: 0, vatPct: 18, lineTotal: 0 },
   ]);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
+  const [sendChoice, setSendChoice] = useState<SendChoice>("Email");
+  const [sending, setSending] = useState(false);
 
   const customer = customers.find((c) => c.id === customerId);
 
@@ -56,13 +62,12 @@ export default function NewInvoicePage() {
   const vat = Math.round(subtotal * 0.18);
   const total = subtotal + vat;
 
-  function save(status: "Draft" | "Sent") {
-    if (!customer) return;
-    const inv: Invoice = {
+  function buildInvoice(status: "Draft" | "Sent"): Invoice {
+    return {
       id: `inv_new_${Date.now()}`,
       number: `INV-2024-${String(Math.floor(Math.random() * 90000) + 10000)}`,
-      customerId: customer.id,
-      customerName: customer.name,
+      customerId: customer!.id,
+      customerName: customer!.name,
       issueDate,
       dueDate,
       lines,
@@ -74,9 +79,54 @@ export default function NewInvoicePage() {
       efdNumber: efdFormat(Date.now() % 99999999),
       notes: "Payment is due 30 days from invoice date. Bank: CRDB 0150123456789",
     };
-    addInvoice(inv);
-    toast.success(status === "Sent" ? "Invoice sent" : "Invoice saved as draft");
+  }
+
+  function saveDraft() {
+    if (!customer) return;
+    addInvoice(buildInvoice("Draft"));
+    toast.success("Invoice saved as draft");
     router.push("/sales/invoices");
+  }
+
+  function openSendModal() {
+    if (!customer) return;
+    setSendChoice("Email");
+    setSendModalOpen(true);
+  }
+
+  async function confirmSend() {
+    if (!customer) return;
+    if (sendChoice === "JustSave") {
+      addInvoice(buildInvoice("Sent"));
+      toast.success("Invoice marked as sent");
+      setSendModalOpen(false);
+      router.push("/sales/invoices");
+      return;
+    }
+    setSending(true);
+    const inv = buildInvoice("Sent");
+    addInvoice(inv);
+    const channel: SendChannel = sendChoice === "Both" ? "Both" : sendChoice;
+    const recipient = channel === "Email" ? customer.email
+                    : channel === "WhatsApp" ? customer.phone
+                    : `${customer.email} · ${customer.phone}`;
+    const t = toast.loading(`Sending invoice via ${channel}…`);
+    await new Promise((r) => setTimeout(r, 1200));
+    const entry: SendLogEntry = {
+      id: `send_${Date.now()}`,
+      invoiceId: inv.id,
+      invoiceNumber: inv.number,
+      customerName: customer.name,
+      channel,
+      recipient,
+      sentAt: new Date().toISOString(),
+      status: "Delivered",
+    };
+    addSendLog(entry);
+    toast.success(`Delivered via ${channel}`, { id: t });
+    setSending(false);
+    setSendModalOpen(false);
+    router.push("/sales/sent-log");
   }
 
   return (
@@ -137,9 +187,9 @@ export default function NewInvoicePage() {
             </button>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => save("Draft")} icon={<Save className="w-4 h-4" />}>Save draft</Button>
-            <Button variant="primary" onClick={() => save("Sent")}  icon={<Send className="w-4 h-4" />}>Save & send</Button>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button variant="outline" onClick={saveDraft} icon={<Save className="w-4 h-4" />}>Save draft</Button>
+            <Button variant="primary" onClick={openSendModal} icon={<Send className="w-4 h-4" />}>Save & send</Button>
           </div>
         </div>
 
@@ -206,12 +256,97 @@ export default function NewInvoicePage() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-ud-border text-[10px] text-ud-text-muted">
-            <div className="font-medium text-ud-text-secondary mb-1">Payment</div>
-            <div>Bank: CRDB 0150-1234-5678-9 · Kilimanjaro Trading Co. Ltd</div>
+            <div className="font-medium text-ud-text-secondary mb-1">Payment — local (TZS)</div>
+            <div>Bank: CRDB Bank · A/C 0150-1234-5678-9 · Kilimanjaro Trading Co. Ltd</div>
             <div>EFD will be issued on payment. Thank you for your business.</div>
+
+            {customer?.isInternational && (
+              <div className="mt-3 pt-3 border-t border-dashed border-ud-border">
+                <div className="font-medium text-ud-text-secondary mb-1 inline-flex items-center gap-1">
+                  <Globe className="w-3 h-3" />
+                  International payments
+                </div>
+                <div>Beneficiary bank: {customer.beneficiaryBank ?? "Stanbic Bank Tanzania"}</div>
+                <div>SWIFT / BIC: <span className="font-mono">{customer.swiftBic ?? "SBICTZTX"}</span></div>
+                {customer.iban && <div>IBAN: <span className="font-mono">{customer.iban}</span></div>}
+                <div>Beneficiary: Kilimanjaro Trading Company Limited</div>
+                <div>Receiving country: {customer.country ?? "Tanzania"}</div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      <Modal
+        open={sendModalOpen}
+        onOpenChange={setSendModalOpen}
+        title="Send invoice"
+        description={customer ? `To ${customer.name}` : ""}
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setSendModalOpen(false)} disabled={sending}>Cancel</Button>
+            <Button variant="primary" onClick={() => { void confirmSend(); }} loading={sending} icon={<Send className="w-4 h-4" />}>
+              {sendChoice === "JustSave" ? "Save" : "Send"}
+            </Button>
+          </>
+        }
+      >
+        {customer && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <ChannelOption
+                icon={<Mail className="w-4 h-4" />} label="Email"
+                detail={customer.email}
+                active={sendChoice === "Email"}
+                onClick={() => setSendChoice("Email")}
+              />
+              <ChannelOption
+                icon={<MessageCircle className="w-4 h-4" />} label="WhatsApp"
+                detail={customer.phone}
+                active={sendChoice === "WhatsApp"}
+                onClick={() => setSendChoice("WhatsApp")}
+              />
+              <ChannelOption
+                icon={<Send className="w-4 h-4" />} label="Both"
+                detail="Email + WhatsApp"
+                active={sendChoice === "Both"}
+                onClick={() => setSendChoice("Both")}
+              />
+              <ChannelOption
+                icon={<Save className="w-4 h-4" />} label="Just save"
+                detail="No send"
+                active={sendChoice === "JustSave"}
+                onClick={() => setSendChoice("JustSave")}
+              />
+            </div>
+            <div className="text-xs text-ud-text-muted">
+              This is a demo simulation — no real email or WhatsApp is sent. Delivery is logged to{" "}
+              <span className="text-ud-primary font-medium">Sales → Sent log</span>.
+            </div>
+          </div>
+        )}
+      </Modal>
     </PageWrapper>
+  );
+}
+
+function ChannelOption({ icon, label, detail, active, onClick }: {
+  icon: React.ReactNode; label: string; detail: string; active: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left p-3 rounded-xl border transition-all min-h-[64px] ${
+        active ? "border-ud-primary bg-ud-primary-50/60 shadow-sm" : "border-ud-border hover:border-ud-primary/40"
+      }`}
+    >
+      <div className="flex items-center gap-2 text-sm font-medium">
+        <span className={active ? "text-ud-primary" : "text-ud-text-muted"}>{icon}</span>
+        {label}
+      </div>
+      <div className="text-xs text-ud-text-muted mt-1 truncate">{detail}</div>
+    </button>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 import { useState, useRef, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Plus, MessageSquare, Globe, Loader2 } from "lucide-react";
-import { AI_RESPONSES, AI_SUGGESTIONS_EN, AI_SUGGESTIONS_SW } from "@/lib/mock-data/ai-responses";
+import { Sparkles, Send, Plus, MessageSquare, Globe, Loader2, ClipboardCheck } from "lucide-react";
+import { AI_RESPONSES, AI_SUGGESTIONS_EN, AI_SUGGESTIONS_SW, AI_AUDIT_SUGGESTIONS } from "@/lib/mock-data/ai-responses";
 import { HealthGauge } from "@/components/charts/HealthGauge";
 import type { AIMessage } from "@/types";
 import { cn } from "@/lib/utils/cn";
@@ -201,6 +201,21 @@ export default function AIAssistantPage() {
                       key={s}
                       onClick={() => send(s)}
                       className="text-left px-3.5 py-2.5 rounded-xl glass-light text-sm hover:bg-white/10 transition-colors text-white/85"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-5 text-xs text-white/45 mb-2 inline-flex items-center gap-1.5">
+                  <ClipboardCheck className="w-3 h-3 text-ud-gold" />
+                  Audit assist — checkpoint prompts
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {AI_AUDIT_SUGGESTIONS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => send(s)}
+                      className="text-left px-3 py-1.5 rounded-full bg-ud-gold/15 border border-ud-gold/25 text-xs text-white/90 hover:bg-ud-gold/25 transition-colors"
                     >
                       {s}
                     </button>

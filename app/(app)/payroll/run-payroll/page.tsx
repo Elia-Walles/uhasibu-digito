@@ -8,7 +8,7 @@ import { Steps } from "@/components/ui/Steps";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
-import { EMPLOYEES } from "@/lib/mock-data/employees";
+import { useDataStore } from "@/lib/store/dataStore";
 import { calculateDeductions } from "@/lib/utils/paye";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -27,9 +27,10 @@ export default function RunPayrollPage() {
   const [period, setPeriod] = useState("2024-10");
   const [processing, setProcessing] = useState(false);
 
+  const employees = useDataStore((s) => s.employees);
   const enriched = useMemo(
-    () => EMPLOYEES.map((e) => ({ ...e, ...calculateDeductions(e.grossSalary, e.hasHeslb) })),
-    []
+    () => employees.map((e) => ({ ...e, ...calculateDeductions(e.grossSalary, e.hasHeslb) })),
+    [employees]
   );
 
   const totals = useMemo(() => {
@@ -199,7 +200,7 @@ export default function RunPayrollPage() {
                 <div className="text-sm font-bold text-ud-warning mb-1">Statutory deadlines</div>
                 <ul className="text-xs text-ud-text-secondary space-y-0.5">
                   <li>• PAYE, NSSF, SDL, WCF — due to TRA by 7 November 2024</li>
-                  <li>• Net pay will be disbursed from CRDB Payroll account ({EMPLOYEES.length} transfers)</li>
+                  <li>• Net pay will be disbursed from CRDB Payroll account ({employees.length} transfers)</li>
                   <li>• Once approved, this cannot be reversed without a full reversal journal entry</li>
                 </ul>
               </div>
