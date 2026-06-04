@@ -367,16 +367,31 @@ describe.skipIf(!RUN)("compound journal posting (real DB)", () => {
     ({ db } = await import("@/lib/server/db"));
     ({ authDb } = await import("@/lib/server/auth-db"));
     ({ runWithContext } = await import("@/lib/server/request-context"));
-    const tenant = await authDb.tenant.findUnique({ where: { slug: "kilimanjaro" } });
-    tenantId = tenant?.id ?? "";
+    // Self-contained: the app tenant carries no seeded bank account, so create a scratch
+    // tenant that owns ba_001 (the id bankIdForAccountCode("1010") resolves to).
+    const stamp = Date.now();
+    const t = await authDb.tenant.create({ data: { name: "ISO JV", slug: `iso-jv-${stamp}` } });
+    tenantId = t.id;
+    await authDb.bankAccount.create({
+      data: {
+        id: "ba_001",
+        tenantId,
+        bankName: "CRDB",
+        accountName: "CRDB Operating",
+        accountNumber: "0000",
+        currency: "TZS",
+        balance: 0,
+      },
+    });
   }, 60_000);
 
   afterAll(async () => {
     if (authDb && tenantId) {
-      // Belt-and-braces: ensure the test entry leaves no residue.
-      await authDb.bankTransaction.deleteMany({ where: { tenantId, reference: ref } });
-      await authDb.gLEntry.deleteMany({ where: { tenantId, reference: ref } });
-      await authDb.journalEntryGroup.deleteMany({ where: { tenantId, reference: ref } });
+      await authDb.bankTransaction.deleteMany({ where: { tenantId } });
+      await authDb.gLEntry.deleteMany({ where: { tenantId } });
+      await authDb.journalEntryGroup.deleteMany({ where: { tenantId } });
+      await authDb.bankAccount.deleteMany({ where: { tenantId } });
+      await authDb.tenant.deleteMany({ where: { id: tenantId } });
       await authDb.$disconnect();
     }
   }, 60_000);
