@@ -28,3 +28,4 @@ export const INVOICES_BACKEND_ENABLED = isModuleEnabled("invoices");
 // — they flip together because posting a journal writes both ledgers atomically.
 export const LEDGER_BACKEND_ENABLED = isModuleEnabled("gl");
 export const INVENTORY_BACKEND_ENABLED = isModuleEnabled("inventory");
+export const QUOTATIONS_BACKEND_ENABLED = isModuleEnabled("quotations");

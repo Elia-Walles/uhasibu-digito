@@ -14,14 +14,14 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useQuotations } from "@/lib/hooks/useQuotations";
 import { useCustomers } from "@/lib/hooks/useCustomers";
 import { useInvoices } from "@/lib/hooks/useInvoices";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
-import type { Quotation, QuotationStatus, InvoiceLine } from "@/types";
+import type { Quotation, InvoiceLine } from "@/types";
 
 const STATUS_BADGE = { Draft: "warning", Sent: "info", Accepted: "success", Expired: "danger", Converted: "default" } as const;
 
@@ -51,10 +51,8 @@ export default function QuotationsPage() {
   const router = useRouter();
   const { customers } = useCustomers();
   const { createInvoice } = useInvoices();
-  const loading = useLoadingSimulation(800);
-  const quotations = useDataStore((s) => s.quotations);
-  const addQuotation = useDataStore((s) => s.addQuotation);
-  const updateQuotationStatus = useDataStore((s) => s.updateQuotationStatus);
+  const { quotations, createQuotation, updateQuotationStatus, loading: quotLoading } = useQuotations();
+  const loading = useLoadingSimulation(800) || quotLoading;
 
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(customers[0]?.id ?? ""));
@@ -92,7 +90,7 @@ export default function QuotationsPage() {
     setForm((prev) => ({ ...prev, lines: prev.lines.filter((l) => l.id !== id) }));
   }
 
-  function save(status: QuotationStatus) {
+  async function save(status: "Draft" | "Sent") {
     const customer = customers.find((c) => c.id === form.customerId);
     if (!customer) {
       toast.error("Pick a customer");
@@ -102,22 +100,25 @@ export default function QuotationsPage() {
       toast.error("Add at least one line item with a value");
       return;
     }
-    const stamp = Date.now();
-    const quotation: Quotation = {
-      id: `quo_${stamp}`,
-      number: `QUO-2024-${String(stamp).slice(-5)}`,
+    const res = await createQuotation({
       customerId: customer.id,
       customerName: customer.name,
       date: form.date,
       validUntil: form.validUntil,
-      lines: form.lines,
-      subtotal,
-      vatAmount: vat,
-      total,
-      status,
       notes: form.notes,
-    };
-    addQuotation(quotation);
+      status,
+      lines: form.lines.map((l) => ({
+        description: l.description,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        discountPct: l.discountPct,
+        vatPct: l.vatPct,
+      })),
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
     toast.success(status === "Sent" ? "Quotation sent" : "Quotation saved as draft");
     setAddOpen(false);
   }
@@ -141,7 +142,7 @@ export default function QuotationsPage() {
       toast.error(res.error);
       return;
     }
-    updateQuotationStatus(q.id, "Converted");
+    await updateQuotationStatus(q.id, "Converted", res.data.id);
     toast.success(`Converted to ${res.data.number}`);
     router.push("/sales/invoices");
   }
@@ -201,8 +202,8 @@ export default function QuotationsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="outline" onClick={() => save("Draft")}>Save draft</Button>
-            <Button variant="primary" onClick={() => save("Sent")} icon={<Send className="w-4 h-4" />}>Save & send</Button>
+            <Button variant="outline" onClick={() => void save("Draft")}>Save draft</Button>
+            <Button variant="primary" onClick={() => void save("Sent")} icon={<Send className="w-4 h-4" />}>Save & send</Button>
           </>
         }
       >

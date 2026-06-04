@@ -34,6 +34,8 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
   afterAll(async () => {
     if (authDb) {
       const ids = { tenantId: { in: [tenantA, tenantB] } };
+      await authDb.quotationLine.deleteMany({ where: ids });
+      await authDb.quotation.deleteMany({ where: ids });
       await authDb.invoiceLine.deleteMany({ where: ids });
       await authDb.invoice.deleteMany({ where: ids });
       await authDb.customer.deleteMany({ where: ids });
@@ -129,6 +131,43 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
       db.invoice.findMany({ where: { tenantId: tenantB } }),
     );
     expect(aMalicious.every((i) => i.tenantId === tenantA)).toBe(true);
+  }, 60_000);
+
+  it("isolates quotations (with nested lines) across tenants", async () => {
+    const ctxA = { tenantId: tenantA, userId: "u_a", role: "CFO" as const };
+    const ctxB = { tenantId: tenantB, userId: "u_b", role: "CFO" as const };
+    const stamp = Date.now();
+
+    const quo = await runWithContext(ctxA, async () => {
+      const cust = await db.customer.create({
+        data: { tenantId: tenantA, name: "Quo Cust A", contactPerson: "", tin: "", phone: "", email: "", city: "", address: "", paymentTerms: "" },
+      });
+      return db.quotation.create({
+        data: {
+          tenantId: tenantA,
+          number: `QUO-ISO-${stamp}`,
+          customerId: cust.id,
+          customerName: cust.name,
+          date: new Date(),
+          validUntil: new Date(),
+          subtotal: 100,
+          vatAmount: 18,
+          total: 118,
+          status: "Draft",
+          lines: { create: [{ tenantId: tenantA, description: "x", quantity: 1, unitPrice: 100, discountPct: 0, vatPct: 18, lineTotal: 100 }] },
+        },
+        include: { lines: true },
+      });
+    });
+    expect(quo.lines).toHaveLength(1);
+
+    const bQuotes = await runWithContext(ctxB, async () => db.quotation.findMany());
+    expect(bQuotes.find((q) => q.id === quo.id)).toBeUndefined();
+
+    const aMalicious = await runWithContext(ctxA, async () =>
+      db.quotation.findMany({ where: { tenantId: tenantB } }),
+    );
+    expect(aMalicious.every((q) => q.tenantId === tenantA)).toBe(true);
   }, 60_000);
 });
 
