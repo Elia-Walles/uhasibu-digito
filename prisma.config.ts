@@ -1,11 +1,14 @@
+import "dotenv/config";
 import path from "node:path";
-import { defineConfig } from "prisma/config";
+import { defineConfig, env } from "prisma/config";
 
 // Prisma 7 config. Connection URLs live here (not in schema.prisma).
-// `migrate dev` / `db seed` use DIRECT_DATABASE_URL; they go live once the user
-// fills real TiDB credentials into `.env`. We read process.env directly (not the
-// `env()` helper, which throws on the empty placeholder) so `generate`/`validate`/
-// `format` keep working before the DB exists — they don't open a connection.
+// Prisma 7 does NOT auto-load `.env` when a config file is present, and `env()` only
+// reads process.env (throwing if absent) — so we load `.env` ourselves via
+// `dotenv/config` above, then resolve with `env()`.
+// We point migrate/seed at DATABASE_URL: TiDB Serverless has no separate pooled/direct
+// endpoint, so there is no distinct DIRECT_DATABASE_URL to use (the .env placeholder
+// for it is unused).
 export default defineConfig({
   schema: path.join("prisma", "schema.prisma"),
   migrations: {
@@ -13,6 +16,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL ?? "",
+    url: env("DATABASE_URL"),
   },
 });

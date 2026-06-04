@@ -27,7 +27,7 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
     const b = await authDb.tenant.create({ data: { name: "ISO B", slug: `iso-b-${stamp}` } });
     tenantA = a.id;
     tenantB = b.id;
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (authDb) {
@@ -35,7 +35,7 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
       await authDb.tenant.deleteMany({ where: { id: { in: [tenantA, tenantB] } } });
       await authDb.$disconnect();
     }
-  });
+  }, 60_000);
 
   it("scopes reads, overrides malicious tenantId, and blocks cross-tenant writes", async () => {
     const ctxA = { tenantId: tenantA, userId: "u_a", role: "CFO" as const };
@@ -67,5 +67,5 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
     // B still sees its own — proving the delete above did not fall through
     const bList = await runWithContext(ctxB, async () => db.department.findMany());
     expect(bList.map((d) => d.name)).toContain("B-only");
-  });
+  }, 60_000);
 });

@@ -1,14 +1,13 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { hash } from "bcryptjs";
+import { createMariaDbAdapter } from "../lib/server/db-adapter";
 
 // Demo seed for Kilimanjaro Trading Co. Runs via `npm run db:seed` (tsx) once real
 // `.env` credentials exist. Uses the raw client (no tenant extension), so tenantId is
 // passed explicitly. Idempotent — safe to re-run. Extended with domain data in later
 // waves; Wave 1 seeds only what auth + departments need.
-const prisma = new PrismaClient({
-  adapter: new PrismaMariaDb(process.env.DATABASE_URL ?? ""),
-});
+const prisma = new PrismaClient({ adapter: createMariaDbAdapter() });
 
 // Distinct departments from lib/mock-data/employees.ts (hardcoded so the seed has no
 // runtime dependency on the alias-importing mock module).

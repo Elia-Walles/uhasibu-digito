@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { createMariaDbAdapter } from "./db-adapter";
 import { currentContext } from "./request-context";
 import { applyTenantScope, isTenantScopedModel, type ScopableArgs } from "./tenant-scope";
 
@@ -17,8 +17,7 @@ import { applyTenantScope, isTenantScopedModel, type ScopableArgs } from "./tena
  * Cloud is compatible with. The pool connects lazily on first query.
  */
 function createExtendedClient() {
-  const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? "");
-  const base = new PrismaClient({ adapter });
+  const base = new PrismaClient({ adapter: createMariaDbAdapter() });
 
   return base.$extends({
     query: {

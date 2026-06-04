@@ -1,16 +1,18 @@
 import { defineConfig } from "vitest/config";
+import { loadEnv } from "vite";
 
-// No Docker, no database: the tenant-isolation gate runs as pure-unit tests of
-// the scoping policy (lib/server/tenant-scope.ts) + request context. The real-DB
-// integration test arrives in Wave 1 against actual TiDB.
-export default defineConfig({
+// The always-on gate is the pure-unit tenant-scope suite (no DB). The opt-in real-DB
+// suite (RUN_DB_TESTS=1) needs DATABASE_URL — vitest does not auto-load `.env`, so we
+// load it into the test process env via Vite's loadEnv (empty prefix = all vars).
+export default defineConfig(({ mode }) => ({
   test: {
     environment: "node",
     include: ["tests/**/*.spec.ts"],
+    env: loadEnv(mode, import.meta.dirname, ""),
   },
   resolve: {
     alias: {
       "@": import.meta.dirname,
     },
   },
-});
+}));

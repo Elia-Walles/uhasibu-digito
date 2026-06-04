@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { createMariaDbAdapter } from "./db-adapter";
 
 /**
  * The raw, UNSCOPED Prisma client — the single documented exception to
@@ -12,8 +12,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 const globalForAuthDb = globalThis as unknown as { __udAuthDb?: PrismaClient };
 
 export const authDb =
-  globalForAuthDb.__udAuthDb ??
-  new PrismaClient({ adapter: new PrismaMariaDb(process.env.DATABASE_URL ?? "") });
+  globalForAuthDb.__udAuthDb ?? new PrismaClient({ adapter: createMariaDbAdapter() });
 
 if (process.env.NODE_ENV !== "production") {
   globalForAuthDb.__udAuthDb = authDb;
