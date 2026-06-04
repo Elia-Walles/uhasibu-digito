@@ -1,6 +1,9 @@
 "use client";
 import { Mail } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Select } from "@/components/ui/Select";
+import { Avatar } from "@/components/ui/Avatar";
+import { FileUpload } from "@/components/ui/FileUpload";
 import { useAppStore } from "@/lib/store/appStore";
 import type { InvoiceStatus } from "@/types";
 
@@ -9,10 +12,24 @@ const INVOICE_STATUSES: InvoiceStatus[] = ["Draft", "Sent", "Paid", "Overdue", "
 export default function PreferencesPage() {
   const emailPrefs = useAppStore((s) => s.emailNotifications);
   const setEmailNotification = useAppStore((s) => s.setEmailNotification);
+  const { data: session, update } = useSession();
+  const user = session?.user;
+  const initials = (user?.name ?? "U").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="bg-white border border-ud-border rounded-2xl p-6 shadow-card space-y-5">
       <h2 className="font-display font-bold text-lg">Preferences</h2>
+      <Card title="Profile photo" description="Shown across the app in place of your initials">
+        <div className="flex items-center gap-4">
+          <Avatar initials={initials} src={user?.image ?? null} size="xl" />
+          <FileUpload
+            purpose="avatar"
+            accept="image/*"
+            label={user?.image ? "Replace photo" : "Upload photo"}
+            onUploaded={(r) => void update({ image: r.url })}
+          />
+        </div>
+      </Card>
       <Card title="Localization" description="Language and currency display">
         <Select label="Interface language" options={[{ value: "en", label: "English" }, { value: "sw", label: "Kiswahili" }]} value="en" />
         <Select label="Currency display" options={[{ value: "tzs", label: "TZS (Tanzanian Shilling)" }, { value: "usd", label: "USD (US Dollar)" }]} value="tzs" />
@@ -48,8 +65,8 @@ export default function PreferencesPage() {
           ))}
         </div>
         <p className="text-xs text-ud-text-muted mt-2">
-          Demo behaviour: when a matching status change happens on the Invoices page, an in-app notification is
-          pushed and a toast confirms the (simulated) email send. No real email leaves this app.
+          When a matching status change happens on the Invoices page, the customer is emailed via your
+          configured SMTP server and an in-app notification is pushed.
         </p>
       </Card>
     </div>

@@ -13,6 +13,7 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { Modal } from "@/components/ui/Modal";
+import { Attachments } from "@/components/ui/Attachments";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useInvoices } from "@/lib/hooks/useInvoices";
@@ -154,6 +155,9 @@ export default function InvoicesPage() {
                   )}
                 </button>
               ))}
+            </div>
+            <div className="pt-3 border-t border-ud-border">
+              <Attachments ownerType="Invoice" ownerId={editTarget.id} label="Invoice documents" />
             </div>
           </div>
         )}

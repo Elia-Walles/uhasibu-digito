@@ -40,6 +40,7 @@ export interface Company {
   financialYear: { start: string; end: string };
   baseCurrency: string;
   secondaryCurrency: string;
+  logoUrl?: string;
 }
 
 // ---------- General Ledger ----------

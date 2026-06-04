@@ -6,6 +6,7 @@ import { CheckCircle2, AlertTriangle, Circle, ExternalLink, ChevronDown } from "
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAudit } from "@/lib/hooks/useAudit";
+import { Attachments } from "@/components/ui/Attachments";
 import { cn } from "@/lib/utils/cn";
 import type { AuditProcedure, AuditStep, AuditStepStatus } from "@/types";
 
@@ -125,6 +126,11 @@ export function AuditChecklist({ procedure, title, description, steps }: AuditCh
                           rows={3}
                           className="w-full rounded-xl border border-ud-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ud-primary"
                         />
+                      </div>
+
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted mb-2">Working-paper files</div>
+                        <Attachments ownerType="AuditStep" ownerId={`${procedure}:${step.key}`} compact />
                       </div>
 
                       <div className="flex flex-wrap gap-2">

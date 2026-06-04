@@ -141,6 +141,55 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+// Company identity (1:1 with tenant) — replaces the old COMPANY mock constant. Drives
+// invoice/statement/report headers and the Settings → Company page.
+model CompanyProfile {
+  id                String   @id @default(cuid())
+  tenantId          String   @unique @map("tenant_id")
+  name              String
+  shortName         String   @default("") @map("short_name")
+  tin               String   @default("")
+  vatNumber         String   @default("") @map("vat_number")
+  efdSerial         String   @default("") @map("efd_serial")
+  nbaaNumber        String   @default("") @map("nbaa_number")
+  regNumber         String   @default("") @map("reg_number")
+  address           String   @default("")
+  branch            String   @default("")
+  email             String   @default("")
+  phone             String   @default("")
+  website           String   @default("")
+  financialYearStart String  @default("January") @map("financial_year_start")
+  financialYearEnd   String  @default("December") @map("financial_year_end")
+  baseCurrency      String   @default("TZS") @map("base_currency")
+  secondaryCurrency String   @default("USD") @map("secondary_currency")
+  logoUrl           String?  @map("logo_url")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("company_profiles")
+}
+
+// Generic uploaded document (Vercel Blob). Polymorphic owner (ownerType + ownerId) so it
+// attaches to invoices, purchase orders, audit step results, etc.
+model Document {
+  id           String   @id @default(cuid())
+  tenantId     String   @map("tenant_id")
+  ownerType    String   @map("owner_type")
+  ownerId      String   @map("owner_id")
+  url          String   @db.Text
+  pathname     String
+  fileName     String   @map("file_name")
+  mimeType     String   @map("mime_type")
+  size         Int
+  uploadedById String?  @map("uploaded_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([tenantId, ownerType, ownerId])
+  @@map("documents")
+}
+
 // Forward-compat: user × tenant × role join for future multi-tenant users
 model Membership {
   id        String   @id @default(cuid())

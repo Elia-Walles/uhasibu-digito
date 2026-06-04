@@ -1,11 +1,15 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils/cn";
 
 interface AvatarProps {
   initials: string;
+  src?: string | null;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   variant?: "teal" | "gold" | "obsidian";
   className?: string;
 }
+
+const PX = { xs: 24, sm: 32, md: 40, lg: 48, xl: 64 } as const;
 
 const SIZES = {
   xs: "w-6 h-6 text-[10px]",
@@ -21,7 +25,18 @@ const VARIANTS = {
   obsidian: "gradient-obsidian text-ud-primary-glow",
 } as const;
 
-export function Avatar({ initials, size = "md", variant = "teal", className }: AvatarProps) {
+export function Avatar({ initials, src, size = "md", variant = "teal", className }: AvatarProps) {
+  if (src) {
+    return (
+      <Image
+        src={src}
+        alt={initials}
+        width={PX[size]}
+        height={PX[size]}
+        className={cn("rounded-full object-cover flex-shrink-0", SIZES[size], className)}
+      />
+    );
+  }
   return (
     <div
       className={cn(
