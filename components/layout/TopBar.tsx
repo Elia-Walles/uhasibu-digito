@@ -8,13 +8,14 @@ import { useCurrentUser, useSignOut } from "@/lib/auth/client";
 import { useAppStore } from "@/lib/store/appStore";
 import { useRouter } from "next/navigation";
 import { formatTZS } from "@/lib/utils/currency";
-import { COMPANY } from "@/lib/mock-data/company";
+import { useCompany } from "@/lib/hooks/useCompany";
 import { cn } from "@/lib/utils/cn";
 
 export function TopBar() {
   const router = useRouter();
   const user = useCurrentUser();
   const signOut = useSignOut();
+  const { company } = useCompany();
   const { toggleSidebar, notifications } = useAppStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const unread = notifications.filter((n) => !n.read).length;
@@ -101,7 +102,7 @@ export function TopBar() {
           {/* Company pill (md+) */}
           <div className="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-ud-surface-2 text-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-ud-success" />
-            <span className="text-ud-text-secondary truncate max-w-[160px]">{COMPANY.shortName}</span>
+            <span className="text-ud-text-secondary truncate max-w-[160px]">{company?.shortName || company?.name || ""}</span>
           </div>
 
           {/* User menu */}

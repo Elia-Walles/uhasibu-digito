@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { useAudit } from "@/lib/hooks/useAudit";
 import { useExports } from "@/lib/hooks/useExports";
-import { AUDIT_STEPS } from "@/lib/mock-data/audit-steps";
+import { AUDIT_STEPS } from "@/lib/config/audit-procedures";
 import type { AuditProcedure } from "@/types";
 import toast from "react-hot-toast";
 

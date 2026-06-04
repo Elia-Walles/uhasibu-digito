@@ -7,22 +7,12 @@ import type {
   StockMovement, Supplier, PurchaseOrder, BudgetLine, Quotation,
   QuotationStatus,
 } from "@/types";
-import { INVOICES } from "@/lib/mock-data/invoices";
-import { CUSTOMERS } from "@/lib/mock-data/customers";
-import { GL_ENTRIES } from "@/lib/mock-data/gl-entries";
-import { EMPLOYEES } from "@/lib/mock-data/employees";
-import { FIXED_ASSETS } from "@/lib/mock-data/assets";
-import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
-import { LEADS, PIPELINE_DEALS } from "@/lib/mock-data/pipeline";
-import { INVENTORY, STOCK_MOVEMENTS } from "@/lib/mock-data/inventory";
-import { SUPPLIERS, PURCHASE_ORDERS } from "@/lib/mock-data/suppliers";
-import { BUDGET_LINES } from "@/lib/mock-data/budgets";
 import { bankIdForAccountCode } from "@/lib/utils/bank-account-mapping";
 
-function seedDepartments(): Department[] {
-  const distinct = Array.from(new Set(EMPLOYEES.map((e) => e.department))).sort();
-  return distinct.map((name, i) => ({ id: `dept_${i + 1}`, name }));
-}
+// Legacy in-memory store. The app now runs entirely on the real backend (every domain has a
+// server-action hook), so the business slices below start empty and are no longer the source
+// of truth — they remain only so the model-assumptions planning state has a home. New code
+// should use the domain hooks (useInvoices, useCustomers, …), not this store.
 
 const DEFAULT_ASSUMPTIONS: ModelAssumptions = {
   scenario: "Base",
@@ -148,13 +138,13 @@ function reverseBankSideEffects(
 }
 
 export const useDataStore = create<DataState>((set, get) => ({
-  invoices: INVOICES,
-  customers: CUSTOMERS,
-  glEntries: GL_ENTRIES,
-  departments: seedDepartments(),
-  assets: FIXED_ASSETS,
-  employees: EMPLOYEES,
-  bankAccounts: BANK_ACCOUNTS,
+  invoices: [],
+  customers: [],
+  glEntries: [],
+  departments: [],
+  assets: [],
+  employees: [],
+  bankAccounts: [],
   sendLog: [],
   modelAssumptions: DEFAULT_ASSUMPTIONS,
   auditEngagement: DEFAULT_AUDIT_ENGAGEMENT,
@@ -163,13 +153,13 @@ export const useDataStore = create<DataState>((set, get) => ({
     Purchases: emptyProcedureState(),
     Sales:     emptyProcedureState(),
   },
-  leads: LEADS,
-  deals: PIPELINE_DEALS,
-  inventory: INVENTORY,
-  stockMovements: STOCK_MOVEMENTS,
-  suppliers: SUPPLIERS,
-  purchaseOrders: PURCHASE_ORDERS,
-  budgetLines: BUDGET_LINES,
+  leads: [],
+  deals: [],
+  inventory: [],
+  stockMovements: [],
+  suppliers: [],
+  purchaseOrders: [],
+  budgetLines: [],
   quotations: [],
   addInvoice: (i) => set((s) => ({ invoices: [i, ...s.invoices] })),
   updateInvoiceStatus: (id, status) =>
@@ -239,7 +229,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   removeDepartment: (id) =>
     set((s) => ({ departments: s.departments.filter((d) => d.id !== id) })),
   countEmployeesInDepartment: (name) =>
-    EMPLOYEES.filter((e) => e.department === name).length,
+    get().employees.filter((e) => e.department === name).length,
   disposeAsset: (id, proceeds, date) =>
     set((s) => ({
       assets: s.assets.map((a) => {

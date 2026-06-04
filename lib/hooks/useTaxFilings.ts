@@ -1,9 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { TAX_BACKEND_ENABLED } from "@/lib/flags";
-import { TAX_FILINGS } from "@/lib/mock-data/tax";
 import { listTaxFilings, updateTaxStatus } from "@/lib/server/actions/tax";
-import { ok, type Result } from "@/lib/server/result";
+import { type Result } from "@/lib/server/result";
 import type { TaxFiling } from "@/types";
 
 export interface UseTaxFilings {
@@ -14,10 +12,9 @@ export interface UseTaxFilings {
 
 export function useTaxFilings(): UseTaxFilings {
   const [serverFilings, setServerFilings] = useState<TaxFiling[]>([]);
-  const [loading, setLoading] = useState(TAX_BACKEND_ENABLED);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!TAX_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       setServerFilings(await listTaxFilings());
@@ -30,17 +27,6 @@ export function useTaxFilings(): UseTaxFilings {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
     void refresh();
   }, [refresh]);
-
-  if (!TAX_BACKEND_ENABLED) {
-    return {
-      taxFilings: TAX_FILINGS,
-      loading: false,
-      markFiled: async (id) => {
-        const f = TAX_FILINGS.find((x) => x.id === id);
-        return ok({ ...(f ?? ({ id } as TaxFiling)), status: "Filed" });
-      },
-    };
-  }
 
   return {
     taxFilings: serverFilings,

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
-import { COMPANY } from "@/lib/mock-data/company";
+import { useCompany } from "@/lib/hooks/useCompany";
 import { useCustomers } from "@/lib/hooks/useCustomers";
 import { useInvoices } from "@/lib/hooks/useInvoices";
 import { formatTZS } from "@/lib/utils/currency";
@@ -32,6 +32,7 @@ export default function NewInvoicePage() {
   const router = useRouter();
   const { customers } = useCustomers();
   const { createInvoice, sendInvoice } = useInvoices();
+  const { company } = useCompany();
   const today = new Date().toISOString().split("T")[0]!;
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? "");
   const [issueDate, setIssueDate] = useState(today);
@@ -207,9 +208,9 @@ export default function NewInvoicePage() {
                 height={48}
                 className="w-12 h-12 rounded-xl mb-2"
               />
-              <div className="font-display font-bold">{COMPANY.shortName}</div>
-              <div className="text-xs text-ud-text-muted">{COMPANY.address}</div>
-              <div className="text-xs text-ud-text-muted">TIN: {COMPANY.tin} · VAT: {COMPANY.vatNumber}</div>
+              <div className="font-display font-bold">{company?.shortName || company?.name || ""}</div>
+              <div className="text-xs text-ud-text-muted">{company?.address ?? ""}</div>
+              <div className="text-xs text-ud-text-muted">TIN: {company?.tin ?? ""} · VAT: {company?.vatNumber ?? ""}</div>
             </div>
             <div className="text-right">
               <h1 className="font-display font-extrabold text-3xl text-ud-primary">INVOICE</h1>

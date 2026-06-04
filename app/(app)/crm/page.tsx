@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
-import { PipelineFunnel } from "@/components/charts/PipelineFunnel";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useCustomers } from "@/lib/hooks/useCustomers";
@@ -44,8 +43,22 @@ export default function CRMHome() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-4">Pipeline funnel</h3>
-          <PipelineFunnel />
+          <h3 className="font-display font-bold text-base mb-4">Pipeline by stage</h3>
+          <div className="space-y-2">
+            {(["Lead", "Qualified", "Proposal", "Negotiation", "Won"] as const).map((st) => {
+              const inStage = deals.filter((x) => x.stage === st);
+              const total = inStage.reduce((s, x) => s + x.value, 0);
+              return (
+                <div key={st} className="flex items-center justify-between p-2.5 rounded-xl bg-ud-surface-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{st}</span>
+                    <span className="text-xs text-ud-text-muted">{inStage.length}</span>
+                  </div>
+                  <CurrencyDisplay amount={total} compact className="font-medium" />
+                </div>
+              );
+            })}
+          </div>
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
           <h3 className="font-display font-bold text-base mb-4">Top customers (YTD)</h3>

@@ -1,12 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { Badge } from "@/components/ui/Badge";
-import { COA } from "@/lib/mock-data/gl-entries";
+import { useCOA } from "@/lib/hooks/useCOA";
+import type { COAAccount } from "@/types";
 import { cn } from "@/lib/utils/cn";
 
 const TYPE_COLOR = {
@@ -19,7 +20,12 @@ const TYPE_COLOR = {
 } as const;
 
 export default function COAPage() {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(COA.filter((c) => c.parentCode === null).map((c) => c.code)));
+  const { accounts, loading } = useCOA();
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setExpanded(new Set(accounts.filter((c) => c.parentCode === null).map((c) => c.code)));
+  }, [accounts]);
 
   function toggle(code: string) {
     setExpanded((prev) => {
@@ -30,12 +36,12 @@ export default function COAPage() {
     });
   }
 
-  function isVisible(account: typeof COA[number]): boolean {
+  function isVisible(account: COAAccount): boolean {
     if (!account.parentCode) return true;
     let current = account.parentCode;
     while (current) {
       if (!expanded.has(current)) return false;
-      const parent = COA.find((a) => a.code === current);
+      const parent = accounts.find((a) => a.code === current);
       current = parent?.parentCode ?? "";
     }
     return true;
@@ -61,8 +67,11 @@ export default function COAPage() {
               <div className="text-right">Closing</div>
             </div>
             <div>
-              {COA.filter(isVisible).map((account) => {
-                const hasChildren = COA.some((a) => a.parentCode === account.code);
+              {loading && accounts.length === 0 && (
+                <div className="px-4 py-8 text-center text-sm text-ud-text-muted">Loading…</div>
+              )}
+              {accounts.filter(isVisible).map((account) => {
+                const hasChildren = accounts.some((a) => a.parentCode === account.code);
                 const isExpanded = expanded.has(account.code);
                 return (
                   <button

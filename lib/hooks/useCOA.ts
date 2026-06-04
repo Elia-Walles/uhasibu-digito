@@ -1,7 +1,5 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { LEDGER_BACKEND_ENABLED } from "@/lib/flags";
-import { COA } from "@/lib/mock-data/gl-entries";
 import { listCOAAccounts } from "@/lib/server/actions/ledger";
 import type { COAAccount } from "@/types";
 
@@ -11,11 +9,10 @@ export interface UseCOA {
 }
 
 export function useCOA(): UseCOA {
-  const [accounts, setAccounts] = useState<COAAccount[]>(LEDGER_BACKEND_ENABLED ? [] : COA);
-  const [loading, setLoading] = useState(LEDGER_BACKEND_ENABLED);
+  const [accounts, setAccounts] = useState<COAAccount[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!LEDGER_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       setAccounts(await listCOAAccounts());

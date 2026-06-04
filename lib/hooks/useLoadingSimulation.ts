@@ -1,11 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
 
-export function useLoadingSimulation(delayMs = 900) {
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), delayMs);
-    return () => clearTimeout(t);
-  }, [delayMs]);
-  return loading;
+/**
+ * Deprecated no-op. The app no longer simulates loading — pages reflect the real loading
+ * state of their data hooks. Retained as a stable shim so existing call sites compile; new
+ * code should not use it.
+ */
+export function useLoadingSimulation(_delayMs = 0): boolean {
+  void _delayMs;
+  return false;
 }

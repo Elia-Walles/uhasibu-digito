@@ -1,5 +1,5 @@
 import type { AuditEngagement, AuditProcedure, AuditProcedureState } from "@/types";
-import { AUDIT_STEPS } from "@/lib/mock-data/audit-steps";
+import { AUDIT_STEPS } from "@/lib/config/audit-procedures";
 import {
   buildWorkbook,
   setupSheet,

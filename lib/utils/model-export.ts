@@ -1,5 +1,4 @@
 import type { ModelAssumptions } from "@/types";
-import { COMPANY } from "@/lib/mock-data/company";
 import {
   buildWorkbook,
   setupSheet,
@@ -9,6 +8,23 @@ import {
   NUM_FMT_PCT,
   type Workbook,
 } from "@/lib/utils/excel-build";
+
+export interface ModelCompany {
+  name: string;
+  shortName: string;
+  address: string;
+  branch: string;
+  tin: string;
+  vatNumber: string;
+  efdSerial: string;
+  nbaaNumber: string;
+  baseCurrency: string;
+}
+
+const DEFAULT_COMPANY: ModelCompany = {
+  name: "Your Company", shortName: "Company", address: "", branch: "",
+  tin: "", vatNumber: "", efdSerial: "", nbaaNumber: "", baseCurrency: "TZS",
+};
 
 const FORECAST_YEARS = [2025, 2026, 2027];
 
@@ -32,11 +48,11 @@ const HIST: Historicals = {
   ppeFY2024: 312_500_000,
 };
 
-export function modelFilename(): string {
-  return `Uhasibu-Digito-Model-${COMPANY.shortName.replace(/\s+/g, "-")}.xlsx`;
+export function modelFilename(company: ModelCompany = DEFAULT_COMPANY): string {
+  return `Uhasibu-Digito-Model-${(company.shortName || "Company").replace(/\s+/g, "-")}.xlsx`;
 }
 
-export function buildModelWorkbook(assumptions: ModelAssumptions): Promise<Workbook> {
+export function buildModelWorkbook(assumptions: ModelAssumptions, company: ModelCompany = DEFAULT_COMPANY): Promise<Workbook> {
   return buildWorkbook(async (wb) => {
     // ============ Cover ============
     const cover = wb.addWorksheet("Cover");
@@ -50,18 +66,16 @@ export function buildModelWorkbook(assumptions: ModelAssumptions): Promise<Workb
     cover.getRow(1).height = 32;
 
     const rows: [string, string][] = [
-      ["Business name",  COMPANY.name],
-      ["Short name",     COMPANY.shortName],
-      ["Location",       COMPANY.address],
-      ["Branch",         COMPANY.branch],
-      ["Sector",         "Wholesale & Distribution"],
-      ["Activity",       "Trading — FMCG, construction supplies, light vehicles"],
+      ["Business name",  company.name],
+      ["Short name",     company.shortName],
+      ["Location",       company.address],
+      ["Branch",         company.branch],
       ["Primary products", assumptions.primaryProducts],
-      ["TIN",            COMPANY.tin],
-      ["VAT number",     COMPANY.vatNumber],
-      ["EFD serial",     COMPANY.efdSerial],
-      ["NBAA #",         COMPANY.nbaaNumber],
-      ["Base currency",  COMPANY.baseCurrency],
+      ["TIN",            company.tin],
+      ["VAT number",     company.vatNumber],
+      ["EFD serial",     company.efdSerial],
+      ["NBAA #",         company.nbaaNumber],
+      ["Base currency",  company.baseCurrency],
       ["Scenario",       assumptions.scenario],
       ["Forecast horizon", `${FORECAST_YEARS[0]} – ${FORECAST_YEARS[FORECAST_YEARS.length - 1]}`],
     ];

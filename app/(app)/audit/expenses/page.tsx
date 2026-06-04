@@ -2,7 +2,7 @@
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AuditChecklist } from "@/components/audit/AuditChecklist";
-import { AUDIT_STEPS } from "@/lib/mock-data/audit-steps";
+import { AUDIT_STEPS } from "@/lib/config/audit-procedures";
 
 export default function AuditExpensesPage() {
   return (

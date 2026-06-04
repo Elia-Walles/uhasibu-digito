@@ -1,5 +1,7 @@
 import type { AuditStep, AuditProcedure } from "@/types";
 
+// Audit procedure step definitions (reference configuration, not demo data). Drives the
+// audit workpaper checklists and the audit Excel export.
 export const AUDIT_STEPS: Record<AuditProcedure, AuditStep[]> = {
   Expenses: [
     {

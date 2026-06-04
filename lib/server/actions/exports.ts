@@ -1,4 +1,5 @@
 "use server";
+import { db } from "@/lib/server/db";
 import { withAuth } from "@/lib/server/with-auth";
 import { listAssets } from "@/lib/server/actions/fixed-assets";
 import { getAudit } from "@/lib/server/actions/audit";
@@ -35,7 +36,19 @@ export async function exportModelXlsx(input: unknown): Promise<ExportFile> {
   const parsed = modelAssumptionsSchema.safeParse(input);
   if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid assumptions");
   return withAuth(async () => {
-    const wb = await buildModelWorkbook(parsed.data);
-    return { filename: modelFilename(), base64: await workbookToBase64(wb) };
+    const c = await db.companyProfile.findFirst();
+    const company = {
+      name: c?.name ?? "Your Company",
+      shortName: c?.shortName ?? "",
+      address: c?.address ?? "",
+      branch: c?.branch ?? "",
+      tin: c?.tin ?? "",
+      vatNumber: c?.vatNumber ?? "",
+      efdSerial: c?.efdSerial ?? "",
+      nbaaNumber: c?.nbaaNumber ?? "",
+      baseCurrency: c?.baseCurrency ?? "TZS",
+    };
+    const wb = await buildModelWorkbook(parsed.data, company);
+    return { filename: modelFilename(company), base64: await workbookToBase64(wb) };
   });
 }

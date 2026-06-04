@@ -5,15 +5,11 @@ import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
-import { RevenueChart } from "@/components/charts/RevenueChart";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
-import { ChartSkeleton } from "@/components/skeletons/ChartSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useInvoices } from "@/lib/hooks/useInvoices";
 
 export default function SalesPage() {
-  const { invoices, loading: invLoading } = useInvoices();
-  const loading = useLoadingSimulation(800) || invLoading;
+  const { invoices, loading } = useInvoices();
   const totalSales    = invoices.filter((i) => i.status !== "Cancelled" && i.status !== "Draft").reduce((s, i) => s + i.total, 0);
   const totalPaid     = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0);
   const totalOverdue  = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.total, 0);
@@ -41,11 +37,7 @@ export default function SalesPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-3">Revenue trend</h3>
-          {loading ? <ChartSkeleton /> : <RevenueChart />}
-        </div>
+      <div className="grid grid-cols-1 gap-4 mb-6">
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
           <h3 className="font-display font-bold text-base mb-3">Invoice status</h3>
           <div className="space-y-3">
