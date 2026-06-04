@@ -2,12 +2,24 @@
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
-import { TAX_FILINGS } from "@/lib/mock-data/tax";
+import { useTaxFilings } from "@/lib/hooks/useTaxFilings";
 import { formatDate, daysUntil } from "@/lib/utils/dates";
+import toast from "react-hot-toast";
 
 export default function TaxCalendarPage() {
-  const sorted = [...TAX_FILINGS].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+  const { taxFilings, markFiled } = useTaxFilings();
+  const sorted = [...taxFilings].sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+  async function onMarkFiled(id: string, label: string) {
+    const res = await markFiled(id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(`${label} marked as filed`);
+  }
   return (
     <PageWrapper>
       <PageHeader
@@ -46,6 +58,11 @@ export default function TaxCalendarPage() {
                     {days >= 0 ? `in ${days}d` : `${Math.abs(days)}d overdue`}
                   </div>
                 </div>
+                {t.status !== "Filed" && (
+                  <Button size="sm" variant="outline" onClick={() => void onMarkFiled(t.id, `${t.type} ${t.period}`)}>
+                    Mark filed
+                  </Button>
+                )}
               </div>
             );
           })}

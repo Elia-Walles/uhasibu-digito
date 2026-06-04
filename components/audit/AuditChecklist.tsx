@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, AlertTriangle, Circle, ExternalLink, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useAudit } from "@/lib/hooks/useAudit";
 import { cn } from "@/lib/utils/cn";
 import type { AuditProcedure, AuditStep, AuditStepStatus } from "@/types";
 
@@ -17,9 +17,8 @@ interface AuditChecklistProps {
 }
 
 export function AuditChecklist({ procedure, title, description, steps }: AuditChecklistProps) {
-  const state = useDataStore((s) => s.auditState[procedure]);
-  const setAuditStep = useDataStore((s) => s.setAuditStep);
-  const resetAuditProcedure = useDataStore((s) => s.resetAuditProcedure);
+  const { results, setStep: setAuditStep, resetProcedure: resetAuditProcedure } = useAudit();
+  const state = results[procedure];
   const [expanded, setExpanded] = useState<string | null>(steps[0]?.key ?? null);
 
   const summary = useMemo(() => {

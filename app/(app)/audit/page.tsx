@@ -6,9 +6,9 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useAudit } from "@/lib/hooks/useAudit";
+import { useExports } from "@/lib/hooks/useExports";
 import { AUDIT_STEPS } from "@/lib/mock-data/audit-steps";
-import { exportAuditReport } from "@/lib/utils/audit-export";
 import type { AuditProcedure } from "@/types";
 import toast from "react-hot-toast";
 
@@ -19,13 +19,12 @@ const PROCEDURE_META: Record<AuditProcedure, { title: string; description: strin
 };
 
 export default function AuditLandingPage() {
-  const auditState = useDataStore((s) => s.auditState);
-  const engagement = useDataStore((s) => s.auditEngagement);
-  const updateAuditEngagement = useDataStore((s) => s.updateAuditEngagement);
+  const { results: auditState, engagement, updateEngagement: updateAuditEngagement } = useAudit();
+  const { exportAudit } = useExports();
 
   async function handleExport() {
     try {
-      await exportAuditReport(engagement, auditState);
+      await exportAudit(engagement, auditState);
       toast.success("Audit report exported");
     } catch (err) {
       console.error(err);

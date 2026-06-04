@@ -1,14 +1,14 @@
-"use client";
 import type { ModelAssumptions } from "@/types";
 import { COMPANY } from "@/lib/mock-data/company";
 import {
-  downloadWorkbook,
+  buildWorkbook,
   setupSheet,
   applyStyle,
   STYLE,
   NUM_FMT_PLAIN,
   NUM_FMT_PCT,
-} from "@/lib/utils/excel";
+  type Workbook,
+} from "@/lib/utils/excel-build";
 
 const FORECAST_YEARS = [2025, 2026, 2027];
 
@@ -32,9 +32,12 @@ const HIST: Historicals = {
   ppeFY2024: 312_500_000,
 };
 
-export async function exportFinancialModel(assumptions: ModelAssumptions): Promise<void> {
-  const fn = `Uhasibu-Digito-Model-${COMPANY.shortName.replace(/\s+/g, "-")}.xlsx`;
-  await downloadWorkbook(fn, async (wb) => {
+export function modelFilename(): string {
+  return `Uhasibu-Digito-Model-${COMPANY.shortName.replace(/\s+/g, "-")}.xlsx`;
+}
+
+export function buildModelWorkbook(assumptions: ModelAssumptions): Promise<Workbook> {
+  return buildWorkbook(async (wb) => {
     // ============ Cover ============
     const cover = wb.addWorksheet("Cover");
     setupSheet(cover, { freezeRow: 0, firstColWidth: 28 });

@@ -8,6 +8,12 @@ import { COA, GL_ENTRIES } from "@/lib/mock-data/gl-entries";
 import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
 import { INVENTORY, STOCK_MOVEMENTS } from "@/lib/mock-data/inventory";
 import { SUPPLIERS, PURCHASE_ORDERS } from "@/lib/mock-data/suppliers";
+import { EMPLOYEES } from "@/lib/mock-data/employees";
+import { PAYROLL_RUNS } from "@/lib/mock-data/payroll";
+import { TAX_FILINGS, VAT_RETURN_OCT } from "@/lib/mock-data/tax";
+import { FIXED_ASSETS } from "@/lib/mock-data/assets";
+import { BUDGET_LINES } from "@/lib/mock-data/budgets";
+import { LEADS, PIPELINE_DEALS } from "@/lib/mock-data/pipeline";
 
 // Demo seed for Kilimanjaro Trading Co. Runs via `npm run db:seed` (tsx) once real
 // `.env` credentials exist. Uses the raw client (no tenant extension), so tenantId is
@@ -297,6 +303,261 @@ async function main() {
     console.log(`Seeded ${SUPPLIERS.length} suppliers, ${PURCHASE_ORDERS.length} POs, ${poLineData.length} PO lines.`);
   } else {
     console.log(`Suppliers already present (${existingSup}) — skipped procurement seed.`);
+  }
+
+  // Wave 7 — employees (+ allowances) + historical payroll runs (+ per-employee lines).
+  const existingEmp = await prisma.employee.count({ where: { tenantId: tenant.id } });
+  if (existingEmp === 0) {
+    await prisma.employee.createMany({
+      data: EMPLOYEES.map((e) => ({
+        id: e.id,
+        tenantId: tenant.id,
+        employeeNumber: e.employeeNumber,
+        firstName: e.firstName,
+        lastName: e.lastName,
+        fullName: e.fullName,
+        department: e.department,
+        position: e.position,
+        employmentType: e.employmentType,
+        startDate: new Date(e.startDate),
+        basicSalary: e.basicSalary,
+        housingAllowance: e.housingAllowance,
+        transportAllowance: e.transportAllowance,
+        otherAllowances: e.otherAllowances,
+        grossSalary: e.grossSalary,
+        nssf: e.nssf,
+        tin: e.tin,
+        bankName: e.bankName,
+        bankAccount: e.bankAccount,
+        phone: e.phone,
+        email: e.email,
+        status: e.status,
+        leaveBalance: e.leaveBalance,
+        hasHeslb: e.hasHeslb,
+        overtimeRate: e.overtimeRate ?? null,
+        overtimeHoursDefault: e.overtimeHoursDefault ?? null,
+      })),
+      skipDuplicates: true,
+    });
+
+    const allowanceData = EMPLOYEES.flatMap((e) =>
+      (e.allowances ?? []).map((a) => ({
+        tenantId: tenant.id,
+        employeeId: e.id,
+        label: a.label,
+        amount: a.amount,
+        taxable: a.taxable,
+      })),
+    );
+    if (allowanceData.length > 0) {
+      await prisma.employeeAllowance.createMany({ data: allowanceData, skipDuplicates: true });
+    }
+
+    await prisma.payrollRun.createMany({
+      data: PAYROLL_RUNS.map((r) => ({
+        id: r.id,
+        tenantId: tenant.id,
+        period: r.period,
+        month: r.month,
+        year: r.year,
+        status: r.status,
+        processedAt: new Date(r.processedAt),
+        totalGross: r.totalGross,
+        totalPAYE: r.totalPAYE,
+        totalNSSF: r.totalNSSF,
+        totalSDL: r.totalSDL,
+        totalWCF: r.totalWCF,
+        totalNet: r.totalNet,
+      })),
+      skipDuplicates: true,
+    });
+
+    const payrollLineData = PAYROLL_RUNS.flatMap((r) =>
+      r.employees.map((e) => ({
+        tenantId: tenant.id,
+        payrollRunId: r.id,
+        employeeId: e.id,
+        employeeName: e.fullName,
+        grossPay: e.grossPay,
+        paye: e.paye,
+        nssfEmployee: e.nssf_employee,
+        nssfEmployer: e.nssf_employer,
+        wcf: e.wcf,
+        sdl: e.sdl,
+        heslb: e.heslb,
+        netPay: e.netPay,
+      })),
+    );
+    await prisma.payrollRunEmployee.createMany({ data: payrollLineData, skipDuplicates: true });
+    console.log(
+      `Seeded ${EMPLOYEES.length} employees, ${PAYROLL_RUNS.length} payroll runs, ${payrollLineData.length} payroll lines.`,
+    );
+  } else {
+    console.log(`Employees already present (${existingEmp}) — skipped payroll seed.`);
+  }
+
+  // Wave 8 — tax filings + the October VAT return (+ output/input transactions).
+  const existingTax = await prisma.taxFiling.count({ where: { tenantId: tenant.id } });
+  if (existingTax === 0) {
+    await prisma.taxFiling.createMany({
+      data: TAX_FILINGS.map((f) => ({
+        id: f.id,
+        tenantId: tenant.id,
+        type: f.type,
+        period: f.period,
+        dueDate: new Date(f.dueDate),
+        amount: f.amount,
+        status: f.status,
+        filedAt: f.filedAt ? new Date(f.filedAt) : null,
+      })),
+      skipDuplicates: true,
+    });
+
+    const vatId = "vat_oct_2024";
+    await prisma.vATReturn.create({
+      data: {
+        id: vatId,
+        tenantId: tenant.id,
+        period: VAT_RETURN_OCT.period,
+        outputVAT: VAT_RETURN_OCT.outputVAT,
+        inputVAT: VAT_RETURN_OCT.inputVAT,
+        vatPayable: VAT_RETURN_OCT.vatPayable,
+      },
+    });
+
+    const vatTxData = [
+      ...VAT_RETURN_OCT.outputTransactions.map((t) => ({ direction: "Output", t })),
+      ...VAT_RETURN_OCT.inputTransactions.map((t) => ({ direction: "Input", t })),
+    ].map(({ direction, t }) => ({
+      tenantId: tenant.id,
+      vatReturnId: vatId,
+      direction,
+      date: new Date(t.date),
+      reference: t.reference,
+      description: t.description,
+      netAmount: t.netAmount,
+      vatRate: t.vatRate,
+      vatAmount: t.vatAmount,
+    }));
+    await prisma.vATTransaction.createMany({ data: vatTxData, skipDuplicates: true });
+    console.log(`Seeded ${TAX_FILINGS.length} tax filings, 1 VAT return, ${vatTxData.length} VAT transactions.`);
+  } else {
+    console.log(`Tax filings already present (${existingTax}) — skipped tax seed.`);
+  }
+
+  // Wave 9 — fixed assets (ids fa_… preserved).
+  const existingAssets = await prisma.fixedAsset.count({ where: { tenantId: tenant.id } });
+  if (existingAssets === 0) {
+    await prisma.fixedAsset.createMany({
+      data: FIXED_ASSETS.map((a) => ({
+        id: a.id,
+        tenantId: tenant.id,
+        code: a.code,
+        name: a.name,
+        category: a.category,
+        location: a.location,
+        acquisitionDate: new Date(a.acquisitionDate),
+        cost: a.cost,
+        residualValue: a.residualValue,
+        usefulLifeYears: a.usefulLifeYears,
+        depreciationMethod: a.depreciationMethod,
+        accumulatedDepreciation: a.accumulatedDepreciation,
+        netBookValue: a.netBookValue,
+        status: a.status,
+        disposalDate: a.disposalDate ? new Date(a.disposalDate) : null,
+        disposalProceeds: a.disposalProceeds ?? null,
+        gainLoss: a.gainLoss ?? null,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`Seeded ${FIXED_ASSETS.length} fixed assets.`);
+  } else {
+    console.log(`Fixed assets already present (${existingAssets}) — skipped asset seed.`);
+  }
+
+  // Wave 10 — budget lines + CRM leads/pipeline deals (ids b_…/lead_…/deal_… preserved).
+  const existingBudgets = await prisma.budgetLine.count({ where: { tenantId: tenant.id } });
+  if (existingBudgets === 0) {
+    await prisma.budgetLine.createMany({
+      data: BUDGET_LINES.map((b) => ({
+        id: b.id,
+        tenantId: tenant.id,
+        lineItem: b.lineItem,
+        category: b.category,
+        annualBudget: b.annualBudget,
+        mtdBudget: b.mtdBudget,
+        mtdActual: b.mtdActual,
+        mtdVariance: b.mtdVariance,
+        ytdBudget: b.ytdBudget,
+        ytdActual: b.ytdActual,
+        ytdVariance: b.ytdVariance,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`Seeded ${BUDGET_LINES.length} budget lines.`);
+  } else {
+    console.log(`Budget lines already present (${existingBudgets}) — skipped budget seed.`);
+  }
+
+  const existingLeads = await prisma.lead.count({ where: { tenantId: tenant.id } });
+  if (existingLeads === 0) {
+    await prisma.lead.createMany({
+      data: LEADS.map((l) => ({
+        id: l.id,
+        tenantId: tenant.id,
+        name: l.name,
+        company: l.company,
+        phone: l.phone,
+        email: l.email,
+        source: l.source,
+        status: l.status,
+        temperature: l.temperature,
+        assignedTo: l.assignedTo,
+        expectedValue: l.expectedValue,
+        followUpDate: l.followUpDate ? new Date(l.followUpDate) : null,
+        createdAt: new Date(l.createdAt),
+      })),
+      skipDuplicates: true,
+    });
+
+    await prisma.pipelineDeal.createMany({
+      data: PIPELINE_DEALS.map((d) => ({
+        id: d.id,
+        tenantId: tenant.id,
+        dealName: d.dealName,
+        companyName: d.companyName,
+        contactName: d.contactName,
+        value: d.value,
+        probability: d.probability,
+        stage: d.stage,
+        assignedTo: d.assignedTo,
+        assignedInitials: d.assignedInitials,
+        expectedCloseDate: d.expectedCloseDate ? new Date(d.expectedCloseDate) : null,
+        daysInStage: d.daysInStage,
+        notes: d.notes,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`Seeded ${LEADS.length} leads, ${PIPELINE_DEALS.length} pipeline deals.`);
+  } else {
+    console.log(`Leads already present (${existingLeads}) — skipped CRM seed.`);
+  }
+
+  // Audit engagement — one per tenant (the singleton the workpapers UI edits). Step results
+  // start empty and are written as the auditor works, so nothing else to seed here.
+  const existingEngagement = await prisma.auditEngagement.count({ where: { tenantId: tenant.id } });
+  if (existingEngagement === 0) {
+    await prisma.auditEngagement.create({
+      data: {
+        tenantId: tenant.id,
+        name: "Kilimanjaro Trading — FY 2024 Audit",
+        period: "01 Jan 2024 – 31 Dec 2024",
+        auditorName: "Elia Mwangi",
+      },
+    });
+    console.log(`Seeded 1 audit engagement.`);
+  } else {
+    console.log(`Audit engagement already present (${existingEngagement}) — skipped audit seed.`);
   }
 }
 

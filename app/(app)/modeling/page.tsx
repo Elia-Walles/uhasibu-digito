@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { useDataStore } from "@/lib/store/dataStore";
-import { exportFinancialModel } from "@/lib/utils/model-export";
+import { useExports } from "@/lib/hooks/useExports";
 import { formatTZS } from "@/lib/utils/currency";
 import type { ModelScenario } from "@/types";
 import toast from "react-hot-toast";
@@ -37,6 +37,7 @@ const SCENARIO_ADJ: Record<ModelScenario, { growth: number; margin: number }> = 
 export default function FinancialModelingPage() {
   const assumptions = useDataStore((s) => s.modelAssumptions);
   const updateAssumptions = useDataStore((s) => s.updateAssumptions);
+  const { exportModel } = useExports();
 
   const adj = SCENARIO_ADJ[assumptions.scenario];
   const effectiveGrowth = assumptions.revenueGrowth + adj.growth;
@@ -99,7 +100,7 @@ export default function FinancialModelingPage() {
 
   async function handleExport() {
     try {
-      await exportFinancialModel(assumptions);
+      await exportModel(assumptions);
       toast.success("Model workbook downloaded");
     } catch (err) {
       console.error(err);

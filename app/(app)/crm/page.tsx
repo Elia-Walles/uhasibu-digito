@@ -10,12 +10,13 @@ import { PipelineFunnel } from "@/components/charts/PipelineFunnel";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useCustomers } from "@/lib/hooks/useCustomers";
-import { PIPELINE_DEALS } from "@/lib/mock-data/pipeline";
+import { usePipelineDeals } from "@/lib/hooks/usePipelineDeals";
 
 export default function CRMHome() {
   const { customers, loading: custLoading } = useCustomers();
-  const loading = useLoadingSimulation(800) || custLoading;
-  const totalDeals     = PIPELINE_DEALS.reduce((s, d) => s + d.value, 0);
+  const { deals, loading: dealsLoading } = usePipelineDeals();
+  const loading = useLoadingSimulation(800) || custLoading || dealsLoading;
+  const totalDeals     = deals.reduce((s, d) => s + d.value, 0);
   const totalCustomers = customers.length;
   const topCustomers   = [...customers].sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 5);
 
@@ -36,8 +37,8 @@ export default function CRMHome() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard label="Total customers"    value={totalCustomers}            variant="teal"    format="raw" trendValue={6.7} />
           <StatCard label="Pipeline value"     value={totalDeals}                variant="emerald" format="compact" prefix="TSh" trendValue={11.3} />
-          <StatCard label="Active deals"       value={PIPELINE_DEALS.filter((d) => d.stage !== "Won" && d.stage !== "Lost").length} variant="blue" format="raw" />
-          <StatCard label="Won this month"     value={PIPELINE_DEALS.filter((d) => d.stage === "Won").length} variant="amber" format="raw" />
+          <StatCard label="Active deals"       value={deals.filter((d) => d.stage !== "Won" && d.stage !== "Lost").length} variant="blue" format="raw" />
+          <StatCard label="Won this month"     value={deals.filter((d) => d.stage === "Won").length} variant="amber" format="raw" />
         </div>
       )}
 

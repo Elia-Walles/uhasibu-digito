@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useBudgetLines } from "@/lib/hooks/useBudgetLines";
 import type { BudgetLine } from "@/types";
 
 interface FormState {
@@ -28,15 +28,14 @@ function emptyForm(): FormState {
 }
 
 export default function BudgetingPage() {
-  const loading = useLoadingSimulation(800);
-  const budgetLines = useDataStore((s) => s.budgetLines);
-  const addBudgetLine = useDataStore((s) => s.addBudgetLine);
+  const { budgetLines, loading: dataLoading, addBudgetLine } = useBudgetLines();
+  const loading = useLoadingSimulation(800) || dataLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
   const existingCategories = Array.from(new Set(budgetLines.map((b) => b.category))).sort();
 
-  function save() {
+  async function save() {
     if (!form.lineItem.trim()) {
       toast.error("Line item is required");
       return;
@@ -59,7 +58,11 @@ export default function BudgetingPage() {
       ytdActual: form.ytdActual,
       ytdVariance: ytdBudget - form.ytdActual,
     };
-    addBudgetLine(line);
+    const r = await addBudgetLine(line);
+    if (!r.ok) {
+      toast.error(r.error);
+      return;
+    }
     toast.success(`Added ${line.lineItem}`);
     setAddOpen(false);
     setForm(emptyForm());
@@ -121,7 +124,7 @@ export default function BudgetingPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={save}>Add line</Button>
+            <Button variant="primary" onClick={() => void save()}>Add line</Button>
           </>
         }
       >

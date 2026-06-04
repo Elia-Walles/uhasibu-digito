@@ -8,5 +8,7 @@ import { authConfig } from "./auth.config";
 export default NextAuth(authConfig).auth;
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|images|manifest.json|api/auth).*)"],
+  // Guard page routes only. API routes manage their own auth (Auth.js handles its own;
+  // the cron route checks CRON_SECRET), so exclude the whole /api prefix.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|images|manifest.json|api).*)"],
 };

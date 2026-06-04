@@ -7,20 +7,21 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { Badge } from "@/components/ui/Badge";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { DepreciationChart } from "@/components/charts/DepreciationChart";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useFixedAssets } from "@/lib/hooks/useFixedAssets";
+import { useExports } from "@/lib/hooks/useExports";
 import { STANDARD_RATES } from "@/lib/utils/depreciation-rates";
-import { exportDepreciationSchedule } from "@/lib/utils/depreciation-export";
 import type { AssetCategory } from "@/types";
 
 const CLASSES: AssetCategory[] = ["Building", "Vehicle", "Equipment", "Computer", "Furniture"];
 
 export default function DepreciationPage() {
-  const assets = useDataStore((s) => s.assets);
+  const { assets } = useFixedAssets();
+  const { exportDepreciation } = useExports();
   const active = assets.filter((a) => a.status === "Active");
 
   async function handleExport() {
     try {
-      await exportDepreciationSchedule(assets);
+      await exportDepreciation(assets);
       toast.success("Depreciation schedule exported");
     } catch (err) {
       console.error(err);

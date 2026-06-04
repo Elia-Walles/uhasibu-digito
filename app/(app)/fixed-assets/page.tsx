@@ -16,7 +16,7 @@ import { Select } from "@/components/ui/Select";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useFixedAssets } from "@/lib/hooks/useFixedAssets";
 import { STANDARD_RATES } from "@/lib/utils/depreciation-rates";
 import { formatTZS } from "@/lib/utils/currency";
 import type { FixedAsset, AssetCategory, DepreciationMethod } from "@/types";
@@ -49,17 +49,15 @@ function emptyAddForm(): AddForm {
 }
 
 export default function FixedAssetsPage() {
-  const loading = useLoadingSimulation(800);
-  const assets = useDataStore((s) => s.assets);
-  const disposeAsset = useDataStore((s) => s.disposeAsset);
-  const addAsset = useDataStore((s) => s.addAsset);
+  const { assets, addAsset, disposeAsset, loading: assetsLoading } = useFixedAssets();
+  const loading = useLoadingSimulation(800) || assetsLoading;
 
   const [disposeTarget, setDisposeTarget] = useState<FixedAsset | null>(null);
   const [proceeds, setProceeds] = useState<string>("");
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState<AddForm>(emptyAddForm());
 
-  function saveAsset() {
+  async function saveAsset() {
     if (!addForm.name.trim()) {
       toast.error("Asset name is required");
       return;
@@ -84,8 +82,12 @@ export default function FixedAssetsPage() {
       netBookValue: addForm.cost,
       status: "Active",
     };
-    addAsset(newAsset);
-    toast.success(`Added ${newAsset.name}`);
+    const res = await addAsset(newAsset);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(`Added ${res.data.name}`);
     setAddOpen(false);
     setAddForm(emptyAddForm());
   }
@@ -133,17 +135,22 @@ export default function FixedAssetsPage() {
   const proceedsNum = Number(proceeds.replace(/[, ]/g, "")) || 0;
   const gainLoss = proceedsNum - nbv;
 
-  function confirmDispose() {
+  async function confirmDispose() {
     if (!disposeTarget) return;
     if (proceedsNum <= 0) {
       toast.error("Enter disposal proceeds greater than zero");
       return;
     }
-    disposeAsset(disposeTarget.id, proceedsNum, new Date().toISOString().split("T")[0]!);
+    const res = await disposeAsset(disposeTarget.id, proceedsNum, new Date().toISOString().split("T")[0]!);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    const gl = res.data.gainLoss;
     toast.success(
-      gainLoss >= 0
-        ? `Asset disposed at a gain of ${formatTZS(gainLoss, true)} — subject to Capital Gains Tax`
-        : `Asset disposed at a loss of ${formatTZS(Math.abs(gainLoss), true)}`
+      gl >= 0
+        ? `Asset disposed at a gain of ${formatTZS(gl, true)} — posted to GL`
+        : `Asset disposed at a loss of ${formatTZS(Math.abs(gl), true)} — posted to GL`
     );
     setDisposeTarget(null);
   }
@@ -183,7 +190,7 @@ export default function FixedAssetsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setDisposeTarget(null)}>Cancel</Button>
-            <Button variant="primary" onClick={confirmDispose}>Confirm disposal</Button>
+            <Button variant="primary" onClick={() => void confirmDispose()}>Confirm disposal</Button>
           </>
         }
       >
@@ -245,7 +252,7 @@ export default function FixedAssetsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={saveAsset}>Add asset</Button>
+            <Button variant="primary" onClick={() => void saveAsset()}>Add asset</Button>
           </>
         }
       >

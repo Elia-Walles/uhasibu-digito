@@ -1,71 +1,28 @@
 "use client";
-import ExcelJS, { type Workbook, type Worksheet, type Cell } from "exceljs";
+// Browser-only xlsx sinks. The pure workbook helpers (STYLE, applyStyle, setupSheet,
+// number formats, buildWorkbook) live in excel-build.ts so they can run on the server too;
+// they are re-exported here for backwards-compatible imports. Anything that touches the DOM
+// (Blob, URL, document) stays in this client module.
+import type { Workbook } from "exceljs";
 
-export const STYLE = {
-  /** Inputs / assumptions that the user edits. Blue font on tinted background. */
-  input: {
-    font: { color: { argb: "FF1D4ED8" }, bold: true } as Partial<Cell["font"]>,
-    fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF6FF" } } as Cell["fill"],
-  },
-  /** Formula / link cells. Green font. */
-  link: {
-    font: { color: { argb: "FF059669" } } as Partial<Cell["font"]>,
-  },
-  /** Computed / given numbers — black. */
-  computed: {
-    font: { color: { argb: "FF111827" } } as Partial<Cell["font"]>,
-  },
-  /** Section header — bold uppercase tracking on tinted background. */
-  header: {
-    font: { color: { argb: "FFFFFFFF" }, bold: true, size: 11 } as Partial<Cell["font"]>,
-    fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F7B5E" } } as Cell["fill"],
-    alignment: { vertical: "middle" } as Cell["alignment"],
-  },
-  /** Subheading / table column header. */
-  subheader: {
-    font: { color: { argb: "FF374151" }, bold: true, size: 10 } as Partial<Cell["font"]>,
-    fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FFFE" } } as Cell["fill"],
-    border: { bottom: { style: "thin", color: { argb: "FFE5F0EC" } } } as Cell["border"],
-  },
-  /** Total / subtotal row. */
-  total: {
-    font: { color: { argb: "FF0A2318" }, bold: true } as Partial<Cell["font"]>,
-    border: {
-      top:    { style: "thin",   color: { argb: "FF0A2318" } },
-      bottom: { style: "double", color: { argb: "FF0A2318" } },
-    } as Cell["border"],
-  },
-} as const;
+export {
+  STYLE,
+  applyStyle,
+  setupSheet,
+  buildWorkbook,
+  workbookToBase64,
+  NUM_FMT_TZS,
+  NUM_FMT_PLAIN,
+  NUM_FMT_PCT,
+  NUM_FMT_RATE,
+  type Workbook,
+  type Worksheet,
+  type Cell,
+} from "@/lib/utils/excel-build";
 
-/** Apply a STYLE preset to a cell. */
-export function applyStyle(cell: Cell, style: { font?: Partial<Cell["font"]>; fill?: Cell["fill"]; border?: Cell["border"]; alignment?: Cell["alignment"] }) {
-  if (style.font)      cell.font      = { ...(cell.font ?? {}), ...style.font };
-  if (style.fill)      cell.fill      = style.fill;
-  if (style.border)    cell.border    = style.border;
-  if (style.alignment) cell.alignment = style.alignment;
-}
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-/** Number format for TZS currency cells. */
-export const NUM_FMT_TZS    = '_-"TSh "* #,##0_-;[Red]_-"TSh "* -#,##0_-;_-"TSh "* "-"_-;_-@_-';
-export const NUM_FMT_PLAIN  = "#,##0";
-export const NUM_FMT_PCT    = "0.00%";
-export const NUM_FMT_RATE   = "#,##0.00";
-
-/**
- * Create a workbook, run a builder against it, then trigger a browser download.
- * Returns a Promise that resolves when the file is queued.
- */
-export async function downloadWorkbook(
-  filename: string,
-  build: (wb: Workbook) => void | Promise<void>,
-): Promise<void> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator  = "Uhasibu Digito";
-  wb.company  = "Uhasibu Digito";
-  wb.created  = new Date(0); // deterministic for tests
-  await build(wb);
-  const buffer = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+function saveBlob(filename: string, blob: Blob): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -76,11 +33,14 @@ export async function downloadWorkbook(
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Initialise common sheet defaults: freeze header row, set first column width. */
-export function setupSheet(ws: Worksheet, opts?: { freezeRow?: number; firstColWidth?: number }): Worksheet {
-  ws.views = [{ state: "frozen", ySplit: opts?.freezeRow ?? 1 }];
-  ws.getColumn(1).width = opts?.firstColWidth ?? 32;
-  return ws;
+/** Serialize a prebuilt workbook to a blob and trigger a browser download. */
+export async function downloadWorkbook(filename: string, wb: Workbook): Promise<void> {
+  const buffer = await wb.xlsx.writeBuffer();
+  saveBlob(filename, new Blob([buffer], { type: XLSX_MIME }));
 }
 
-export type { Workbook, Worksheet, Cell };
+/** Decode a server-generated base64 xlsx and trigger a browser download. */
+export function saveBase64Xlsx(filename: string, base64: string): void {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  saveBlob(filename, new Blob([bytes], { type: XLSX_MIME }));
+}

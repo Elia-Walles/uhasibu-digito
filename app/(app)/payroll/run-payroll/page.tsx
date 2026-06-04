@@ -8,7 +8,8 @@ import { Steps } from "@/components/ui/Steps";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useEmployees } from "@/lib/hooks/useEmployees";
+import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
 import { calculateDeductions } from "@/lib/utils/paye";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,8 @@ export default function RunPayrollPage() {
   const [period, setPeriod] = useState("2024-10");
   const [processing, setProcessing] = useState(false);
 
-  const employees = useDataStore((s) => s.employees);
+  const { employees } = useEmployees();
+  const { createPayrollRun } = usePayrollRuns();
   const enriched = useMemo(
     () => employees.map((e) => ({ ...e, ...calculateDeductions(e.grossSalary, e.hasHeslb) })),
     [employees]
@@ -55,10 +57,18 @@ export default function RunPayrollPage() {
       return;
     }
     setProcessing(true);
-    await new Promise((r) => setTimeout(r, 1800));
+    const [y, m] = period.split("-");
+    const year = Number(y);
+    const month = Number(m);
+    const label = new Date(year, month - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+    const res = await createPayrollRun({ year, month, period: label });
     setProcessing(false);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
     setStep(4);
-    toast.success("Payroll approved and disbursed");
+    toast.success(`Payroll for ${label} approved and disbursed`);
   }
 
   return (

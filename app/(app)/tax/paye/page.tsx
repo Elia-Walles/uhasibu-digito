@@ -6,10 +6,17 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { DigitalStamp } from "@/components/ui/DigitalStamp";
 import { Badge } from "@/components/ui/Badge";
-import { CURRENT_PAYROLL } from "@/lib/mock-data/payroll";
-import type { StampData } from "@/types";
+import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
+import type { StampData, PayrollRun } from "@/types";
+
+const EMPTY_RUN: PayrollRun = {
+  id: "", period: "—", month: 0, year: 0, status: "Draft", processedAt: "",
+  totalGross: 0, totalPAYE: 0, totalNSSF: 0, totalSDL: 0, totalWCF: 0, totalNet: 0, employees: [],
+};
 
 export default function PAYEReturnPage() {
+  const { payrollRuns } = usePayrollRuns();
+  const CURRENT_PAYROLL = payrollRuns[payrollRuns.length - 1] ?? EMPTY_RUN;
   const [stamp, setStamp] = useState<StampData | null>(null);
   return (
     <PageWrapper>

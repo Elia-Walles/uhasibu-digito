@@ -1,21 +1,23 @@
-"use client";
 import type { AuditEngagement, AuditProcedure, AuditProcedureState } from "@/types";
 import { AUDIT_STEPS } from "@/lib/mock-data/audit-steps";
 import {
-  downloadWorkbook,
+  buildWorkbook,
   setupSheet,
   applyStyle,
   STYLE,
-} from "@/lib/utils/excel";
+  type Workbook,
+} from "@/lib/utils/excel-build";
 
-export async function exportAuditReport(
+export function auditFilename(engagement: AuditEngagement): string {
+  const safeName = engagement.name.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 60);
+  return `${safeName || "Audit-Report"}.xlsx`;
+}
+
+export function buildAuditWorkbook(
   engagement: AuditEngagement,
   state: Record<AuditProcedure, AuditProcedureState>,
-): Promise<void> {
-  const safeName = engagement.name.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 60);
-  const filename = `${safeName || "Audit-Report"}.xlsx`;
-
-  await downloadWorkbook(filename, (wb) => {
+): Promise<Workbook> {
+  return buildWorkbook((wb) => {
     // Cover sheet
     const cover = wb.addWorksheet("Cover");
     setupSheet(cover, { freezeRow: 0, firstColWidth: 28 });
@@ -82,3 +84,5 @@ export async function exportAuditReport(
     });
   });
 }
+
+

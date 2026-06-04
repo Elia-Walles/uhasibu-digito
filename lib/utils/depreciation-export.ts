@@ -1,19 +1,19 @@
-"use client";
 import type { FixedAsset, AssetCategory } from "@/types";
 import { STANDARD_RATES } from "@/lib/utils/depreciation-rates";
 import {
-  downloadWorkbook,
+  buildWorkbook,
   setupSheet,
   applyStyle,
   STYLE,
   NUM_FMT_PLAIN,
   NUM_FMT_PCT,
-} from "@/lib/utils/excel";
+  type Workbook,
+} from "@/lib/utils/excel-build";
 
-export async function exportDepreciationSchedule(assets: FixedAsset[]): Promise<void> {
-  const filename = "Uhasibu-Digito-Depreciation-Schedule.xlsx";
+export const DEPRECIATION_FILENAME = "Uhasibu-Digito-Depreciation-Schedule.xlsx";
 
-  await downloadWorkbook(filename, (wb) => {
+export function buildDepreciationWorkbook(assets: FixedAsset[]): Promise<Workbook> {
+  return buildWorkbook((wb) => {
     // ============ Schedule ============
     const ws = wb.addWorksheet("Schedule");
     setupSheet(ws, { freezeRow: 2, firstColWidth: 36 });

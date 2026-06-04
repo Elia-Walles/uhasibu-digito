@@ -8,12 +8,13 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { Button } from "@/components/ui/Button";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { TAX_FILINGS } from "@/lib/mock-data/tax";
+import { useTaxFilings } from "@/lib/hooks/useTaxFilings";
 import { formatDate, daysUntil } from "@/lib/utils/dates";
 
 export default function TaxCenterPage() {
-  const loading = useLoadingSimulation(800);
-  const upcoming = TAX_FILINGS.filter((t) => t.status !== "Filed");
+  const { taxFilings, loading: taxLoading } = useTaxFilings();
+  const loading = useLoadingSimulation(800) || taxLoading;
+  const upcoming = taxFilings.filter((t) => t.status !== "Filed");
 
   return (
     <PageWrapper>
@@ -30,7 +31,7 @@ export default function TaxCenterPage() {
 
       {loading ? <CardGridSkeleton count={6} cols={3} /> : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {TAX_FILINGS.slice(0, 6).map((t) => {
+          {taxFilings.slice(0, 6).map((t) => {
             const overdue = t.status === "Overdue";
             const pending = t.status === "Pending";
             const days = daysUntil(t.dueDate);

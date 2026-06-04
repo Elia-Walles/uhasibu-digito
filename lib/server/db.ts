@@ -17,7 +17,13 @@ import { applyTenantScope, isTenantScopedModel, type ScopableArgs } from "./tena
  * Cloud is compatible with. The pool connects lazily on first query.
  */
 function createExtendedClient() {
-  const base = new PrismaClient({ adapter: createMariaDbAdapter() });
+  // Raise the interactive-transaction timeout: the compound writes (journal posting,
+  // stock movement, payroll run with N employees) do many round-trips, and remote TiDB
+  // latency can blow past Prisma's 5s default. maxWait covers pool-acquisition under load.
+  const base = new PrismaClient({
+    adapter: createMariaDbAdapter(),
+    transactionOptions: { timeout: 30_000, maxWait: 15_000 },
+  });
 
   return base.$extends({
     query: {

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { usePipelineDeals } from "@/lib/hooks/usePipelineDeals";
 import type { PipelineDeal, DealStage } from "@/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -51,19 +51,17 @@ function emptyForm(): FormState {
 }
 
 export default function PipelinePage() {
-  const loading = useLoadingSimulation(800);
-  const deals = useDataStore((s) => s.deals);
-  const addDeal = useDataStore((s) => s.addDeal);
-  const moveDealAction = useDataStore((s) => s.moveDeal);
+  const { deals, loading: dataLoading, addDeal, moveDeal: moveDealAction } = usePipelineDeals();
+  const loading = useLoadingSimulation(800) || dataLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
   function moveDeal(dealId: string, newStage: DealStage) {
-    moveDealAction(dealId, newStage);
+    void moveDealAction(dealId, newStage);
     toast.success(`Moved to ${newStage}`);
   }
 
-  function save() {
+  async function save() {
     if (!form.dealName.trim() || !form.companyName.trim()) {
       toast.error("Deal name and company are required");
       return;
@@ -83,7 +81,11 @@ export default function PipelinePage() {
       daysInStage: 0,
       notes: form.notes,
     };
-    addDeal(deal);
+    const r = await addDeal(deal);
+    if (!r.ok) {
+      toast.error(r.error);
+      return;
+    }
     toast.success(`Added ${deal.dealName}`);
     setAddOpen(false);
     setForm(emptyForm());
@@ -166,7 +168,7 @@ export default function PipelinePage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={save}>Add deal</Button>
+            <Button variant="primary" onClick={() => void save()}>Add deal</Button>
           </>
         }
       >

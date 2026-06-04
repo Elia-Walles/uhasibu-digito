@@ -8,28 +8,30 @@ import { DigitalStamp } from "@/components/ui/DigitalStamp";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { CURRENT_PAYROLL } from "@/lib/mock-data/payroll";
+import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
 import type { StampData } from "@/types";
 
 type TabKey = "paye" | "nssf" | "sdl" | "wcf";
 
 export default function StatutoryPage() {
-  const loading = useLoadingSimulation(800);
+  const { payrollRuns, loading: prLoading } = usePayrollRuns();
+  const loading = useLoadingSimulation(800) || prLoading;
+  const current = payrollRuns[payrollRuns.length - 1];
   const [tab, setTab] = useState<TabKey>("paye");
   const [stamp, setStamp] = useState<StampData | null>(null);
 
   const totalMap: Record<TabKey, { label: string; rate: string; total: number; description: string }> = {
-    paye: { label: "PAYE",  rate: "0% / 8% / 20% / 25% / 30%", total: CURRENT_PAYROLL.totalPAYE,  description: "Pay-As-You-Earn — remitted to TRA on behalf of employees." },
-    nssf: { label: "NSSF",  rate: "10% employee + 10% employer", total: CURRENT_PAYROLL.totalNSSF * 2, description: "National Social Security Fund contribution." },
-    sdl:  { label: "SDL",   rate: "4% of gross",  total: CURRENT_PAYROLL.totalSDL,   description: "Skills Development Levy paid by the employer." },
-    wcf:  { label: "WCF",   rate: "0.5% of gross", total: CURRENT_PAYROLL.totalWCF,   description: "Workers' Compensation Fund." },
+    paye: { label: "PAYE",  rate: "0% / 8% / 20% / 25% / 30%", total: current?.totalPAYE ?? 0,  description: "Pay-As-You-Earn — remitted to TRA on behalf of employees." },
+    nssf: { label: "NSSF",  rate: "10% employee + 10% employer", total: (current?.totalNSSF ?? 0) * 2, description: "National Social Security Fund contribution." },
+    sdl:  { label: "SDL",   rate: "4% of gross",  total: current?.totalSDL ?? 0,   description: "Skills Development Levy paid by the employer." },
+    wcf:  { label: "WCF",   rate: "0.5% of gross", total: current?.totalWCF ?? 0,   description: "Workers' Compensation Fund." },
   };
   const meta = totalMap[tab];
 
   return (
     <PageWrapper>
       <PageHeader
-        title={`Statutory returns — ${CURRENT_PAYROLL.period}`}
+        title={`Statutory returns — ${current?.period ?? "latest"}`}
         subtitle="Prepare and stamp PAYE, NSSF, SDL, and WCF returns for TRA filing"
         breadcrumbs={[{ label: "Payroll", href: "/payroll" }, { label: "Statutory" }]}
         actions={<ExportMenu fileLabel={`${meta.label} return`} />}
@@ -67,7 +69,7 @@ export default function StatutoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {CURRENT_PAYROLL.employees.map((e, i) => {
+                  {(current?.employees ?? []).map((e, i) => {
                     const amt = tab === "paye" ? e.paye :
                                 tab === "nssf" ? e.nssf_employee + e.nssf_employer :
                                 tab === "sdl"  ? e.sdl :
@@ -95,7 +97,7 @@ export default function StatutoryPage() {
           )}
 
           <div className="mt-6 flex flex-wrap items-start gap-4">
-            <DigitalStamp documentName={`${meta.label} Return — ${CURRENT_PAYROLL.period}`} onApply={setStamp} applied={stamp} />
+            <DigitalStamp documentName={`${meta.label} Return — ${current?.period ?? "latest"}`} onApply={setStamp} applied={stamp} />
             {!stamp && (
               <p className="text-xs text-ud-text-muted max-w-md">
                 Apply the NBAA digital stamp to certify this statutory return before submission to TRA.

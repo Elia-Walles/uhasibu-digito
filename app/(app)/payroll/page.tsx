@@ -11,7 +11,7 @@ import { DataTable, type Column } from "@/components/ui/DataTable";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { PAYROLL_RUNS } from "@/lib/mock-data/payroll";
+import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
 import { formatDate } from "@/lib/utils/dates";
 import type { PayrollRun } from "@/types";
 
@@ -30,8 +30,9 @@ const COLS: Column<PayrollRun>[] = [
 ];
 
 export default function PayrollOverviewPage() {
-  const loading = useLoadingSimulation(800);
-  const current = PAYROLL_RUNS[PAYROLL_RUNS.length - 1]!;
+  const { payrollRuns, loading: prLoading } = usePayrollRuns();
+  const loading = useLoadingSimulation(800) || prLoading;
+  const current = payrollRuns[payrollRuns.length - 1];
   return (
     <PageWrapper>
       <PageHeader
@@ -47,26 +48,26 @@ export default function PayrollOverviewPage() {
 
       {loading ? <StatRowSkeleton /> : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard label="Gross (Oct)"     value={current.totalGross} variant="teal"    icon={<Wallet />} prefix="TSh" format="compact" />
-          <StatCard label="PAYE remitted"   value={current.totalPAYE}  variant="amber"   prefix="TSh" format="compact" />
-          <StatCard label="NSSF (combined)" value={current.totalNSSF * 2} variant="blue" prefix="TSh" format="compact" />
-          <StatCard label="Net disbursed"   value={current.totalNet}   variant="emerald" prefix="TSh" format="compact" />
+          <StatCard label="Gross (latest)"  value={current?.totalGross ?? 0} variant="teal"    icon={<Wallet />} prefix="TSh" format="compact" />
+          <StatCard label="PAYE remitted"   value={current?.totalPAYE ?? 0}  variant="amber"   prefix="TSh" format="compact" />
+          <StatCard label="NSSF (combined)" value={(current?.totalNSSF ?? 0) * 2} variant="blue" prefix="TSh" format="compact" />
+          <StatCard label="Net disbursed"   value={current?.totalNet ?? 0}   variant="emerald" prefix="TSh" format="compact" />
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
           <h3 className="font-display font-bold text-base mb-4">Payroll history</h3>
-          {loading ? <TableSkeleton rows={6} columns={7} /> : <DataTable data={PAYROLL_RUNS.slice().reverse()} columns={COLS} pageSize={10} />}
+          {loading ? <TableSkeleton rows={6} columns={7} /> : <DataTable data={payrollRuns.slice().reverse()} columns={COLS} pageSize={10} />}
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
           <h3 className="font-display font-bold text-base mb-4">Statutory due</h3>
           <div className="space-y-3 text-sm">
             {[
-              { label: "PAYE",  amount: current.totalPAYE,  due: "2024-11-07" },
-              { label: "NSSF",  amount: current.totalNSSF * 2, due: "2024-11-07" },
-              { label: "SDL",   amount: current.totalSDL,   due: "2024-11-07" },
-              { label: "WCF",   amount: current.totalWCF,   due: "2024-11-07" },
+              { label: "PAYE",  amount: current?.totalPAYE ?? 0,  due: "2024-11-07" },
+              { label: "NSSF",  amount: (current?.totalNSSF ?? 0) * 2, due: "2024-11-07" },
+              { label: "SDL",   amount: current?.totalSDL ?? 0,   due: "2024-11-07" },
+              { label: "WCF",   amount: current?.totalWCF ?? 0,   due: "2024-11-07" },
             ].map((s) => (
               <div key={s.label} className="flex items-center justify-between py-2 border-b border-ud-border last:border-b-0">
                 <div>

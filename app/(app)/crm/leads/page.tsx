@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useLeads } from "@/lib/hooks/useLeads";
 import { formatDate } from "@/lib/utils/dates";
 import type { Lead, LeadSource, LeadTemperature } from "@/types";
 
@@ -46,15 +46,13 @@ function emptyForm(): FormState {
 }
 
 export default function LeadsPage() {
-  const loading = useLoadingSimulation(800);
-  const leads = useDataStore((s) => s.leads);
-  const addLead = useDataStore((s) => s.addLead);
-  const updateLeadStatus = useDataStore((s) => s.updateLeadStatus);
+  const { leads, loading: dataLoading, addLead, updateLeadStatus } = useLeads();
+  const loading = useLoadingSimulation(800) || dataLoading;
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [statusEdit, setStatusEdit] = useState<Lead | null>(null);
 
-  function save() {
+  async function save() {
     if (!form.name.trim() || !form.company.trim()) {
       toast.error("Name and company are required");
       return;
@@ -73,7 +71,11 @@ export default function LeadsPage() {
       followUpDate: form.followUpDate,
       createdAt: new Date().toISOString(),
     };
-    addLead(lead);
+    const r = await addLead(lead);
+    if (!r.ok) {
+      toast.error(r.error);
+      return;
+    }
     toast.success(`Added ${lead.name}`);
     setModalOpen(false);
     setForm(emptyForm());
@@ -121,7 +123,7 @@ export default function LeadsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={save}>Add lead</Button>
+            <Button variant="primary" onClick={() => void save()}>Add lead</Button>
           </>
         }
       >
@@ -155,7 +157,7 @@ export default function LeadsPage() {
             {(["New", "Contacted", "Qualified", "Lost"] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => { updateLeadStatus(statusEdit.id, s); toast.success(`Lead set to ${s}`); setStatusEdit(null); }}
+                onClick={() => { void updateLeadStatus(statusEdit.id, s); toast.success(`Lead set to ${s}`); setStatusEdit(null); }}
                 className={`p-3 rounded-xl border text-sm font-medium transition-all min-h-[56px] ${
                   statusEdit.status === s ? "border-ud-primary bg-ud-primary-50 text-ud-primary" : "border-ud-border hover:border-ud-primary/40"
                 }`}

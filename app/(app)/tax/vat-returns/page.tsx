@@ -6,11 +6,22 @@ import { Tabs } from "@/components/ui/Tabs";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DigitalStamp } from "@/components/ui/DigitalStamp";
 import { ExportMenu } from "@/components/ui/ExportMenu";
-import { VAT_RETURN_OCT } from "@/lib/mock-data/tax";
+import { useVATReturns } from "@/lib/hooks/useVATReturns";
 import { formatDate } from "@/lib/utils/dates";
-import type { StampData } from "@/types";
+import type { StampData, VATReturn } from "@/types";
+
+const EMPTY_VAT: VATReturn = {
+  period: "—",
+  outputVAT: 0,
+  inputVAT: 0,
+  vatPayable: 0,
+  outputTransactions: [],
+  inputTransactions: [],
+};
 
 export default function VATReturnsPage() {
+  const { vatReturns } = useVATReturns();
+  const VAT_RETURN_OCT = vatReturns[0] ?? EMPTY_VAT;
   const [tab, setTab] = useState("summary");
   const [stamp, setStamp] = useState<StampData | null>(null);
 

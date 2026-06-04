@@ -15,7 +15,8 @@ import { Select } from "@/components/ui/Select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useEmployees } from "@/lib/hooks/useEmployees";
+import { useDepartments } from "@/lib/hooks/useDepartments";
 import type { Employee, AllowanceLine } from "@/types";
 
 interface FormState {
@@ -90,17 +91,14 @@ function employeeToForm(e: Employee): FormState {
 }
 
 export default function EmployeesPage() {
-  const loading = useLoadingSimulation(800);
   const [selected, setSelected] = useState<Employee | null>(null);
   const [editForm, setEditForm] = useState<FormState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null); // null on add; id on edit
   const [confirmRemove, setConfirmRemove] = useState<Employee | null>(null);
 
-  const departments  = useDataStore((s) => s.departments);
-  const employees    = useDataStore((s) => s.employees);
-  const addEmployee  = useDataStore((s) => s.addEmployee);
-  const updateEmployee = useDataStore((s) => s.updateEmployee);
-  const removeEmployee = useDataStore((s) => s.removeEmployee);
+  const { departments } = useDepartments();
+  const { employees, addEmployee, updateEmployee, removeEmployee, loading: empLoading } = useEmployees();
+  const loading = useLoadingSimulation(800) || empLoading;
 
   const deptOptions = useMemo(
     () => departments.map((d) => ({ value: d.name, label: d.name })),
@@ -141,7 +139,7 @@ export default function EmployeesPage() {
     setEditForm({ ...editForm, allowances: editForm.allowances.filter((a) => a.id !== id) });
   }
 
-  function saveForm() {
+  async function saveForm() {
     if (!editForm) return;
     if (!editForm.firstName.trim() || !editForm.lastName.trim()) {
       toast.error("Name is required");
@@ -189,20 +187,23 @@ export default function EmployeesPage() {
       overtimeHoursDefault: editForm.overtimeHoursDefault,
     };
 
-    if (isEdit) {
-      updateEmployee(employee.id, employee);
-      toast.success(`Updated ${employee.fullName}`);
-    } else {
-      addEmployee(employee);
-      toast.success(`Added ${employee.fullName}`);
+    const res = isEdit ? await updateEmployee(employee.id, employee) : await addEmployee(employee);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success(isEdit ? `Updated ${employee.fullName}` : `Added ${employee.fullName}`);
     setEditForm(null);
     setEditingId(null);
   }
 
-  function confirmRemoveEmployee() {
+  async function confirmRemoveEmployee() {
     if (!confirmRemove) return;
-    removeEmployee(confirmRemove.id);
+    const res = await removeEmployee(confirmRemove.id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
     toast.success(`Removed ${confirmRemove.fullName}`);
     setConfirmRemove(null);
   }
@@ -332,7 +333,7 @@ export default function EmployeesPage() {
         footer={editForm && (
           <>
             <Button variant="ghost" onClick={() => setEditForm(null)}>Cancel</Button>
-            <Button variant="primary" onClick={saveForm}>{editingId ? "Save changes" : "Add employee"}</Button>
+            <Button variant="primary" onClick={() => void saveForm()}>{editingId ? "Save changes" : "Add employee"}</Button>
           </>
         )}
       >

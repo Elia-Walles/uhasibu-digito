@@ -30,3 +30,12 @@ export const LEDGER_BACKEND_ENABLED = isModuleEnabled("gl");
 export const INVENTORY_BACKEND_ENABLED = isModuleEnabled("inventory");
 export const QUOTATIONS_BACKEND_ENABLED = isModuleEnabled("quotations");
 export const PROCUREMENT_BACKEND_ENABLED = isModuleEnabled("procurement");
+export const PAYROLL_BACKEND_ENABLED = isModuleEnabled("payroll");
+export const TAX_BACKEND_ENABLED = isModuleEnabled("tax");
+export const ASSETS_BACKEND_ENABLED = isModuleEnabled("assets");
+export const BUDGETS_BACKEND_ENABLED = isModuleEnabled("budgets");
+// "crm" covers leads + pipeline deals (customers already flipped in Wave 2 under "customers").
+export const CRM_BACKEND_ENABLED = isModuleEnabled("crm");
+export const AUDIT_BACKEND_ENABLED = isModuleEnabled("audit");
+// "reports" moves xlsx generation (financial model, audit report, depreciation) to the server.
+export const REPORTS_BACKEND_ENABLED = isModuleEnabled("reports");
