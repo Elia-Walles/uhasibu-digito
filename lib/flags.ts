@@ -19,5 +19,8 @@ export function isModuleEnabled(module: string): boolean {
   return ENABLED_MODULES.has(module);
 }
 
-export const AUTH_BACKEND_ENABLED = isModuleEnabled("auth");
+// Auth is permanently live (no mock fallback). Per-domain backend flags below gate
+// the remaining wave-by-wave cutovers.
 export const DEPARTMENTS_BACKEND_ENABLED = isModuleEnabled("departments");
+export const CUSTOMERS_BACKEND_ENABLED = isModuleEnabled("customers");
+export const INVOICES_BACKEND_ENABLED = isModuleEnabled("invoices");

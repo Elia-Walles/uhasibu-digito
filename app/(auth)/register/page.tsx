@@ -5,14 +5,11 @@ import { Mail, Lock, User as UserIcon, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { signIn } from "next-auth/react";
-import { AUTH_BACKEND_ENABLED } from "@/lib/flags";
-import { useAuthStore } from "@/lib/store/authStore";
 import { registerTenant } from "@/lib/server/actions/auth";
 import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const mockLogin = useAuthStore((s) => s.login);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -23,26 +20,19 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (AUTH_BACKEND_ENABLED) {
-        const res = await registerTenant({ name, companyName, email, password });
-        if (!res.ok) {
-          toast.error(res.error);
-          return;
-        }
-        const signInRes = await signIn("credentials", { email, password, redirect: false });
-        if (signInRes?.error) {
-          toast.success("Account created — please sign in");
-          router.push("/login");
-          return;
-        }
-        toast.success("Account created. Welcome!");
-        router.push("/dashboard");
-      } else {
-        await new Promise((r) => setTimeout(r, 1200));
-        await mockLogin("new@uhasibudigito.co.tz", "Demo@2024");
-        toast.success("Account created. Welcome!");
-        router.push("/dashboard");
+      const res = await registerTenant({ name, companyName, email, password });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
       }
+      const signInRes = await signIn("credentials", { email, password, redirect: false });
+      if (signInRes?.error) {
+        toast.success("Account created — please sign in");
+        router.push("/login");
+        return;
+      }
+      toast.success("Account created. Welcome!");
+      router.push("/dashboard");
     } catch {
       toast.error("Could not create your account");
     } finally {
