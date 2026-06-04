@@ -15,7 +15,7 @@ import { ExportMenu } from "@/components/ui/ExportMenu";
 import { Modal } from "@/components/ui/Modal";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useInvoices } from "@/lib/hooks/useInvoices";
 import { useAppStore } from "@/lib/store/appStore";
 import { formatDate, isOverdue } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
@@ -43,8 +43,8 @@ type TabKey = "All" | "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
 const ALL_STATUSES: InvoiceStatus[] = ["Draft", "Sent", "Paid", "Overdue", "Cancelled"];
 
 export default function InvoicesPage() {
-  const loading = useLoadingSimulation(800);
-  const { invoices, updateInvoiceStatus } = useDataStore();
+  const { invoices, updateInvoiceStatus, loading: invLoading } = useInvoices();
+  const loading = useLoadingSimulation(800) || invLoading;
   const emailPrefs = useAppStore((s) => s.emailNotifications);
   const addNotification = useAppStore((s) => s.addNotification);
   const [tab, setTab] = useState<TabKey>("All");
@@ -75,7 +75,7 @@ export default function InvoicesPage() {
       setEditTarget(null);
       return;
     }
-    updateInvoiceStatus(invoice.id, status);
+    void updateInvoiceStatus(invoice.id, status);
     if (emailPrefs[status]) {
       addNotification({
         id: `inv-status-${invoice.id}-${status}-${Date.now()}`,

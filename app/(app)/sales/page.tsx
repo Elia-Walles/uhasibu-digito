@@ -9,11 +9,11 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { ChartSkeleton } from "@/components/skeletons/ChartSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useInvoices } from "@/lib/hooks/useInvoices";
 
 export default function SalesPage() {
-  const loading = useLoadingSimulation(800);
-  const invoices = useDataStore((s) => s.invoices);
+  const { invoices, loading: invLoading } = useInvoices();
+  const loading = useLoadingSimulation(800) || invLoading;
   const totalSales    = invoices.filter((i) => i.status !== "Cancelled" && i.status !== "Draft").reduce((s, i) => s + i.total, 0);
   const totalPaid     = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0);
   const totalOverdue  = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.total, 0);

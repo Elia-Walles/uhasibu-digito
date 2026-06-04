@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDataStore } from "@/lib/store/dataStore";
+import { useCustomers } from "@/lib/hooks/useCustomers";
+import { useInvoices } from "@/lib/hooks/useInvoices";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { formatDate } from "@/lib/utils/dates";
@@ -47,12 +49,12 @@ function emptyForm(customerId: string): FormState {
 
 export default function QuotationsPage() {
   const router = useRouter();
+  const { customers } = useCustomers();
+  const { createInvoice } = useInvoices();
   const loading = useLoadingSimulation(800);
-  const customers = useDataStore((s) => s.customers);
   const quotations = useDataStore((s) => s.quotations);
   const addQuotation = useDataStore((s) => s.addQuotation);
   const updateQuotationStatus = useDataStore((s) => s.updateQuotationStatus);
-  const convertQuotationToInvoice = useDataStore((s) => s.convertQuotationToInvoice);
 
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(customers[0]?.id ?? ""));
@@ -120,12 +122,28 @@ export default function QuotationsPage() {
     setAddOpen(false);
   }
 
-  function convert(q: Quotation) {
-    const inv = convertQuotationToInvoice(q.id);
-    if (inv) {
-      toast.success(`Converted to ${inv.number}`);
-      router.push("/sales/invoices");
+  async function convert(q: Quotation) {
+    const res = await createInvoice({
+      customerId: q.customerId,
+      issueDate: new Date().toISOString().split("T")[0]!,
+      dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0]!,
+      notes: `Converted from quotation ${q.number}. ${q.notes ?? ""}`.trim(),
+      status: "Sent",
+      lines: q.lines.map((l) => ({
+        description: l.description,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        discountPct: l.discountPct,
+        vatPct: l.vatPct,
+      })),
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    updateQuotationStatus(q.id, "Converted");
+    toast.success(`Converted to ${res.data.number}`);
+    router.push("/sales/invoices");
   }
 
   const cols: Column<Quotation>[] = [
@@ -144,7 +162,7 @@ export default function QuotationsPage() {
           </button>
         )}
         {(r.status === "Sent" || r.status === "Accepted") && (
-          <button onClick={(e) => { e.stopPropagation(); convert(r); }}
+          <button onClick={(e) => { e.stopPropagation(); void convert(r); }}
                   className="p-1.5 rounded-lg hover:bg-ud-primary-50 text-ud-text-muted hover:text-ud-primary" aria-label="Convert to invoice">
             <FileCheck2 className="w-3.5 h-3.5" />
           </button>

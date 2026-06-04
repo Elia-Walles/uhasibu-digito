@@ -15,7 +15,7 @@ import { Select } from "@/components/ui/Select";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useCustomers } from "@/lib/hooks/useCustomers";
 import type { Customer } from "@/types";
 
 interface FormState {
@@ -44,14 +44,14 @@ function emptyForm(): FormState {
 }
 
 export default function CustomersPage() {
-  const loading = useLoadingSimulation(800);
-  const { customers, addCustomer } = useDataStore();
+  const { customers, createCustomer, loading: custLoading } = useCustomers();
+  const loading = useLoadingSimulation(800) || custLoading;
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Customer | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
-  function save() {
+  async function save() {
     if (!form.name.trim()) {
       toast.error("Customer name is required");
       return;
@@ -78,8 +78,12 @@ export default function CustomersPage() {
         iban: form.iban,
       }),
     };
-    addCustomer(customer);
-    toast.success(`Added ${customer.name}`);
+    const res = await createCustomer(customer);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(`Added ${res.data.name}`);
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -147,7 +151,7 @@ export default function CustomersPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={save}>Add customer</Button>
+            <Button variant="primary" onClick={() => void save()}>Add customer</Button>
           </>
         }
       >

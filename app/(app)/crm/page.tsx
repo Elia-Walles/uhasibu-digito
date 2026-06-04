@@ -9,14 +9,15 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { PipelineFunnel } from "@/components/charts/PipelineFunnel";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { CUSTOMERS } from "@/lib/mock-data/customers";
+import { useCustomers } from "@/lib/hooks/useCustomers";
 import { PIPELINE_DEALS } from "@/lib/mock-data/pipeline";
 
 export default function CRMHome() {
-  const loading = useLoadingSimulation(800);
+  const { customers, loading: custLoading } = useCustomers();
+  const loading = useLoadingSimulation(800) || custLoading;
   const totalDeals     = PIPELINE_DEALS.reduce((s, d) => s + d.value, 0);
-  const totalCustomers = CUSTOMERS.length;
-  const topCustomers   = [...CUSTOMERS].sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 5);
+  const totalCustomers = customers.length;
+  const topCustomers   = [...customers].sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 5);
 
   return (
     <PageWrapper>

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useInvoices } from "@/lib/hooks/useInvoices";
 import { formatDate } from "@/lib/utils/dates";
 import toast from "react-hot-toast";
 
@@ -29,8 +29,8 @@ interface Payment {
 const METHOD_ICON = { "M-Pesa": Smartphone, "Tigo Pesa": Smartphone, "Airtel": Smartphone, "Bank Transfer": CreditCard, "Cash": Banknote, "Cheque": CreditCard };
 
 export default function PaymentsPage() {
-  const loading = useLoadingSimulation(800);
-  const { invoices } = useDataStore();
+  const { invoices, loading: invLoading } = useInvoices();
+  const loading = useLoadingSimulation(800) || invLoading;
   const [open, setOpen] = useState(false);
 
   const payments: Payment[] = invoices

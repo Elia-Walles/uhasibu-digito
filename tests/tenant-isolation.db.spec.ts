@@ -31,7 +31,11 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
 
   afterAll(async () => {
     if (authDb) {
-      await authDb.department.deleteMany({ where: { tenantId: { in: [tenantA, tenantB] } } });
+      const ids = { tenantId: { in: [tenantA, tenantB] } };
+      await authDb.invoiceLine.deleteMany({ where: ids });
+      await authDb.invoice.deleteMany({ where: ids });
+      await authDb.customer.deleteMany({ where: ids });
+      await authDb.department.deleteMany({ where: ids });
       await authDb.tenant.deleteMany({ where: { id: { in: [tenantA, tenantB] } } });
       await authDb.$disconnect();
     }
@@ -67,5 +71,61 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
     // B still sees its own — proving the delete above did not fall through
     const bList = await runWithContext(ctxB, async () => db.department.findMany());
     expect(bList.map((d) => d.name)).toContain("B-only");
+  }, 60_000);
+
+  it("isolates invoices (with nested lines) across tenants", async () => {
+    const ctxA = { tenantId: tenantA, userId: "u_a", role: "CFO" as const };
+    const ctxB = { tenantId: tenantB, userId: "u_b", role: "CFO" as const };
+    const stamp = Date.now();
+
+    const inv = await runWithContext(ctxA, async () => {
+      const cust = await db.customer.create({
+        data: {
+          tenantId: tenantA,
+          name: "ISO Cust A",
+          contactPerson: "",
+          tin: "",
+          phone: "",
+          email: "",
+          city: "",
+          address: "",
+          paymentTerms: "",
+        },
+      });
+      return db.invoice.create({
+        data: {
+          tenantId: tenantA,
+          number: `ISO-${stamp}`,
+          customerId: cust.id,
+          customerName: cust.name,
+          issueDate: new Date(),
+          dueDate: new Date(),
+          subtotal: 100,
+          discount: 0,
+          vatAmount: 18,
+          total: 118,
+          status: "Draft",
+          efdNumber: `EFD-ISO-${stamp}`,
+          notes: "",
+          lines: {
+            create: [
+              { tenantId: tenantA, description: "x", quantity: 1, unitPrice: 100, discountPct: 0, vatPct: 18, lineTotal: 100 },
+            ],
+          },
+        },
+        include: { lines: true },
+      });
+    });
+    expect(inv.lines).toHaveLength(1);
+
+    // Tenant B sees none of A's invoices
+    const bInvoices = await runWithContext(ctxB, async () => db.invoice.findMany());
+    expect(bInvoices.find((i) => i.id === inv.id)).toBeUndefined();
+
+    // Malicious where.tenantId = B is overridden for tenant A
+    const aMalicious = await runWithContext(ctxA, async () =>
+      db.invoice.findMany({ where: { tenantId: tenantB } }),
+    );
+    expect(aMalicious.every((i) => i.tenantId === tenantA)).toBe(true);
   }, 60_000);
 });

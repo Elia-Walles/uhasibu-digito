@@ -18,5 +18,9 @@ export function createMariaDbAdapter(): PrismaMariaDb {
     password: decodeURIComponent(parsed.password),
     database: parsed.pathname.replace(/^\//, ""),
     ssl: { rejectUnauthorized: true },
+    // TiDB Serverless auto-pauses when idle; the first connection wakes it (cold
+    // start), which exceeds the mariadb driver's ~1s default. Give it room.
+    connectTimeout: 30_000,
+    acquireTimeout: 30_000,
   });
 }

@@ -11,12 +11,12 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
 import { COMPANY } from "@/lib/mock-data/company";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useCustomers } from "@/lib/hooks/useCustomers";
+import { useInvoices } from "@/lib/hooks/useInvoices";
 import { formatTZS } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/dates";
-import { efdFormat } from "@/lib/mock-data/generators";
 import toast from "react-hot-toast";
-import type { InvoiceLine, Invoice, SendChannel, SendLogEntry } from "@/types";
+import type { InvoiceLine, SendChannel } from "@/types";
 
 type SendChoice = "Email" | "WhatsApp" | "Both" | "JustSave";
 
@@ -30,7 +30,8 @@ function computeDueDate(issued: string): string {
 
 export default function NewInvoicePage() {
   const router = useRouter();
-  const { customers, addInvoice, addSendLog } = useDataStore();
+  const { customers } = useCustomers();
+  const { createInvoice, sendInvoice } = useInvoices();
   const today = new Date().toISOString().split("T")[0]!;
   const [customerId, setCustomerId] = useState(customers[0]?.id ?? "");
   const [issueDate, setIssueDate] = useState(today);
@@ -62,28 +63,30 @@ export default function NewInvoicePage() {
   const vat = Math.round(subtotal * 0.18);
   const total = subtotal + vat;
 
-  function buildInvoice(status: "Draft" | "Sent"): Invoice {
+  function buildPayload(status: "Draft" | "Sent") {
     return {
-      id: `inv_new_${Date.now()}`,
-      number: `INV-2024-${String(Math.floor(Math.random() * 90000) + 10000)}`,
       customerId: customer!.id,
-      customerName: customer!.name,
       issueDate,
       dueDate,
-      lines,
-      subtotal,
-      discount: 0,
-      vatAmount: vat,
-      total,
-      status,
-      efdNumber: efdFormat(Date.now() % 99999999),
       notes: "Payment is due 30 days from invoice date. Bank: CRDB 0150123456789",
+      status,
+      lines: lines.map((l) => ({
+        description: l.description,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        discountPct: l.discountPct,
+        vatPct: l.vatPct,
+      })),
     };
   }
 
-  function saveDraft() {
+  async function saveDraft() {
     if (!customer) return;
-    addInvoice(buildInvoice("Draft"));
+    const res = await createInvoice(buildPayload("Draft"));
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
     toast.success("Invoice saved as draft");
     router.push("/sales/invoices");
   }
@@ -97,36 +100,36 @@ export default function NewInvoicePage() {
   async function confirmSend() {
     if (!customer) return;
     if (sendChoice === "JustSave") {
-      addInvoice(buildInvoice("Sent"));
+      const res = await createInvoice(buildPayload("Sent"));
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
       toast.success("Invoice marked as sent");
       setSendModalOpen(false);
       router.push("/sales/invoices");
       return;
     }
     setSending(true);
-    const inv = buildInvoice("Sent");
-    addInvoice(inv);
-    const channel: SendChannel = sendChoice === "Both" ? "Both" : sendChoice;
-    const recipient = channel === "Email" ? customer.email
-                    : channel === "WhatsApp" ? customer.phone
-                    : `${customer.email} · ${customer.phone}`;
-    const t = toast.loading(`Sending invoice via ${channel}…`);
-    await new Promise((r) => setTimeout(r, 1200));
-    const entry: SendLogEntry = {
-      id: `send_${Date.now()}`,
-      invoiceId: inv.id,
-      invoiceNumber: inv.number,
-      customerName: customer.name,
-      channel,
-      recipient,
-      sentAt: new Date().toISOString(),
-      status: "Delivered",
-    };
-    addSendLog(entry);
-    toast.success(`Delivered via ${channel}`, { id: t });
-    setSending(false);
-    setSendModalOpen(false);
-    router.push("/sales/sent-log");
+    try {
+      const created = await createInvoice(buildPayload("Sent"));
+      if (!created.ok) {
+        toast.error(created.error);
+        return;
+      }
+      const channel: SendChannel = sendChoice === "Both" ? "Both" : sendChoice;
+      const recipient = channel === "Email" ? customer.email
+                      : channel === "WhatsApp" ? customer.phone
+                      : `${customer.email} · ${customer.phone}`;
+      const t = toast.loading(`Sending invoice via ${channel}…`);
+      const sent = await sendInvoice(created.data.id, channel, recipient);
+      if (sent.ok) toast.success(`Delivered via ${channel}`, { id: t });
+      else toast.error(sent.error, { id: t });
+      setSendModalOpen(false);
+      router.push("/sales/sent-log");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -188,7 +191,7 @@ export default function NewInvoicePage() {
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            <Button variant="outline" onClick={saveDraft} icon={<Save className="w-4 h-4" />}>Save draft</Button>
+            <Button variant="outline" onClick={() => void saveDraft()} icon={<Save className="w-4 h-4" />}>Save draft</Button>
             <Button variant="primary" onClick={openSendModal} icon={<Send className="w-4 h-4" />}>Save & send</Button>
           </div>
         </div>

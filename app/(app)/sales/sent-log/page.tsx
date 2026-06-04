@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useInvoices } from "@/lib/hooks/useInvoices";
 import { formatDateTime } from "@/lib/utils/dates";
 import type { SendLogEntry } from "@/types";
 
@@ -16,7 +16,7 @@ const CHANNEL_ICON: Record<SendLogEntry["channel"], React.ElementType> = {
 };
 
 export default function SentLogPage() {
-  const sendLog = useDataStore((s) => s.sendLog);
+  const { sendLog } = useInvoices();
 
   const cols: Column<SendLogEntry>[] = [
     { key: "sentAt", label: "Sent at", width: "180px", render: (e) => <span className="font-mono text-xs">{formatDateTime(e.sentAt)}</span> },

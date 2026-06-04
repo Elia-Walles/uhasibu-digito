@@ -15,7 +15,7 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { ExpenseDonut } from "@/components/charts/ExpenseDonut";
 import { HealthGauge } from "@/components/charts/HealthGauge";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useInvoices } from "@/lib/hooks/useInvoices";
 import { TAX_FILINGS } from "@/lib/mock-data/tax";
 import { formatDate, daysUntil } from "@/lib/utils/dates";
 
@@ -33,8 +33,8 @@ const ALERTS = [
 ];
 
 export default function DashboardPage() {
-  const loading = useLoadingSimulation(900);
-  const invoices = useDataStore((s) => s.invoices);
+  const { invoices, loading: invLoading } = useInvoices();
+  const loading = useLoadingSimulation(900) || invLoading;
   if (loading) return <PageWrapper><DashboardSkeleton /></PageWrapper>;
 
   const recentInvoices = invoices.slice(0, 6);

@@ -6,10 +6,11 @@ import { Search, ShoppingCart, X, Plus, Minus, Smartphone, Banknote, CheckCircle
 import { INVENTORY } from "@/lib/mock-data/inventory";
 import { formatTZS, formatAmount } from "@/lib/utils/currency";
 import { cn } from "@/lib/utils/cn";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useCustomers } from "@/lib/hooks/useCustomers";
+import { useInvoices } from "@/lib/hooks/useInvoices";
 import { useAppStore } from "@/lib/store/appStore";
 import toast from "react-hot-toast";
-import type { Invoice, InvoiceLine, Customer } from "@/types";
+import type { Customer } from "@/types";
 
 const WALK_IN_CUSTOMER: Customer = {
   id: "cust_pos_walkin",
@@ -47,9 +48,8 @@ export default function POSPage() {
   const [phone, setPhone] = useState("+255 712 345 678");
   const [efdNumber, setEfdNumber] = useState("");
   const [postedInvoiceId, setPostedInvoiceId] = useState<string | null>(null);
-  const customers = useDataStore((s) => s.customers);
-  const addCustomer = useDataStore((s) => s.addCustomer);
-  const addInvoice = useDataStore((s) => s.addInvoice);
+  const { customers, createCustomer } = useCustomers();
+  const { createInvoice } = useInvoices();
   const addNotification = useAppStore((s) => s.addNotification);
 
   const categories = useMemo(() => ["All", ...Array.from(new Set(INVENTORY.map((i) => i.category)))], []);
@@ -87,45 +87,43 @@ export default function POSPage() {
   async function processPayment() {
     setPaymentStatus("waiting");
     await new Promise((r) => setTimeout(r, paymentMethod === "mpesa" ? 3000 : 1500));
-    const efd = `EFD-2024-${String(Math.floor(Math.random() * 90000000 + 10000000))}`;
-    setEfdNumber(efd);
+    const stamp = new Date();
+    const dateKey = stamp.toISOString().split("T")[0]!;
 
-    // Ensure walk-in POS customer exists in the data store
-    if (!customers.some((c) => c.id === WALK_IN_CUSTOMER.id)) {
-      addCustomer(WALK_IN_CUSTOMER);
+    // Ensure a single walk-in POS customer exists (backend assigns the id).
+    let walkInId = customers.find((c) => c.name === WALK_IN_CUSTOMER.name)?.id;
+    if (!walkInId) {
+      const cres = await createCustomer(WALK_IN_CUSTOMER);
+      if (!cres.ok) {
+        toast.error(cres.error);
+        setPaymentStatus("idle");
+        return;
+      }
+      walkInId = cres.data.id;
     }
 
-    // Build a paid invoice from the cart and post it to the sales pipeline
-    const stamp = new Date();
-    const dateKey = stamp.toISOString().split("T")[0]!.replace(/-/g, "");
-    const seq = String(Math.floor(Math.random() * 900) + 100);
-    const invoiceLines: InvoiceLine[] = cart.map((l, i) => ({
-      id: `pos_${stamp.getTime()}_${i}`,
-      description: l.name,
-      quantity: l.quantity,
-      unitPrice: l.unitPrice,
-      discountPct: 0,
-      vatPct: 18,
-      lineTotal: l.unitPrice * l.quantity,
-    }));
-    const invoice: Invoice = {
-      id: `inv_pos_${stamp.getTime()}`,
-      number: `INV-POS-${dateKey}-${seq}`,
-      customerId: WALK_IN_CUSTOMER.id,
-      customerName: WALK_IN_CUSTOMER.name,
-      issueDate: stamp.toISOString().split("T")[0]!,
-      dueDate:   stamp.toISOString().split("T")[0]!,
-      lines: invoiceLines,
-      subtotal,
-      discount: 0,
-      vatAmount: vat,
-      total,
-      status: "Paid",
-      efdNumber: efd,
+    const ires = await createInvoice({
+      customerId: walkInId,
+      issueDate: dateKey,
+      dueDate: dateKey,
       notes: `Point of Sale cash sale (${paymentMethod.toUpperCase()})`,
+      status: "Paid",
       paidAt: stamp.toISOString(),
-    };
-    addInvoice(invoice);
+      lines: cart.map((l) => ({
+        description: l.name,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        discountPct: 0,
+        vatPct: 18,
+      })),
+    });
+    if (!ires.ok) {
+      toast.error(ires.error);
+      setPaymentStatus("idle");
+      return;
+    }
+    const invoice = ires.data;
+    setEfdNumber(invoice.efdNumber);
     setPostedInvoiceId(invoice.id);
 
     addNotification({
