@@ -270,7 +270,7 @@ function Summary({ label, amount, color }: { label: string; amount: number; colo
     teal:    "bg-ud-primary-50 text-ud-primary border-ud-primary-100",
     danger:  "bg-ud-danger-bg text-ud-danger border-ud-danger/20",
     warning: "bg-ud-warning-bg text-ud-warning border-ud-warning/20",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    emerald: "bg-ud-success-bg text-ud-success border-ud-success/20",
     default: "bg-ud-surface-2 text-ud-text-secondary border-ud-border",
   }[color];
   return (

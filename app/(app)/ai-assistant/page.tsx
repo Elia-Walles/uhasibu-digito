@@ -88,7 +88,7 @@ export default function AIAssistantPage() {
   const suggestions = language === "sw" ? AI_SUGGESTIONS_SW : AI_SUGGESTIONS_EN;
 
   return (
-    <div className="-mx-4 md:-mx-6 lg:-mx-8 -my-6 min-h-[calc(100vh-4rem)] bg-[#0F1F17] dark-scrollbar grid lg:grid-cols-[280px_1fr_320px] xl:grid-cols-[300px_1fr_360px] text-white">
+    <div className="-mx-4 md:-mx-6 lg:-mx-8 -my-6 min-h-[calc(100vh-4rem)] bg-ud-ai-bg dark-scrollbar grid lg:grid-cols-[280px_1fr_320px] xl:grid-cols-[300px_1fr_360px] text-white">
       {/* Conversation history */}
       <aside className="hidden lg:flex flex-col border-r border-white/5 p-4">
         <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl gradient-teal text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-gold-glow">

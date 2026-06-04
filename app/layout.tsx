@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             duration: 3500,
             style: {
               borderRadius: 12,
-              border: "1px solid #E5F0EC",
+              border: "1px solid var(--color-ud-border)",
               boxShadow: "0 8px 32px -8px rgba(10,35,24,0.12)",
             },
           }}

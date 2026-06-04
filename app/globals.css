@@ -16,6 +16,11 @@
   --color-ud-obsidian-2: #0D2B1E;
   --color-ud-obsidian-3: #112D22;
 
+  /* Dark accent zone surfaces (POS, AI Assistant) — per CLAUDE.md §4 */
+  --color-ud-pos-bg:      #0F1923;
+  --color-ud-pos-surface: #0A1219;
+  --color-ud-ai-bg:       #0F1F17;
+
   /* Gold accents */
   --color-ud-gold: #F5C842;
   --color-ud-gold-dark: #C47B2A;
@@ -86,26 +91,38 @@ body {
 .shadow-elevated    { box-shadow: var(--shadow-elevated); }
 .shadow-gold-glow   { box-shadow: var(--shadow-gold-glow); }
 
+/* Gradient endpoints — used only by the .gradient-* utility classes below. */
+:root {
+  --ud-grad-obsidian-deep: #051410;
+  --ud-grad-gold-deep:     #E6B532;
+  --ud-grad-emerald-from:  #047857;
+  --ud-grad-emerald-to:    #10B981;
+  --ud-grad-blue-from:     #1E40AF;
+  --ud-grad-blue-to:       #3B82F6;
+  --ud-grad-amber-from:    #B45309;
+  --ud-grad-amber-to:      #F59E0B;
+}
+
 .gradient-teal {
   background: linear-gradient(135deg, var(--color-ud-primary) 0%, var(--color-ud-primary-light) 100%);
 }
 .gradient-teal-soft {
-  background: linear-gradient(135deg, #E8F7F2 0%, #F0FDF8 100%);
+  background: linear-gradient(135deg, var(--color-ud-primary-50) 0%, var(--color-ud-surface-3) 100%);
 }
 .gradient-gold {
-  background: linear-gradient(135deg, var(--color-ud-gold) 0%, #E6B532 100%);
+  background: linear-gradient(135deg, var(--color-ud-gold) 0%, var(--ud-grad-gold-deep) 100%);
 }
 .gradient-obsidian {
-  background: linear-gradient(180deg, var(--color-ud-obsidian) 0%, #051410 100%);
+  background: linear-gradient(180deg, var(--color-ud-obsidian) 0%, var(--ud-grad-obsidian-deep) 100%);
 }
 .gradient-emerald {
-  background: linear-gradient(135deg, #047857 0%, #10B981 100%);
+  background: linear-gradient(135deg, var(--ud-grad-emerald-from) 0%, var(--ud-grad-emerald-to) 100%);
 }
 .gradient-blue {
-  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+  background: linear-gradient(135deg, var(--ud-grad-blue-from) 0%, var(--ud-grad-blue-to) 100%);
 }
 .gradient-amber {
-  background: linear-gradient(135deg, #B45309 0%, #F59E0B 100%);
+  background: linear-gradient(135deg, var(--ud-grad-amber-from) 0%, var(--ud-grad-amber-to) 100%);
 }
 .glass-light {
   background: rgba(255, 255, 255, 0.06);

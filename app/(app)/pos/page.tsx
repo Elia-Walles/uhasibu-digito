@@ -148,7 +148,7 @@ export default function POSPage() {
   }
 
   return (
-    <div className="-mx-4 md:-mx-6 lg:-mx-8 -my-6 min-h-[calc(100vh-4rem)] bg-[#0F1923] dark-scrollbar grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] text-white">
+    <div className="-mx-4 md:-mx-6 lg:-mx-8 -my-6 min-h-[calc(100vh-4rem)] bg-ud-pos-bg dark-scrollbar grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] text-white">
       {/* Product grid */}
       <main className="flex flex-col min-h-0 p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
@@ -212,7 +212,7 @@ export default function POSPage() {
       </main>
 
       {/* Cart */}
-      <aside className="border-l border-white/5 flex flex-col bg-[#0A1219]">
+      <aside className="border-l border-white/5 flex flex-col bg-ud-pos-surface">
         <div className="px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-2">
             <ShoppingCart className="w-4 h-4 text-ud-primary-glow" />
@@ -304,7 +304,7 @@ export default function POSPage() {
               initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
-              className="bg-[#0A1219] border border-white/10 rounded-2xl max-w-md w-full p-6"
+              className="bg-ud-pos-surface border border-white/10 rounded-2xl max-w-md w-full p-6"
               onClick={(e) => e.stopPropagation()}
             >
               {paymentStatus === "success" ? (

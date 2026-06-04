@@ -125,7 +125,7 @@ export default function FinancialModelingPage() {
           <Badge variant="warning" size="sm" className="mb-1">Model hygiene</Badge>
           <p>
             Exported workbook follows the standard layout: <span className="font-semibold text-ud-text-primary">Cover · Dashboard · Assumptions · Historicals · IS / BS / CF projections</span>.
-            Inputs are <span className="font-semibold text-blue-600">blue</span>, formulas <span className="font-semibold text-green-600">green</span>. No hard-coded values inside formulas — every driver flows through Assumptions.
+            Inputs are <span className="font-semibold text-ud-info">blue</span>, formulas <span className="font-semibold text-ud-success">green</span>. No hard-coded values inside formulas — every driver flows through Assumptions.
           </p>
         </div>
       </div>
