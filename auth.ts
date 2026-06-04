@@ -1,7 +1,6 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Credentials from "next-auth/providers/credentials";
-import Resend from "next-auth/providers/resend";
 import { compare } from "bcryptjs";
 import { authConfig } from "./auth.config";
 import { authDb } from "@/lib/server/auth-db";
@@ -27,10 +26,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return { id: user.id, email: user.email, name: user.name };
       },
-    }),
-    Resend({
-      from: process.env.EMAIL_FROM ?? "",
-      apiKey: process.env.RESEND_API_KEY ?? "",
     }),
   ],
   callbacks: {

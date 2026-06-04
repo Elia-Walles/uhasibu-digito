@@ -1,7 +1,7 @@
 "use server";
 import type { Invoice as DbInvoice, InvoiceLine as DbInvoiceLine, SendLogEntry as DbSendLog } from "@prisma/client";
-import { Resend } from "resend";
 import { db } from "@/lib/server/db";
+import { sendMail } from "@/lib/server/email";
 import { withAuth } from "@/lib/server/with-auth";
 import {
   createInvoiceSchema,
@@ -154,11 +154,6 @@ export async function updateInvoiceStatus(input: unknown): Promise<Result<Invoic
   });
 }
 
-function resendConfigured(): boolean {
-  const key = process.env.RESEND_API_KEY ?? "";
-  return key.startsWith("re_") && !key.includes("REPLACE") && key.length > 20;
-}
-
 export async function sendInvoice(input: unknown): Promise<Result<SendLogEntry>> {
   const parsed = sendInvoiceSchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
@@ -168,21 +163,16 @@ export async function sendInvoice(input: unknown): Promise<Result<SendLogEntry>>
     const invoice = await db.invoice.findFirst({ where: { id: invoiceId } });
     if (!invoice) return err("Invoice not found");
 
-    let status: SendStatus = "Delivered"; // demo default when not really sending
-    if ((channel === "Email" || channel === "Both") && resendConfigured()) {
-      try {
-        const resend = new Resend(process.env.RESEND_API_KEY);
-        await resend.emails.send({
-          from: process.env.EMAIL_FROM ?? "Uhasibu Digito <no-reply@uhasibudigito.co.tz>",
-          to: recipient || invoice.customerName,
-          subject: `Invoice ${invoice.number} from Kilimanjaro Trading`,
-          html: `<p>Dear ${invoice.customerName},</p><p>Please find invoice <strong>${invoice.number}</strong> attached. Total due: TZS ${decToNum(invoice.total).toLocaleString()}.</p><p>Thank you for your business.</p>`,
-        });
-        status = "Delivered";
-      } catch {
-        status = "Failed";
-      }
+    let status: SendStatus = "Queued";
+    if (channel === "Email" || channel === "Both") {
+      const delivered = await sendMail({
+        to: recipient || invoice.customerName,
+        subject: `Invoice ${invoice.number}`,
+        html: `<p>Dear ${invoice.customerName},</p><p>Please find invoice <strong>${invoice.number}</strong>. Total due: TZS ${decToNum(invoice.total).toLocaleString()}.</p><p>Thank you for your business.</p>`,
+      });
+      status = delivered ? "Delivered" : "Failed";
     }
+    // WhatsApp-only sends remain "Queued" — no WhatsApp provider is wired yet.
 
     const entry = await db.sendLogEntry.create({
       data: {

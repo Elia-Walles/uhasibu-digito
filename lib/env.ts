@@ -6,7 +6,7 @@ import { z } from "zod";
  *
  * Wave 0 keeps validation LENIENT (non-empty strings; most vars optional) so the
  * placeholder `.env` passes and the demo build stays green. Wave 1 tightens this
- * (url() on connection strings, required Resend/S3 once those modules ship) when
+ * (url() on connection strings, required SMTP/Blob once those modules ship) when
  * real credentials are provisioned.
  *
  * Server-only — never import from a Client Component (it reads secret env vars).
@@ -23,16 +23,18 @@ const serverEnvSchema = z.object({
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
   AUTH_URL: z.string().min(1).optional(),
 
-  // Email (Resend)
-  RESEND_API_KEY: z.string().min(1).optional(),
+  // Email (Gmail SMTP via nodemailer)
+  EMAIL_SERVER_HOST: z.string().min(1).optional(),
+  EMAIL_SERVER_PORT: z.string().min(1).optional(),
+  EMAIL_SERVER_USER: z.string().min(1).optional(),
+  EMAIL_SERVER_PASSWORD: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(1).optional(),
 
-  // File storage (R2 / S3)
-  S3_ENDPOINT: z.string().min(1).optional(),
-  S3_BUCKET: z.string().min(1).optional(),
-  S3_REGION: z.string().min(1).optional(),
-  S3_ACCESS_KEY_ID: z.string().min(1).optional(),
-  S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
+  // File storage (Vercel Blob)
+  BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+
+  // AI (Google Gemini)
+  GEMINI_API_KEY: z.string().min(1).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

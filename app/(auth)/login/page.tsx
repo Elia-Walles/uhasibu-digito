@@ -11,10 +11,9 @@ import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("demo@uhasibudigito.co.tz");
-  const [password, setPassword] = useState("Demo@2024");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [linkLoading, setLinkLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,22 +30,6 @@ export default function LoginPage() {
       toast.error("Could not sign in");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function onMagicLink() {
-    if (!email) {
-      toast.error("Enter your email first");
-      return;
-    }
-    setLinkLoading(true);
-    try {
-      await signIn("resend", { email, redirect: false });
-      toast.success("Magic link sent — check your inbox");
-    } catch {
-      toast.error("Could not send the magic link");
-    } finally {
-      setLinkLoading(false);
     }
   }
 
@@ -146,24 +129,10 @@ export default function LoginPage() {
             <Button type="submit" variant="primary" size="lg" loading={loading} fullWidth>
               {loading ? "Signing in…" : "Sign in"}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="lg"
-              loading={linkLoading}
-              onClick={onMagicLink}
-              fullWidth
-            >
-              Email me a magic link
-            </Button>
           </form>
 
-          <div className="mt-6 px-4 py-3 rounded-xl bg-ud-surface-2 text-xs">
-            <div className="font-medium text-ud-text-secondary mb-1">Demo credentials</div>
-            <div className="font-mono text-ud-text-muted leading-relaxed">
-              demo@uhasibudigito.co.tz<br />
-              Demo@2024
-            </div>
+          <div className="mt-4 text-center">
+            <a href="/forgot-password" className="text-xs text-ud-primary font-medium hover:underline">Forgot your password?</a>
           </div>
 
           <div className="mt-6 text-xs text-ud-text-muted text-center">

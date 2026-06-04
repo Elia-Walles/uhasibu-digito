@@ -69,11 +69,12 @@ model User {
   tenantId     String? @map("tenant_id")
   departmentId String? @map("department_id")
 
-  tenant      Tenant?      @relation(fields: [tenantId], references: [id])
-  department  Department?  @relation(fields: [departmentId], references: [id])
-  accounts    Account[]
-  sessions    Session[]
-  memberships Membership[]
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id])
+  department          Department?          @relation(fields: [departmentId], references: [id])
+  accounts            Account[]
+  sessions            Session[]
+  memberships         Membership[]
+  passwordResetTokens PasswordResetToken[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -123,6 +124,21 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+// Password reset — short-lived single-use tokens (only the SHA-256 hash is stored).
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 // Forward-compat: user × tenant × role join for future multi-tenant users
