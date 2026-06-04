@@ -8,21 +8,21 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { COA } from "@/lib/mock-data/gl-entries";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useCOA } from "@/lib/hooks/useCOA";
+import { useGL } from "@/lib/hooks/useGL";
 import { formatTZS } from "@/lib/utils/currency";
 import toast from "react-hot-toast";
 import type { JournalEntryLine } from "@/types";
-
-const ACCOUNT_OPTIONS = COA.filter((a) => a.level >= 1).map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` }));
 
 export default function JournalEntryPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editRef = searchParams.get("ref");
-  const addJournalEntry = useDataStore((s) => s.addJournalEntry);
-  const editJournalEntry = useDataStore((s) => s.editJournalEntry);
-  const glEntries = useDataStore((s) => s.glEntries);
+  const { accounts } = useCOA();
+  const { glEntries, postJournalEntry, editJournalEntry } = useGL();
+  const accountOptions = accounts
+    .filter((a) => a.level >= 1)
+    .map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` }));
   const uid = useId();
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]!);
   // Derive a stable demo reference from useId — no Math.random in render
@@ -60,7 +60,7 @@ export default function JournalEntryPage() {
       if (l.id !== id) return l;
       const updated = { ...l, ...patch };
       if (patch.accountCode) {
-        const acc = COA.find((a) => a.code === patch.accountCode);
+        const acc = accounts.find((a) => a.code === patch.accountCode);
         updated.accountName = acc?.name ?? "";
       }
       return updated;
@@ -79,7 +79,7 @@ export default function JournalEntryPage() {
   const totalCredit = lines.reduce((s, l) => s + l.credit, 0);
   const balanced = totalDebit === totalCredit && totalDebit > 0;
 
-  function save() {
+  async function save() {
     if (!balanced) {
       setShake(true);
       setTimeout(() => setShake(false), 600);
@@ -91,13 +91,17 @@ export default function JournalEntryPage() {
       toast.error("Need at least 2 valid lines");
       return;
     }
-    if (isEdit) {
-      editJournalEntry(reference, validLines, narration || "Manual journal entry");
-      toast.success("Journal entry updated · bank balances auto-adjusted");
-    } else {
-      addJournalEntry(validLines, narration || "Manual journal entry", reference);
-      toast.success("Journal entry posted · bank balances auto-adjusted");
+    const payload = { reference, narration: narration || "Manual journal entry", date, lines: validLines };
+    const res = isEdit ? await editJournalEntry(payload) : await postJournalEntry(payload);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success(
+      isEdit
+        ? "Journal entry updated · bank balances auto-adjusted"
+        : "Journal entry posted · bank balances auto-adjusted",
+    );
     router.push("/general-ledger");
   }
 
@@ -143,7 +147,7 @@ export default function JournalEntryPage() {
                         <Select
                           value={line.accountCode}
                           onValueChange={(v) => updateLine(line.id, { accountCode: v })}
-                          options={ACCOUNT_OPTIONS}
+                          options={accountOptions}
                           placeholder="Select account…"
                         />
                       </td>
@@ -197,7 +201,7 @@ export default function JournalEntryPage() {
           <Button variant="ghost" onClick={addLine} icon={<Plus className="w-4 h-4" />}>Add line</Button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-            <Button variant="primary" onClick={save} icon={isEdit ? <Pencil className="w-4 h-4" /> : <Save className="w-4 h-4" />}>{isEdit ? "Update entry" : "Post entry"}</Button>
+            <Button variant="primary" onClick={() => void save()} icon={isEdit ? <Pencil className="w-4 h-4" /> : <Save className="w-4 h-4" />}>{isEdit ? "Update entry" : "Post entry"}</Button>
           </div>
         </div>
       </div>

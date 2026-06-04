@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
-import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
+import { useBanking } from "@/lib/hooks/useBanking";
 import { formatDate } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
 import toast from "react-hot-toast";
@@ -15,10 +15,19 @@ import toast from "react-hot-toast";
 type Phase = "idle" | "importing" | "matching" | "done";
 
 export default function ReconciliationPage() {
+  const { bankAccounts, reconcileAccount } = useBanking();
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
 
-  const txs = BANK_ACCOUNTS[0]!.transactions;
+  const account = bankAccounts[0];
+  const txs = account?.transactions ?? [];
+
+  async function postMatched() {
+    if (!account) return;
+    const res = await reconcileAccount(account.id);
+    if (res.ok) toast.success(`Posted · ${res.data.count} transactions matched`);
+    else toast.error(res.error);
+  }
 
   async function runReconciliation() {
     setPhase("importing");
@@ -102,7 +111,7 @@ export default function ReconciliationPage() {
             <div className="bg-white border border-ud-border rounded-2xl shadow-card overflow-hidden">
               <div className="px-5 py-4 border-b border-ud-border flex items-center justify-between">
                 <h3 className="font-display font-bold text-base">Bank transactions</h3>
-                <Button variant="primary" size="sm">Post matched entries</Button>
+                <Button variant="primary" size="sm" onClick={() => void postMatched()}>Post matched entries</Button>
               </div>
               <div className="divide-y divide-ud-border max-h-[480px] overflow-y-auto">
                 {txs.map((tx) => {

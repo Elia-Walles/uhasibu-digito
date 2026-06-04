@@ -24,3 +24,6 @@ export function isModuleEnabled(module: string): boolean {
 export const DEPARTMENTS_BACKEND_ENABLED = isModuleEnabled("departments");
 export const CUSTOMERS_BACKEND_ENABLED = isModuleEnabled("customers");
 export const INVOICES_BACKEND_ENABLED = isModuleEnabled("invoices");
+// "gl" covers the whole compound GL+Banking wave (COA, GL, journal, bank, reconciliation)
+// — they flip together because posting a journal writes both ledgers atomically.
+export const LEDGER_BACKEND_ENABLED = isModuleEnabled("gl");

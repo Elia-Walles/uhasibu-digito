@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { applyJournalEntry, reverseJournalEntry } from "@/lib/server/journal-posting";
 
 // Real-DB tenant-isolation gate. Opt-in: runs only with RUN_DB_TESTS=1 against a
 // scratch database (the Wave 0 unit suite stays the always-on gate). Modules are
@@ -127,5 +128,70 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
       db.invoice.findMany({ where: { tenantId: tenantB } }),
     );
     expect(aMalicious.every((i) => i.tenantId === tenantA)).toBe(true);
+  }, 60_000);
+});
+
+describe.skipIf(!RUN)("compound journal posting (real DB)", () => {
+  let db: Db;
+  let authDb: AuthDb;
+  let runWithContext: RunWithContext;
+  let tenantId = "";
+  const ref = `TEST-JV-${Date.now()}`;
+
+  beforeAll(async () => {
+    ({ db } = await import("@/lib/server/db"));
+    ({ authDb } = await import("@/lib/server/auth-db"));
+    ({ runWithContext } = await import("@/lib/server/request-context"));
+    const tenant = await authDb.tenant.findUnique({ where: { slug: "kilimanjaro" } });
+    tenantId = tenant?.id ?? "";
+  }, 60_000);
+
+  afterAll(async () => {
+    if (authDb && tenantId) {
+      // Belt-and-braces: ensure the test entry leaves no residue.
+      await authDb.bankTransaction.deleteMany({ where: { tenantId, reference: ref } });
+      await authDb.gLEntry.deleteMany({ where: { tenantId, reference: ref } });
+      await authDb.journalEntryGroup.deleteMany({ where: { tenantId, reference: ref } });
+      await authDb.$disconnect();
+    }
+  }, 60_000);
+
+  it("posts a balanced entry on account 1010 → bank txn + balance move; reverse restores", async () => {
+    expect(tenantId).not.toBe("");
+    const ctx = { tenantId, userId: "test", role: "CFO" as const };
+    const amount = 1_234_567;
+
+    const before = await authDb.bankAccount.findFirst({ where: { id: "ba_001", tenantId } });
+    expect(before).not.toBeNull();
+    const beforeBal = Number(before?.balance ?? 0);
+
+    await runWithContext(ctx, async () =>
+      db.$transaction((tx) =>
+        applyJournalEntry(tx, tenantId, ctx, {
+          reference: ref,
+          narration: "ISO compound test",
+          date: new Date().toISOString().split("T")[0]!,
+          lines: [
+            { accountCode: "1010", accountName: "CRDB Operating", debit: amount, credit: 0 },
+            { accountCode: "4000", accountName: "Sales Revenue", debit: 0, credit: amount },
+          ],
+        }),
+      ),
+    );
+
+    const bankTx = await authDb.bankTransaction.findFirst({ where: { tenantId, reference: ref } });
+    expect(bankTx).not.toBeNull();
+    expect(Number(bankTx?.credit ?? 0)).toBe(amount); // journal debit → bank credit (money in)
+    const after = await authDb.bankAccount.findFirst({ where: { id: "ba_001", tenantId } });
+    expect(Number(after?.balance ?? 0)).toBe(beforeBal + amount);
+
+    // Reverse restores balance and removes the bank txn + GL rows
+    await runWithContext(ctx, async () =>
+      db.$transaction((tx) => reverseJournalEntry(tx, tenantId, ref)),
+    );
+    const restored = await authDb.bankAccount.findFirst({ where: { id: "ba_001", tenantId } });
+    expect(Number(restored?.balance ?? 0)).toBe(beforeBal);
+    const goneTx = await authDb.bankTransaction.findFirst({ where: { tenantId, reference: ref } });
+    expect(goneTx).toBeNull();
   }, 60_000);
 });

@@ -12,15 +12,15 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useGL } from "@/lib/hooks/useGL";
 import { formatDate } from "@/lib/utils/dates";
 import type { GLEntry } from "@/types";
 
 export default function GLPage() {
   const router = useRouter();
-  const loading = useLoadingSimulation(800);
+  const { glEntries, loading: glLoading } = useGL();
+  const loading = useLoadingSimulation(800) || glLoading;
   const [search, setSearch] = useState("");
-  const { glEntries } = useDataStore();
 
   const cols: Column<GLEntry>[] = [
     { key: "date", label: "Date", sortable: true, render: (r) => formatDate(r.date), width: "100px" },

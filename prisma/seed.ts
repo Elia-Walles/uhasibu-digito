@@ -4,6 +4,8 @@ import { hash } from "bcryptjs";
 import { createMariaDbAdapter } from "../lib/server/db-adapter";
 import { CUSTOMERS } from "@/lib/mock-data/customers";
 import { INVOICES } from "@/lib/mock-data/invoices";
+import { COA, GL_ENTRIES } from "@/lib/mock-data/gl-entries";
+import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
 
 // Demo seed for Kilimanjaro Trading Co. Runs via `npm run db:seed` (tsx) once real
 // `.env` credentials exist. Uses the raw client (no tenant extension), so tenantId is
@@ -111,6 +113,80 @@ async function main() {
     console.log(`Seeded ${CUSTOMERS.length} customers, ${INVOICES.length} invoices, ${lineData.length} lines.`);
   } else {
     console.log(`Customers already present (${existingCustomers}) — skipped business-data seed.`);
+  }
+
+  // Wave 3 — COA + GL + bank accounts/transactions. Bank ids (ba_001..ba_004) preserved
+  // so bankIdForAccountCode resolves when journal entries post against bank codes.
+  const existingCOA = await prisma.cOAAccount.count({ where: { tenantId: tenant.id } });
+  if (existingCOA === 0) {
+    await prisma.cOAAccount.createMany({
+      data: COA.map((a) => ({
+        tenantId: tenant.id,
+        code: a.code,
+        name: a.name,
+        type: a.type,
+        parentCode: a.parentCode,
+        openingBalance: a.openingBalance,
+        movement: a.movement,
+        closingBalance: a.closingBalance,
+        level: a.level,
+      })),
+      skipDuplicates: true,
+    });
+
+    await prisma.gLEntry.createMany({
+      data: GL_ENTRIES.map((e) => ({
+        id: e.id,
+        tenantId: tenant.id,
+        date: new Date(e.date),
+        reference: e.reference,
+        narration: e.narration,
+        account: e.account,
+        accountCode: e.accountCode,
+        costCentre: e.costCentre,
+        debit: e.debit,
+        credit: e.credit,
+        balance: e.balance,
+        postedBy: e.postedBy,
+        postedAt: new Date(e.postedAt),
+        status: e.status,
+      })),
+      skipDuplicates: true,
+    });
+
+    await prisma.bankAccount.createMany({
+      data: BANK_ACCOUNTS.map((a) => ({
+        id: a.id,
+        tenantId: tenant.id,
+        bankName: a.bankName,
+        accountName: a.accountName,
+        accountNumber: a.accountNumber,
+        currency: a.currency,
+        balance: a.balance,
+        balanceUSD: a.balanceUSD ?? null,
+      })),
+      skipDuplicates: true,
+    });
+
+    const bankTxData = BANK_ACCOUNTS.flatMap((a) =>
+      a.transactions.map((t) => ({
+        tenantId: tenant.id,
+        bankAccountId: a.id,
+        date: new Date(t.date),
+        description: t.description,
+        debit: t.debit,
+        credit: t.credit,
+        balance: t.balance,
+        reference: t.reference,
+        matched: t.matched,
+      })),
+    );
+    await prisma.bankTransaction.createMany({ data: bankTxData, skipDuplicates: true });
+    console.log(
+      `Seeded ${COA.length} COA accounts, ${GL_ENTRIES.length} GL entries, ${BANK_ACCOUNTS.length} bank accounts, ${bankTxData.length} bank txns.`,
+    );
+  } else {
+    console.log(`COA already present (${existingCOA}) — skipped GL/bank seed.`);
   }
 }
 
