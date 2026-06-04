@@ -1,38 +1,27 @@
 "use client";
 import { useState, useRef, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Plus, MessageSquare, Globe, Loader2, ClipboardCheck } from "lucide-react";
-import { AI_RESPONSES, AI_SUGGESTIONS_EN, AI_SUGGESTIONS_SW, AI_AUDIT_SUGGESTIONS } from "@/lib/mock-data/ai-responses";
+import { Sparkles, Send, Plus, Globe, Loader2, ClipboardCheck } from "lucide-react";
 import { HealthGauge } from "@/components/charts/HealthGauge";
 import type { AIMessage } from "@/types";
 import { cn } from "@/lib/utils/cn";
 
-function findResponse(query: string, lang: "en" | "sw"): string {
-  const q = query.toLowerCase();
-  for (const r of AI_RESPONSES) {
-    if (r.triggers.some((t) => q.includes(t))) {
-      if (lang === "sw" && r.swahili) return r.swahili;
-      return r.response;
-    }
-  }
-  return lang === "sw"
-    ? "Samahani, sina jibu kwa swali hilo. Jaribu kuuliza kuhusu faida, fedha, kodi, au mishahara."
-    : "I don't have a specific answer to that yet. Try asking about profit, cash flow, taxes, payroll, or inventory.";
-}
-
-interface Conversation {
-  id: string;
-  title: string;
-  preview: string;
-  time: string;
-}
-
-const CONVERSATIONS: Conversation[] = [
-  { id: "c1", title: "Q4 forecast review",      preview: "Based on trailing 6 months…",       time: "Today" },
-  { id: "c2", title: "Cash flow analysis",      preview: "Combined cash position is…",        time: "Today" },
-  { id: "c3", title: "VAT October close",       preview: "Output VAT TZS 24M…",                time: "Yesterday" },
-  { id: "c4", title: "Top customers review",    preview: "Top 5 = 70% of revenue…",            time: "2d ago" },
-  { id: "c5", title: "Payroll cost variance",   preview: "Staff costs are 4% above…",          time: "1w ago" },
+const AI_SUGGESTIONS_EN = [
+  "How is my business performing this year?",
+  "What taxes are due soon and how much?",
+  "Explain how PAYE is calculated in Tanzania.",
+  "How can I improve my cash flow?",
+];
+const AI_SUGGESTIONS_SW = [
+  "Biashara yangu inafanyaje mwaka huu?",
+  "Ni kodi gani zinazokaribia kulipwa na kiasi gani?",
+  "Eleza jinsi PAYE inavyokokotolewa Tanzania.",
+  "Naweza kuboresha vipi mtiririko wa fedha?",
+];
+const AI_AUDIT_SUGGESTIONS = [
+  "What evidence do I need for an expense audit?",
+  "Walk me through the purchases audit cycle.",
+  "What's required for a fiscalised sales invoice?",
 ];
 
 export default function AIAssistantPage() {
@@ -40,7 +29,7 @@ export default function AIAssistantPage() {
     {
       id: "m_init",
       role: "assistant",
-      content: "Habari Elia! 👋 I'm your Uhasibu Digito AI assistant. I can answer questions about your financials, taxes, and payroll. What would you like to know?",
+      content: "Habari! 👋 I'm your Uhasibu Digito AI assistant. I can answer questions about your financials, taxes, and payroll. What would you like to know?",
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -69,20 +58,33 @@ export default function AIAssistantPage() {
       content,
       timestamp: new Date().toISOString(),
     };
+    // History sent to Gemini must start with a user turn — drop the initial greeting.
+    const history = [...messages, userMsg]
+      .filter((m) => m.id !== "m_init")
+      .map((m) => ({ role: m.role, content: m.content }));
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTyping(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setTyping(false);
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: nextId(),
-        role: "assistant",
-        content: findResponse(content, language),
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history, language }),
+      });
+      const data = (await res.json()) as { reply?: string; error?: string };
+      const reply = res.ok ? data.reply ?? "" : data.error ?? "Sorry, I couldn't respond right now.";
+      setMessages((prev) => [
+        ...prev,
+        { id: nextId(), role: "assistant", content: reply, timestamp: new Date().toISOString() },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { id: nextId(), role: "assistant", content: "Network error — please try again.", timestamp: new Date().toISOString() },
+      ]);
+    } finally {
+      setTyping(false);
+    }
   }
 
   const suggestions = language === "sw" ? AI_SUGGESTIONS_SW : AI_SUGGESTIONS_EN;
@@ -96,20 +98,8 @@ export default function AIAssistantPage() {
           New conversation
         </button>
         <div className="mt-5 text-[10px] tracking-[0.16em] text-white/40 font-semibold mb-2 px-1">RECENT</div>
-        <div className="space-y-1 overflow-y-auto flex-1 dark-scrollbar">
-          {CONVERSATIONS.map((c) => (
-            <button
-              key={c.id}
-              className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
-            >
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-3.5 h-3.5 text-white/40 group-hover:text-ud-primary-glow transition-colors flex-shrink-0" />
-                <span className="text-sm font-medium text-white/90 truncate">{c.title}</span>
-              </div>
-              <div className="mt-1 text-xs text-white/40 truncate pl-5">{c.preview}</div>
-              <div className="text-[10px] text-white/30 pl-5 mt-0.5">{c.time}</div>
-            </button>
-          ))}
+        <div className="flex-1 flex items-center justify-center text-center px-4">
+          <p className="text-xs text-white/35">Your conversations stay on this screen for the session.</p>
         </div>
       </aside>
 
