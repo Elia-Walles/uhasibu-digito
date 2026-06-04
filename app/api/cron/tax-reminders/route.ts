@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import type { TaxFiling } from "@prisma/client";
 import { authDb } from "@/lib/server/auth-db";
 
 // System scheduled job — scans ALL tenants for tax filings due within 5 days and not yet
@@ -27,7 +28,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     orderBy: { dueDate: "asc" },
   });
 
-  const byTenant = new Map<string, typeof due>();
+  const byTenant = new Map<string, TaxFiling[]>();
   for (const f of due) {
     const list = byTenant.get(f.tenantId) ?? [];
     list.push(f);
