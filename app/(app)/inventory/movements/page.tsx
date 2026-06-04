@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useInventory } from "@/lib/hooks/useInventory";
 import { formatDate } from "@/lib/utils/dates";
 import { formatAmount } from "@/lib/utils/currency";
 import type { StockMovement, MovementType } from "@/types";
@@ -37,10 +37,8 @@ function emptyForm(): FormState {
 }
 
 export default function StockMovementsPage() {
-  const loading = useLoadingSimulation(800);
-  const stockMovements = useDataStore((s) => s.stockMovements);
-  const inventory = useDataStore((s) => s.inventory);
-  const recordStockMovement = useDataStore((s) => s.recordStockMovement);
+  const { stockMovements, inventory, recordMovement, loading: invLoading } = useInventory();
+  const loading = useLoadingSimulation(800) || invLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
@@ -58,34 +56,22 @@ export default function StockMovementsPage() {
     setAddOpen(true);
   }
 
-  function save() {
+  async function save() {
     if (!form.itemId || form.quantity <= 0) {
       toast.error("Pick an item and enter a quantity");
       return;
     }
-    const item = inventory.find((i) => i.id === form.itemId);
-    if (!item) return;
-    const stamp = Date.now();
-    const signedQty = form.type === "OUT" ? -form.quantity : form.quantity;
-    const newBalance = form.type === "OUT" ? item.onHand - form.quantity
-                     : form.type === "IN"  ? item.onHand + form.quantity
-                     : form.type === "ADJUSTMENT" ? item.onHand + form.quantity
-                     : item.onHand;
-    const movement: StockMovement = {
-      id: `mov_${stamp}`,
-      date: new Date().toISOString().split("T")[0]!,
-      reference: `MOV-${String(stamp).slice(-6)}`,
-      itemId: item.id,
-      itemName: item.name,
-      itemCode: item.code,
+    const res = await recordMovement({
+      itemId: form.itemId,
       type: form.type,
-      quantity: signedQty,
+      quantity: form.quantity,
       unitCost: form.unitCost,
-      totalValue: form.quantity * form.unitCost,
-      balanceAfter: Math.max(0, newBalance),
-      narration: form.narration || `${TYPE_META[form.type].label} — ${item.name}`,
-    };
-    recordStockMovement(movement);
+      narration: form.narration,
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
     toast.success(`${TYPE_META[form.type].label} recorded`);
     setAddOpen(false);
     setForm(emptyForm());
@@ -126,7 +112,7 @@ export default function StockMovementsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={save}>Record</Button>
+            <Button variant="primary" onClick={() => void save()}>Record</Button>
           </>
         }
       >

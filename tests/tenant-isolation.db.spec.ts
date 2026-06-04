@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { applyJournalEntry, reverseJournalEntry } from "@/lib/server/journal-posting";
+import { applyStockMovement } from "@/lib/server/stock-movement";
 
 // Real-DB tenant-isolation gate. Opt-in: runs only with RUN_DB_TESTS=1 against a
 // scratch database (the Wave 0 unit suite stays the always-on gate). Modules are
@@ -193,5 +194,73 @@ describe.skipIf(!RUN)("compound journal posting (real DB)", () => {
     expect(Number(restored?.balance ?? 0)).toBe(beforeBal);
     const goneTx = await authDb.bankTransaction.findFirst({ where: { tenantId, reference: ref } });
     expect(goneTx).toBeNull();
+  }, 60_000);
+});
+
+describe.skipIf(!RUN)("inventory compound (real DB)", () => {
+  let db: Db;
+  let authDb: AuthDb;
+  let runWithContext: RunWithContext;
+  let tenantId = "";
+  let itemId = "";
+
+  beforeAll(async () => {
+    ({ db } = await import("@/lib/server/db"));
+    ({ authDb } = await import("@/lib/server/auth-db"));
+    ({ runWithContext } = await import("@/lib/server/request-context"));
+    const stamp = Date.now();
+    const t = await authDb.tenant.create({ data: { name: "ISO INV", slug: `iso-inv-${stamp}` } });
+    tenantId = t.id;
+    const item = await authDb.inventoryItem.create({
+      data: {
+        tenantId,
+        code: `ISO-ITM-${stamp}`,
+        name: "ISO Widget",
+        category: "Test",
+        unit: "Each",
+        onHand: 10,
+        reorderLevel: 5,
+        unitCost: 100,
+        sellingPrice: 150,
+        totalValue: 1000,
+        location: "Test",
+        supplier: "Test",
+        costingMethod: "WeightedAverage",
+        status: "InStock",
+      },
+    });
+    itemId = item.id;
+  }, 60_000);
+
+  afterAll(async () => {
+    if (authDb && tenantId) {
+      await authDb.stockMovement.deleteMany({ where: { tenantId } });
+      await authDb.inventoryItem.deleteMany({ where: { tenantId } });
+      await authDb.tenant.deleteMany({ where: { id: tenantId } });
+      await authDb.$disconnect();
+    }
+  }, 60_000);
+
+  it("OUT decrements onHand, writes a signed movement, and flips status at thresholds", async () => {
+    const ctx = { tenantId, userId: "test", role: "CFO" as const };
+
+    // OUT 7 → 3 (< reorderLevel 5) → LowStock
+    const r1 = await runWithContext(ctx, async () =>
+      db.$transaction((tx) => applyStockMovement(tx, tenantId, { itemId, type: "OUT", quantity: 7, unitCost: 100 })),
+    );
+    expect(r1?.newOnHand).toBe(3);
+    const item1 = await authDb.inventoryItem.findFirst({ where: { id: itemId, tenantId } });
+    expect(Number(item1?.onHand ?? -1)).toBe(3);
+    expect(item1?.status).toBe("LowStock");
+    const mv = await authDb.stockMovement.findFirst({ where: { tenantId, itemId } });
+    expect(Number(mv?.quantity ?? 0)).toBe(-7); // OUT stored signed-negative
+
+    // OUT 3 more → 0 → OutOfStock
+    await runWithContext(ctx, async () =>
+      db.$transaction((tx) => applyStockMovement(tx, tenantId, { itemId, type: "OUT", quantity: 3, unitCost: 100 })),
+    );
+    const item2 = await authDb.inventoryItem.findFirst({ where: { id: itemId, tenantId } });
+    expect(Number(item2?.onHand ?? -1)).toBe(0);
+    expect(item2?.status).toBe("OutOfStock");
   }, 60_000);
 });

@@ -15,7 +15,7 @@ import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useInventory } from "@/lib/hooks/useInventory";
 import type { InventoryItem, CostingMethod } from "@/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -42,11 +42,10 @@ function emptyForm(): FormState {
 }
 
 export default function InventoryItemsPage() {
-  const loading = useLoadingSimulation(800);
+  const { inventory, addItem, loading: invLoading } = useInventory();
+  const loading = useLoadingSimulation(800) || invLoading;
   const [view, setView] = useState<"grid" | "list">("list");
   const [search, setSearch] = useState("");
-  const inventory = useDataStore((s) => s.inventory);
-  const addInventoryItem = useDataStore((s) => s.addInventoryItem);
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
@@ -59,7 +58,7 @@ export default function InventoryItemsPage() {
     return inventory.filter((i) => i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q));
   }, [inventory, search]);
 
-  function save() {
+  async function save() {
     if (!form.name.trim()) {
       toast.error("Item name is required");
       return;
@@ -82,8 +81,12 @@ export default function InventoryItemsPage() {
       costingMethod: form.costingMethod,
       status,
     };
-    addInventoryItem(item);
-    toast.success(`Added ${item.name}`);
+    const res = await addItem(item);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(`Added ${res.data.name}`);
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -158,7 +161,7 @@ export default function InventoryItemsPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={save}>Add item</Button>
+            <Button variant="primary" onClick={() => void save()}>Add item</Button>
           </>
         }
       >

@@ -27,3 +27,4 @@ export const INVOICES_BACKEND_ENABLED = isModuleEnabled("invoices");
 // "gl" covers the whole compound GL+Banking wave (COA, GL, journal, bank, reconciliation)
 // — they flip together because posting a journal writes both ledgers atomically.
 export const LEDGER_BACKEND_ENABLED = isModuleEnabled("gl");
+export const INVENTORY_BACKEND_ENABLED = isModuleEnabled("inventory");

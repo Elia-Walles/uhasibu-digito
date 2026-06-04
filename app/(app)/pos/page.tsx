@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingCart, X, Plus, Minus, Smartphone, Banknote, CheckCircle2, FileText } from "lucide-react";
-import { INVENTORY } from "@/lib/mock-data/inventory";
+import { useInventory } from "@/lib/hooks/useInventory";
 import { formatTZS, formatAmount } from "@/lib/utils/currency";
 import { cn } from "@/lib/utils/cn";
 import { useCustomers } from "@/lib/hooks/useCustomers";
@@ -50,9 +50,10 @@ export default function POSPage() {
   const [postedInvoiceId, setPostedInvoiceId] = useState<string | null>(null);
   const { customers, createCustomer } = useCustomers();
   const { createInvoice } = useInvoices();
+  const { inventory: INVENTORY, recordMovement } = useInventory();
   const addNotification = useAppStore((s) => s.addNotification);
 
-  const categories = useMemo(() => ["All", ...Array.from(new Set(INVENTORY.map((i) => i.category)))], []);
+  const categories = useMemo(() => ["All", ...Array.from(new Set(INVENTORY.map((i) => i.category)))], [INVENTORY]);
   const filtered = useMemo(() => {
     return INVENTORY.filter((i) => {
       if (category !== "All" && i.category !== category) return false;
@@ -60,7 +61,7 @@ export default function POSPage() {
       const q = search.toLowerCase();
       return i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q);
     });
-  }, [search, category]);
+  }, [INVENTORY, search, category]);
 
   const subtotal = cart.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
   const vat = Math.round(subtotal * 0.18);
@@ -125,6 +126,18 @@ export default function POSPage() {
     const invoice = ires.data;
     setEfdNumber(invoice.efdNumber);
     setPostedInvoiceId(invoice.id);
+
+    // Decrement stock for each sold line (sequential; not atomic with the invoice).
+    for (const line of cart) {
+      const item = INVENTORY.find((i) => i.id === line.itemId);
+      await recordMovement({
+        itemId: line.itemId,
+        type: "OUT",
+        quantity: line.quantity,
+        unitCost: item?.unitCost ?? line.unitPrice,
+        narration: `POS sale ${invoice.number}`,
+      });
+    }
 
     addNotification({
       id: `pos-${invoice.id}`,

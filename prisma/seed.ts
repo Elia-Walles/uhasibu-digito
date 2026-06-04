@@ -6,6 +6,7 @@ import { CUSTOMERS } from "@/lib/mock-data/customers";
 import { INVOICES } from "@/lib/mock-data/invoices";
 import { COA, GL_ENTRIES } from "@/lib/mock-data/gl-entries";
 import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
+import { INVENTORY, STOCK_MOVEMENTS } from "@/lib/mock-data/inventory";
 
 // Demo seed for Kilimanjaro Trading Co. Runs via `npm run db:seed` (tsx) once real
 // `.env` credentials exist. Uses the raw client (no tenant extension), so tenantId is
@@ -187,6 +188,54 @@ async function main() {
     );
   } else {
     console.log(`COA already present (${existingCOA}) — skipped GL/bank seed.`);
+  }
+
+  // Wave 4 — inventory items + stock movements. Item ids (inv_001..) preserved so POS
+  // cart itemIds and the seeded movements line up.
+  const existingInv = await prisma.inventoryItem.count({ where: { tenantId: tenant.id } });
+  if (existingInv === 0) {
+    await prisma.inventoryItem.createMany({
+      data: INVENTORY.map((it) => ({
+        id: it.id,
+        tenantId: tenant.id,
+        code: it.code,
+        name: it.name,
+        category: it.category,
+        unit: it.unit,
+        onHand: it.onHand,
+        reorderLevel: it.reorderLevel,
+        unitCost: it.unitCost,
+        sellingPrice: it.sellingPrice,
+        totalValue: it.totalValue,
+        location: it.location,
+        supplier: it.supplier,
+        costingMethod: it.costingMethod,
+        status: it.status,
+      })),
+      skipDuplicates: true,
+    });
+
+    await prisma.stockMovement.createMany({
+      data: STOCK_MOVEMENTS.map((m) => ({
+        id: m.id,
+        tenantId: tenant.id,
+        itemId: m.itemId,
+        date: new Date(m.date),
+        reference: m.reference,
+        itemName: m.itemName,
+        itemCode: m.itemCode,
+        type: m.type,
+        quantity: m.quantity,
+        unitCost: m.unitCost,
+        totalValue: m.totalValue,
+        balanceAfter: m.balanceAfter,
+        narration: m.narration,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(`Seeded ${INVENTORY.length} inventory items, ${STOCK_MOVEMENTS.length} stock movements.`);
+  } else {
+    console.log(`Inventory already present (${existingInv}) — skipped inventory seed.`);
   }
 }
 
