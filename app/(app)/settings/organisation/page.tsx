@@ -7,28 +7,30 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useDepartments } from "@/lib/hooks/useDepartments";
 
 export default function OrganisationSettingsPage() {
-  const departments = useDataStore((s) => s.departments);
-  const addDepartment = useDataStore((s) => s.addDepartment);
-  const renameDepartment = useDataStore((s) => s.renameDepartment);
-  const removeDepartment = useDataStore((s) => s.removeDepartment);
-  const countEmployeesInDepartment = useDataStore((s) => s.countEmployeesInDepartment);
+  const {
+    departments,
+    addDepartment,
+    renameDepartment,
+    removeDepartment,
+    countEmployeesInDepartment,
+  } = useDepartments();
 
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string; count: number } | null>(null);
 
-  function handleAdd() {
+  async function handleAdd() {
     const trimmed = newName.trim();
     if (!trimmed) return;
-    if (departments.some((d) => d.name.toLowerCase() === trimmed.toLowerCase())) {
-      toast.error(`Department "${trimmed}" already exists`);
+    const res = await addDepartment(trimmed);
+    if (!res.ok) {
+      toast.error(res.error);
       return;
     }
-    addDepartment(trimmed);
     toast.success(`Added ${trimmed}`);
     setNewName("");
   }
@@ -38,14 +40,18 @@ export default function OrganisationSettingsPage() {
     setEditingName(name);
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editingId) return;
     const trimmed = editingName.trim();
     if (!trimmed) {
       toast.error("Department name cannot be empty");
       return;
     }
-    renameDepartment(editingId, trimmed);
+    const res = await renameDepartment(editingId, trimmed);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
     toast.success("Department renamed");
     setEditingId(null);
     setEditingName("");
@@ -55,9 +61,13 @@ export default function OrganisationSettingsPage() {
     setConfirmDelete({ id, name, count: countEmployeesInDepartment(name) });
   }
 
-  function confirmRemove() {
+  async function confirmRemove() {
     if (!confirmDelete) return;
-    removeDepartment(confirmDelete.id);
+    const res = await removeDepartment(confirmDelete.id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
     toast.success(`Removed ${confirmDelete.name}`);
     setConfirmDelete(null);
   }

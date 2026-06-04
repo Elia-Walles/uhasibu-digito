@@ -17,3 +17,12 @@ declare module "next-auth" {
     role?: UserRole;
   }
 }
+
+// JWT strategy: tenantId + role are loaded into the token on sign-in (jwt callback)
+// and copied onto session.user (session callback).
+declare module "next-auth/jwt" {
+  interface JWT {
+    tenantId?: string | null;
+    role?: UserRole;
+  }
+}

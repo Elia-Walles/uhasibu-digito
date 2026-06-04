@@ -4,7 +4,7 @@ import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Menu, Search, Bell, ChevronDown, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-import { useAuthStore } from "@/lib/store/authStore";
+import { useCurrentUser, useSignOut } from "@/lib/auth/client";
 import { useAppStore } from "@/lib/store/appStore";
 import { useRouter } from "next/navigation";
 import { formatTZS } from "@/lib/utils/currency";
@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils/cn";
 
 export function TopBar() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const user = useCurrentUser();
+  const signOut = useSignOut();
   const { toggleSidebar, notifications } = useAppStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const unread = notifications.filter((n) => !n.read).length;
@@ -133,8 +134,7 @@ export function TopBar() {
                   <DropdownMenu.Item
                     className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-ud-danger-bg text-ud-danger cursor-pointer outline-none"
                     onSelect={() => {
-                      logout();
-                      router.push("/login");
+                      void signOut();
                     }}
                   >
                     <LogOut className="w-3.5 h-3.5" />
