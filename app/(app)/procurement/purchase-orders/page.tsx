@@ -14,7 +14,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useProcurement } from "@/lib/hooks/useProcurement";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
 import type { PurchaseOrder, POLine } from "@/types";
@@ -44,11 +44,8 @@ function emptyForm(supplierId: string): FormState {
 }
 
 export default function PurchaseOrdersPage() {
-  const loading = useLoadingSimulation(800);
-  const purchaseOrders = useDataStore((s) => s.purchaseOrders);
-  const suppliers = useDataStore((s) => s.suppliers);
-  const addPurchaseOrder = useDataStore((s) => s.addPurchaseOrder);
-  const updatePOMatch = useDataStore((s) => s.updatePOMatch);
+  const { purchaseOrders, suppliers, createPurchaseOrder, updatePOMatch, loading: procLoading } = useProcurement();
+  const loading = useLoadingSimulation(800) || procLoading;
 
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(suppliers[0]?.id ?? ""));
@@ -86,7 +83,7 @@ export default function PurchaseOrdersPage() {
     setForm((prev) => ({ ...prev, lines: prev.lines.filter((l) => l.id !== id) }));
   }
 
-  function save() {
+  async function save() {
     const supplier = suppliers.find((s) => s.id === form.supplierId);
     if (!supplier) {
       toast.error("Pick a supplier");
@@ -96,23 +93,18 @@ export default function PurchaseOrdersPage() {
       toast.error("Add at least one line");
       return;
     }
-    const stamp = Date.now();
-    const po: PurchaseOrder = {
-      id: `po_${stamp}`,
-      number: `PO-2024-${String(stamp).slice(-5)}`,
+    const res = await createPurchaseOrder({
       supplierId: supplier.id,
       supplierName: supplier.name,
       date: form.date,
       expectedDelivery: form.expectedDelivery,
-      lines: form.lines,
-      subtotal,
-      vatAmount: vat,
-      total,
-      status: "Draft",
-      matchStatus: { poConfirmed: false, grnReceived: false, invoiceReceived: false },
-    };
-    addPurchaseOrder(po);
-    toast.success(`PO ${po.number} created`);
+      lines: form.lines.map((l) => ({ description: l.description, quantity: l.quantity, unitPrice: l.unitPrice })),
+    });
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(`PO ${res.data.number} created`);
     setAddOpen(false);
   }
 
@@ -164,7 +156,7 @@ export default function PurchaseOrdersPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={save}>Create PO</Button>
+            <Button variant="primary" onClick={() => void save()}>Create PO</Button>
           </>
         }
       >
@@ -235,7 +227,7 @@ export default function PurchaseOrdersPage() {
                   type="checkbox"
                   checked={matchEdit.matchStatus[row.key]}
                   onChange={(e) => {
-                    updatePOMatch(matchEdit.id, { [row.key]: e.target.checked });
+                    void updatePOMatch(matchEdit.id, { [row.key]: e.target.checked });
                     setMatchEdit({ ...matchEdit, matchStatus: { ...matchEdit.matchStatus, [row.key]: e.target.checked } });
                   }}
                   className="w-4 h-4"

@@ -12,7 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { useDataStore } from "@/lib/store/dataStore";
+import { useProcurement } from "@/lib/hooks/useProcurement";
 import type { Supplier } from "@/types";
 
 interface FormState {
@@ -39,13 +39,12 @@ function emptyForm(): FormState {
 }
 
 export default function SuppliersPage() {
-  const loading = useLoadingSimulation(800);
-  const suppliers = useDataStore((s) => s.suppliers);
-  const addSupplier = useDataStore((s) => s.addSupplier);
+  const { suppliers, createSupplier, loading: procLoading } = useProcurement();
+  const loading = useLoadingSimulation(800) || procLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
-  function save() {
+  async function save() {
     if (!form.name.trim()) {
       toast.error("Supplier name is required");
       return;
@@ -66,8 +65,12 @@ export default function SuppliersPage() {
       bankName: form.bankName,
       bankAccount: form.bankAccount,
     };
-    addSupplier(supplier);
-    toast.success(`Added ${supplier.name}`);
+    const res = await createSupplier(supplier);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(`Added ${res.data.name}`);
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -108,7 +111,7 @@ export default function SuppliersPage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={save}>Add supplier</Button>
+            <Button variant="primary" onClick={() => void save()}>Add supplier</Button>
           </>
         }
       >

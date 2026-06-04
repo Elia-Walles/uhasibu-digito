@@ -29,3 +29,4 @@ export const INVOICES_BACKEND_ENABLED = isModuleEnabled("invoices");
 export const LEDGER_BACKEND_ENABLED = isModuleEnabled("gl");
 export const INVENTORY_BACKEND_ENABLED = isModuleEnabled("inventory");
 export const QUOTATIONS_BACKEND_ENABLED = isModuleEnabled("quotations");
+export const PROCUREMENT_BACKEND_ENABLED = isModuleEnabled("procurement");

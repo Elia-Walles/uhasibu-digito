@@ -7,6 +7,7 @@ import { INVOICES } from "@/lib/mock-data/invoices";
 import { COA, GL_ENTRIES } from "@/lib/mock-data/gl-entries";
 import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
 import { INVENTORY, STOCK_MOVEMENTS } from "@/lib/mock-data/inventory";
+import { SUPPLIERS, PURCHASE_ORDERS } from "@/lib/mock-data/suppliers";
 
 // Demo seed for Kilimanjaro Trading Co. Runs via `npm run db:seed` (tsx) once real
 // `.env` credentials exist. Uses the raw client (no tenant extension), so tenantId is
@@ -236,6 +237,66 @@ async function main() {
     console.log(`Seeded ${INVENTORY.length} inventory items, ${STOCK_MOVEMENTS.length} stock movements.`);
   } else {
     console.log(`Inventory already present (${existingInv}) — skipped inventory seed.`);
+  }
+
+  // Wave 6 — suppliers + purchase orders (+ lines). Ids preserved; matchStatus → 3 cols.
+  const existingSup = await prisma.supplier.count({ where: { tenantId: tenant.id } });
+  if (existingSup === 0) {
+    await prisma.supplier.createMany({
+      data: SUPPLIERS.map((s) => ({
+        id: s.id,
+        tenantId: tenant.id,
+        name: s.name,
+        contactPerson: s.contactPerson,
+        tin: s.tin,
+        phone: s.phone,
+        email: s.email,
+        city: s.city,
+        address: s.address,
+        paymentTerms: s.paymentTerms,
+        outstandingBalance: s.outstandingBalance,
+        creditLimit: s.creditLimit,
+        performanceRating: s.performanceRating,
+        bankName: s.bankName,
+        bankAccount: s.bankAccount,
+      })),
+      skipDuplicates: true,
+    });
+
+    await prisma.purchaseOrder.createMany({
+      data: PURCHASE_ORDERS.map((p) => ({
+        id: p.id,
+        tenantId: tenant.id,
+        number: p.number,
+        supplierId: p.supplierId,
+        supplierName: p.supplierName,
+        date: new Date(p.date),
+        expectedDelivery: new Date(p.expectedDelivery),
+        subtotal: p.subtotal,
+        vatAmount: p.vatAmount,
+        total: p.total,
+        status: p.status,
+        poConfirmed: p.matchStatus.poConfirmed,
+        grnReceived: p.matchStatus.grnReceived,
+        invoiceReceived: p.matchStatus.invoiceReceived,
+      })),
+      skipDuplicates: true,
+    });
+
+    const poLineData = PURCHASE_ORDERS.flatMap((p) =>
+      p.lines.map((l) => ({
+        tenantId: tenant.id,
+        purchaseOrderId: p.id,
+        description: l.description,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        lineTotal: l.lineTotal,
+      })),
+    );
+    await prisma.pOLine.createMany({ data: poLineData, skipDuplicates: true });
+    console.log(`Seeded ${SUPPLIERS.length} suppliers, ${PURCHASE_ORDERS.length} POs, ${poLineData.length} PO lines.`);
+  } else {
+    console.log(`Suppliers already present (${existingSup}) — skipped procurement seed.`);
   }
 }
 

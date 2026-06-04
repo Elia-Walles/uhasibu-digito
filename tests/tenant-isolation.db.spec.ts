@@ -34,6 +34,9 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
   afterAll(async () => {
     if (authDb) {
       const ids = { tenantId: { in: [tenantA, tenantB] } };
+      await authDb.pOLine.deleteMany({ where: ids });
+      await authDb.purchaseOrder.deleteMany({ where: ids });
+      await authDb.supplier.deleteMany({ where: ids });
       await authDb.quotationLine.deleteMany({ where: ids });
       await authDb.quotation.deleteMany({ where: ids });
       await authDb.invoiceLine.deleteMany({ where: ids });
@@ -168,6 +171,45 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
       db.quotation.findMany({ where: { tenantId: tenantB } }),
     );
     expect(aMalicious.every((q) => q.tenantId === tenantA)).toBe(true);
+  }, 60_000);
+
+  it("isolates suppliers + purchase orders (with nested lines) across tenants", async () => {
+    const ctxA = { tenantId: tenantA, userId: "u_a", role: "CFO" as const };
+    const ctxB = { tenantId: tenantB, userId: "u_b", role: "CFO" as const };
+    const stamp = Date.now();
+
+    const po = await runWithContext(ctxA, async () => {
+      const sup = await db.supplier.create({
+        data: { tenantId: tenantA, name: "Sup A", contactPerson: "", tin: "", phone: "", email: "", city: "", address: "", paymentTerms: "Net 30", bankName: "", bankAccount: "" },
+      });
+      return db.purchaseOrder.create({
+        data: {
+          tenantId: tenantA,
+          number: `PO-ISO-${stamp}`,
+          supplierId: sup.id,
+          supplierName: sup.name,
+          date: new Date(),
+          expectedDelivery: new Date(),
+          subtotal: 100,
+          vatAmount: 18,
+          total: 118,
+          status: "Draft",
+          lines: { create: [{ tenantId: tenantA, description: "x", quantity: 1, unitPrice: 100, lineTotal: 100 }] },
+        },
+        include: { lines: true },
+      });
+    });
+    expect(po.lines).toHaveLength(1);
+
+    const bSuppliers = await runWithContext(ctxB, async () => db.supplier.findMany());
+    expect(bSuppliers.find((s) => s.name === "Sup A")).toBeUndefined();
+    const bPOs = await runWithContext(ctxB, async () => db.purchaseOrder.findMany());
+    expect(bPOs.find((p) => p.id === po.id)).toBeUndefined();
+
+    const aMalicious = await runWithContext(ctxA, async () =>
+      db.purchaseOrder.findMany({ where: { tenantId: tenantB } }),
+    );
+    expect(aMalicious.every((p) => p.tenantId === tenantA)).toBe(true);
   }, 60_000);
 });
 
