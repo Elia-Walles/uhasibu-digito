@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { Plus, Mail, Phone, MapPin } from "lucide-react";
+import toast from "react-hot-toast";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -9,17 +10,79 @@ import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useDataStore } from "@/lib/store/dataStore";
 import type { Customer } from "@/types";
 
+interface FormState {
+  name: string;
+  contactPerson: string;
+  tin: string;
+  phone: string;
+  email: string;
+  city: string;
+  address: string;
+  creditLimit: number;
+  paymentTerms: string;
+  isInternational: boolean;
+  country: string;
+  swiftBic: string;
+  beneficiaryBank: string;
+  iban: string;
+}
+
+function emptyForm(): FormState {
+  return {
+    name: "", contactPerson: "", tin: "", phone: "+255 ", email: "",
+    city: "Dar es Salaam", address: "", creditLimit: 5_000_000, paymentTerms: "Net 30",
+    isInternational: false, country: "", swiftBic: "", beneficiaryBank: "", iban: "",
+  };
+}
+
 export default function CustomersPage() {
   const loading = useLoadingSimulation(800);
-  const { customers } = useDataStore();
+  const { customers, addCustomer } = useDataStore();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Customer | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm());
+
+  function save() {
+    if (!form.name.trim()) {
+      toast.error("Customer name is required");
+      return;
+    }
+    const customer: Customer = {
+      id: `cust_${Date.now()}`,
+      name: form.name.trim(),
+      contactPerson: form.contactPerson,
+      tin: form.tin || "000-000-000",
+      phone: form.phone,
+      email: form.email,
+      city: form.city,
+      address: form.address,
+      creditLimit: form.creditLimit,
+      outstandingBalance: 0,
+      status: "Active",
+      paymentTerms: form.paymentTerms,
+      totalRevenue: 0,
+      ...(form.isInternational && {
+        isInternational: true,
+        country: form.country,
+        swiftBic: form.swiftBic,
+        beneficiaryBank: form.beneficiaryBank,
+        iban: form.iban,
+      }),
+    };
+    addCustomer(customer);
+    toast.success(`Added ${customer.name}`);
+    setAddOpen(false);
+    setForm(emptyForm());
+  }
 
   const filtered = useMemo(() => {
     if (!search) return customers;
@@ -33,7 +96,7 @@ export default function CustomersPage() {
         title="Customers"
         subtitle={`${filtered.length} customers`}
         breadcrumbs={[{ label: "CRM", href: "/crm" }, { label: "Customers" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />}>Add customer</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add customer</Button>}
       />
       <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search by name, TIN, city…" />
 
@@ -74,6 +137,48 @@ export default function CustomersPage() {
           ))}
         </div>
       )}
+
+      <Modal
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        title="Add customer"
+        description="Capture a new customer for billing and credit tracking."
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={save}>Add customer</Button>
+          </>
+        }
+      >
+        <div className="space-y-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input label="Customer name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input label="Contact person" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
+            <Input label="TIN" value={form.tin} onChange={(e) => setForm({ ...form, tin: e.target.value })} placeholder="###-###-###" />
+            <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <Input label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Input label="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+            <Input label="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            <Input label="Credit limit (TZS)" type="number" value={String(form.creditLimit)} onChange={(e) => setForm({ ...form, creditLimit: Number(e.target.value) || 0 })} />
+            <Select label="Payment terms" value={form.paymentTerms} onValueChange={(v) => setForm({ ...form, paymentTerms: v })} options={[
+              { value: "Cash", label: "Cash" }, { value: "Net 15", label: "Net 15" }, { value: "Net 30", label: "Net 30" }, { value: "Net 60", label: "Net 60" },
+            ]} />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.isInternational} onChange={(e) => setForm({ ...form, isInternational: e.target.checked })} className="w-4 h-4" />
+            International customer (adds SWIFT / BIC payment block to invoices)
+          </label>
+          {form.isInternational && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-ud-surface-2">
+              <Input label="Country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} />
+              <Input label="SWIFT / BIC" value={form.swiftBic} onChange={(e) => setForm({ ...form, swiftBic: e.target.value })} />
+              <Input label="Beneficiary bank" value={form.beneficiaryBank} onChange={(e) => setForm({ ...form, beneficiaryBank: e.target.value })} />
+              <Input label="IBAN" value={form.iban} onChange={(e) => setForm({ ...form, iban: e.target.value })} />
+            </div>
+          )}
+        </div>
+      </Modal>
 
       <Modal open={selected !== null} onOpenChange={(o) => !o && setSelected(null)} title={selected?.name ?? ""} description={selected?.contactPerson} size="lg">
         {selected && (

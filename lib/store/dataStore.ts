@@ -3,7 +3,9 @@ import type {
   Invoice, Customer, JournalEntryLine, InvoiceStatus, GLEntry,
   Department, FixedAsset, Employee, BankAccount, BankTransaction,
   SendLogEntry, ModelAssumptions, AuditProcedure, AuditProcedureState,
-  AuditEngagement,
+  AuditEngagement, Lead, PipelineDeal, DealStage, InventoryItem,
+  StockMovement, Supplier, PurchaseOrder, BudgetLine, Quotation,
+  QuotationStatus,
 } from "@/types";
 import { INVOICES } from "@/lib/mock-data/invoices";
 import { CUSTOMERS } from "@/lib/mock-data/customers";
@@ -11,6 +13,10 @@ import { GL_ENTRIES } from "@/lib/mock-data/gl-entries";
 import { EMPLOYEES } from "@/lib/mock-data/employees";
 import { FIXED_ASSETS } from "@/lib/mock-data/assets";
 import { BANK_ACCOUNTS } from "@/lib/mock-data/bank-accounts";
+import { LEADS, PIPELINE_DEALS } from "@/lib/mock-data/pipeline";
+import { INVENTORY, STOCK_MOVEMENTS } from "@/lib/mock-data/inventory";
+import { SUPPLIERS, PURCHASE_ORDERS } from "@/lib/mock-data/suppliers";
+import { BUDGET_LINES } from "@/lib/mock-data/budgets";
 import { bankIdForAccountCode } from "@/lib/utils/bank-account-mapping";
 
 function seedDepartments(): Department[] {
@@ -52,6 +58,14 @@ interface DataState {
   modelAssumptions: ModelAssumptions;
   auditEngagement: AuditEngagement;
   auditState: Record<AuditProcedure, AuditProcedureState>;
+  leads: Lead[];
+  deals: PipelineDeal[];
+  inventory: InventoryItem[];
+  stockMovements: StockMovement[];
+  suppliers: Supplier[];
+  purchaseOrders: PurchaseOrder[];
+  budgetLines: BudgetLine[];
+  quotations: Quotation[];
   addInvoice: (i: Invoice) => void;
   updateInvoiceStatus: (id: string, status: InvoiceStatus) => void;
   addCustomer: (c: Customer) => void;
@@ -62,6 +76,7 @@ interface DataState {
   removeDepartment: (id: string) => void;
   countEmployeesInDepartment: (name: string) => number;
   disposeAsset: (id: string, proceeds: number, date: string) => void;
+  addAsset: (asset: FixedAsset) => void;
   addEmployee: (e: Employee) => void;
   updateEmployee: (id: string, patch: Partial<Employee>) => void;
   removeEmployee: (id: string) => void;
@@ -70,6 +85,19 @@ interface DataState {
   setAuditStep: (procedure: AuditProcedure, stepKey: string, status: AuditProcedureState["results"][string]["status"], notes: string) => void;
   resetAuditProcedure: (procedure: AuditProcedure) => void;
   updateAuditEngagement: (patch: Partial<AuditEngagement>) => void;
+  addLead: (lead: Lead) => void;
+  updateLeadStatus: (id: string, status: Lead["status"]) => void;
+  addDeal: (deal: PipelineDeal) => void;
+  moveDeal: (id: string, stage: DealStage) => void;
+  addInventoryItem: (item: InventoryItem) => void;
+  recordStockMovement: (movement: StockMovement) => void;
+  addSupplier: (s: Supplier) => void;
+  addPurchaseOrder: (po: PurchaseOrder) => void;
+  updatePOMatch: (id: string, patch: Partial<PurchaseOrder["matchStatus"]>) => void;
+  addBudgetLine: (line: BudgetLine) => void;
+  addQuotation: (q: Quotation) => void;
+  updateQuotationStatus: (id: string, status: QuotationStatus) => void;
+  convertQuotationToInvoice: (id: string) => Invoice | null;
 }
 
 function applyBankSideEffects(
@@ -119,7 +147,7 @@ function reverseBankSideEffects(
   });
 }
 
-export const useDataStore = create<DataState>((set) => ({
+export const useDataStore = create<DataState>((set, get) => ({
   invoices: INVOICES,
   customers: CUSTOMERS,
   glEntries: GL_ENTRIES,
@@ -135,6 +163,14 @@ export const useDataStore = create<DataState>((set) => ({
     Purchases: emptyProcedureState(),
     Sales:     emptyProcedureState(),
   },
+  leads: LEADS,
+  deals: PIPELINE_DEALS,
+  inventory: INVENTORY,
+  stockMovements: STOCK_MOVEMENTS,
+  suppliers: SUPPLIERS,
+  purchaseOrders: PURCHASE_ORDERS,
+  budgetLines: BUDGET_LINES,
+  quotations: [],
   addInvoice: (i) => set((s) => ({ invoices: [i, ...s.invoices] })),
   updateInvoiceStatus: (id, status) =>
     set((s) => ({
@@ -248,4 +284,76 @@ export const useDataStore = create<DataState>((set) => ({
     })),
   updateAuditEngagement: (patch) =>
     set((s) => ({ auditEngagement: { ...s.auditEngagement, ...patch } })),
+  addAsset: (asset) => set((s) => ({ assets: [asset, ...s.assets] })),
+  addLead: (lead) => set((s) => ({ leads: [lead, ...s.leads] })),
+  updateLeadStatus: (id, status) =>
+    set((s) => ({ leads: s.leads.map((l) => (l.id === id ? { ...l, status } : l)) })),
+  addDeal: (deal) => set((s) => ({ deals: [deal, ...s.deals] })),
+  moveDeal: (id, stage) =>
+    set((s) => ({ deals: s.deals.map((d) => (d.id === id ? { ...d, stage, daysInStage: 0 } : d)) })),
+  addInventoryItem: (item) => set((s) => ({ inventory: [item, ...s.inventory] })),
+  recordStockMovement: (movement) =>
+    set((s) => {
+      const item = s.inventory.find((i) => i.id === movement.itemId);
+      let inventory = s.inventory;
+      if (item) {
+        const delta = movement.type === "IN" ? movement.quantity
+                    : movement.type === "OUT" ? -movement.quantity
+                    : movement.type === "ADJUSTMENT" ? movement.quantity
+                    : 0;
+        const newOnHand = Math.max(0, item.onHand + delta);
+        inventory = s.inventory.map((i) =>
+          i.id === movement.itemId
+            ? {
+                ...i,
+                onHand: newOnHand,
+                totalValue: newOnHand * i.unitCost,
+                status: newOnHand === 0 ? "OutOfStock" : newOnHand < i.reorderLevel ? "LowStock" : "InStock",
+              }
+            : i
+        );
+      }
+      return {
+        stockMovements: [movement, ...s.stockMovements],
+        inventory,
+      };
+    }),
+  addSupplier: (supplier) => set((s) => ({ suppliers: [supplier, ...s.suppliers] })),
+  addPurchaseOrder: (po) => set((s) => ({ purchaseOrders: [po, ...s.purchaseOrders] })),
+  updatePOMatch: (id, patch) =>
+    set((s) => ({
+      purchaseOrders: s.purchaseOrders.map((p) =>
+        p.id === id ? { ...p, matchStatus: { ...p.matchStatus, ...patch } } : p
+      ),
+    })),
+  addBudgetLine: (line) => set((s) => ({ budgetLines: [...s.budgetLines, line] })),
+  addQuotation: (q) => set((s) => ({ quotations: [q, ...s.quotations] })),
+  updateQuotationStatus: (id, status) =>
+    set((s) => ({ quotations: s.quotations.map((q) => (q.id === id ? { ...q, status } : q)) })),
+  convertQuotationToInvoice: (id) => {
+    const q = get().quotations.find((x) => x.id === id);
+    if (!q) return null;
+    const stamp = Date.now();
+    const inv: Invoice = {
+      id: `inv_quo_${stamp}`,
+      number: `INV-2024-${String(Math.floor(stamp / 100) % 100000).padStart(5, "0")}`,
+      customerId: q.customerId,
+      customerName: q.customerName,
+      issueDate: new Date().toISOString().split("T")[0]!,
+      dueDate:   new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0]!,
+      lines: q.lines,
+      subtotal: q.subtotal,
+      discount: 0,
+      vatAmount: q.vatAmount,
+      total: q.total,
+      status: "Sent",
+      efdNumber: `EFD-2024-${String(stamp).slice(-8)}`,
+      notes: `Converted from quotation ${q.number}. ${q.notes ?? ""}`.trim(),
+    };
+    set((s) => ({
+      invoices: [inv, ...s.invoices],
+      quotations: s.quotations.map((x) => (x.id === id ? { ...x, status: "Converted", convertedInvoiceId: inv.id } : x)),
+    }));
+    return inv;
+  },
 }));

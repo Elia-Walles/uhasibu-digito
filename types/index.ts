@@ -160,6 +160,25 @@ export interface Customer {
   isInternational?: boolean | undefined;
 }
 
+// ---------- Quotations ----------
+export type QuotationStatus = "Draft" | "Sent" | "Accepted" | "Expired" | "Converted";
+
+export interface Quotation {
+  id: string;
+  number: string;
+  customerId: string;
+  customerName: string;
+  date: string;
+  validUntil: string;
+  lines: InvoiceLine[];
+  subtotal: number;
+  vatAmount: number;
+  total: number;
+  status: QuotationStatus;
+  notes?: string | undefined;
+  convertedInvoiceId?: string | undefined;
+}
+
 // ---------- Inventory ----------
 export type CostingMethod = "FIFO" | "LIFO" | "WeightedAverage";
 export type StockStatus = "InStock" | "LowStock" | "OutOfStock";

@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Car, Computer, Building, Sofa, Wrench, TrendingDown, AlertTriangle } from "lucide-react";
+import { Car, Computer, Building, Sofa, Wrench, TrendingDown, AlertTriangle, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -12,12 +12,14 @@ import { DataTable, type Column } from "@/components/ui/DataTable";
 import { StatCard } from "@/components/ui/StatCard";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useDataStore } from "@/lib/store/dataStore";
+import { STANDARD_RATES } from "@/lib/utils/depreciation-rates";
 import { formatTZS } from "@/lib/utils/currency";
-import type { FixedAsset, AssetCategory } from "@/types";
+import type { FixedAsset, AssetCategory, DepreciationMethod } from "@/types";
 
 const CAT_ICON: Record<AssetCategory, React.ElementType> = {
   Vehicle: Car, Computer, Building, Furniture: Sofa, Equipment: Wrench,
@@ -26,13 +28,72 @@ const CAT_COLOR: Record<AssetCategory, "teal" | "info" | "warning" | "gold" | "d
   Vehicle: "info", Computer: "teal", Building: "warning", Furniture: "gold", Equipment: "default",
 };
 
+interface AddForm {
+  code: string;
+  name: string;
+  category: AssetCategory;
+  location: string;
+  acquisitionDate: string;
+  cost: number;
+  residualValue: number;
+  usefulLifeYears: number;
+  depreciationMethod: DepreciationMethod;
+}
+
+function emptyAddForm(): AddForm {
+  return {
+    code: "", name: "", category: "Equipment", location: "DSM-Main",
+    acquisitionDate: new Date().toISOString().split("T")[0]!,
+    cost: 0, residualValue: 0, usefulLifeYears: 5, depreciationMethod: "StraightLine",
+  };
+}
+
 export default function FixedAssetsPage() {
   const loading = useLoadingSimulation(800);
   const assets = useDataStore((s) => s.assets);
   const disposeAsset = useDataStore((s) => s.disposeAsset);
+  const addAsset = useDataStore((s) => s.addAsset);
 
   const [disposeTarget, setDisposeTarget] = useState<FixedAsset | null>(null);
   const [proceeds, setProceeds] = useState<string>("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState<AddForm>(emptyAddForm());
+
+  function saveAsset() {
+    if (!addForm.name.trim()) {
+      toast.error("Asset name is required");
+      return;
+    }
+    if (addForm.cost <= 0) {
+      toast.error("Cost must be greater than zero");
+      return;
+    }
+    const code = addForm.code.trim() || `${addForm.category.slice(0, 3).toUpperCase()}-${String(Date.now()).slice(-4)}`;
+    const newAsset: FixedAsset = {
+      id: `fa_new_${Date.now()}`,
+      code,
+      name: addForm.name.trim(),
+      category: addForm.category,
+      location: addForm.location,
+      acquisitionDate: addForm.acquisitionDate,
+      cost: addForm.cost,
+      residualValue: addForm.residualValue,
+      usefulLifeYears: addForm.usefulLifeYears,
+      depreciationMethod: addForm.depreciationMethod,
+      accumulatedDepreciation: 0,
+      netBookValue: addForm.cost,
+      status: "Active",
+    };
+    addAsset(newAsset);
+    toast.success(`Added ${newAsset.name}`);
+    setAddOpen(false);
+    setAddForm(emptyAddForm());
+  }
+
+  function applyCategoryDefaults(cat: AssetCategory) {
+    const rate = STANDARD_RATES[cat];
+    setAddForm((f) => ({ ...f, category: cat, usefulLifeYears: rate.usefulLife }));
+  }
 
   const totals = useMemo(() => ({
     cost: assets.reduce((s, a) => s + a.cost, 0),
@@ -92,7 +153,12 @@ export default function FixedAssetsPage() {
       <PageHeader
         title="Fixed Assets"
         subtitle={`${assets.length} assets in the register`}
-        actions={<Link href="/fixed-assets/depreciation"><Button variant="primary" icon={<TrendingDown className="w-4 h-4" />}>Depreciation schedule</Button></Link>}
+        actions={
+          <>
+            <Button variant="outline" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add asset</Button>
+            <Link href="/fixed-assets/depreciation"><Button variant="primary" icon={<TrendingDown className="w-4 h-4" />}>Depreciation schedule</Button></Link>
+          </>
+        }
       />
 
       {loading ? <StatRowSkeleton /> : (
@@ -168,6 +234,46 @@ export default function FixedAssetsPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        title="Add fixed asset"
+        description="Add a new asset to the register. Useful life defaults from the standard rates for the chosen class."
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={saveAsset}>Add asset</Button>
+          </>
+        }
+      >
+        <div className="space-y-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input  label="Asset code (auto if blank)" value={addForm.code} onChange={(e) => setAddForm({ ...addForm, code: e.target.value })} />
+            <Input  label="Asset name"                 value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} />
+            <Select label="Category" value={addForm.category} onValueChange={(v) => applyCategoryDefaults(v as AssetCategory)} options={[
+              { value: "Building",  label: "Building"  },
+              { value: "Vehicle",   label: "Vehicle"   },
+              { value: "Equipment", label: "Equipment" },
+              { value: "Computer",  label: "Computer"  },
+              { value: "Furniture", label: "Furniture" },
+            ]} />
+            <Select label="Depreciation method" value={addForm.depreciationMethod} onValueChange={(v) => setAddForm({ ...addForm, depreciationMethod: v as DepreciationMethod })} options={[
+              { value: "StraightLine",     label: "Straight Line"     },
+              { value: "ReducingBalance",  label: "Reducing Balance"  },
+            ]} />
+            <Input  label="Location"           value={addForm.location} onChange={(e) => setAddForm({ ...addForm, location: e.target.value })} />
+            <Input  label="Acquisition date"   type="date" value={addForm.acquisitionDate} onChange={(e) => setAddForm({ ...addForm, acquisitionDate: e.target.value })} />
+            <Input  label="Cost (TZS)"           type="number" value={String(addForm.cost)}          onChange={(e) => setAddForm({ ...addForm, cost: Number(e.target.value) || 0 })} />
+            <Input  label="Residual value (TZS)" type="number" value={String(addForm.residualValue)} onChange={(e) => setAddForm({ ...addForm, residualValue: Number(e.target.value) || 0 })} />
+            <Input  label="Useful life (years)"  type="number" value={String(addForm.usefulLifeYears)} onChange={(e) => setAddForm({ ...addForm, usefulLifeYears: Number(e.target.value) || 1 })} />
+          </div>
+          <div className="text-xs text-ud-text-muted">
+            Standard rate for {addForm.category}: <span className="font-mono">{(STANDARD_RATES[addForm.category].slPct * 100).toFixed(1)}% SL</span> · <span className="font-mono">{(STANDARD_RATES[addForm.category].rbPct * 100).toFixed(1)}% RB</span> · useful life {STANDARD_RATES[addForm.category].usefulLife} yr ({STANDARD_RATES[addForm.category].basis}).
+          </div>
+        </div>
       </Modal>
     </PageWrapper>
   );

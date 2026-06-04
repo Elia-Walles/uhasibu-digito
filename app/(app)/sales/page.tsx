@@ -9,14 +9,15 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { ChartSkeleton } from "@/components/skeletons/ChartSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { INVOICES } from "@/lib/mock-data/invoices";
+import { useDataStore } from "@/lib/store/dataStore";
 
 export default function SalesPage() {
   const loading = useLoadingSimulation(800);
-  const totalSales    = INVOICES.filter((i) => i.status !== "Cancelled" && i.status !== "Draft").reduce((s, i) => s + i.total, 0);
-  const totalPaid     = INVOICES.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0);
-  const totalOverdue  = INVOICES.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.total, 0);
-  const overdueCount  = INVOICES.filter((i) => i.status === "Overdue").length;
+  const invoices = useDataStore((s) => s.invoices);
+  const totalSales    = invoices.filter((i) => i.status !== "Cancelled" && i.status !== "Draft").reduce((s, i) => s + i.total, 0);
+  const totalPaid     = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0);
+  const totalOverdue  = invoices.filter((i) => i.status === "Overdue").reduce((s, i) => s + i.total, 0);
+  const overdueCount  = invoices.filter((i) => i.status === "Overdue").length;
 
   return (
     <PageWrapper>
@@ -36,7 +37,7 @@ export default function SalesPage() {
           <StatCard label="Total sales YTD" value={totalSales}   variant="teal"    prefix="TSh" trendValue={12.4} format="compact" />
           <StatCard label="Collected"       value={totalPaid}    variant="emerald" prefix="TSh" trendValue={8.1} format="compact" />
           <StatCard label="Overdue"         value={totalOverdue} variant="amber"   prefix="TSh" trendValue={4.2} trendInvert format="compact" footer={`${overdueCount} invoices`} />
-          <StatCard label="Active invoices" value={INVOICES.filter((i) => i.status === "Sent").length} variant="blue" format="raw" />
+          <StatCard label="Active invoices" value={invoices.filter((i) => i.status === "Sent").length} variant="blue" format="raw" />
         </div>
       )}
 
@@ -49,11 +50,11 @@ export default function SalesPage() {
           <h3 className="font-display font-bold text-base mb-3">Invoice status</h3>
           <div className="space-y-3">
             {[
-              { status: "Paid",      count: INVOICES.filter((i) => i.status === "Paid").length,      color: "bg-ud-success" },
-              { status: "Sent",      count: INVOICES.filter((i) => i.status === "Sent").length,      color: "bg-ud-info" },
+              { status: "Paid",      count: invoices.filter((i) => i.status === "Paid").length,      color: "bg-ud-success" },
+              { status: "Sent",      count: invoices.filter((i) => i.status === "Sent").length,      color: "bg-ud-info" },
               { status: "Overdue",   count: overdueCount,                                            color: "bg-ud-danger" },
-              { status: "Draft",     count: INVOICES.filter((i) => i.status === "Draft").length,     color: "bg-ud-warning" },
-              { status: "Cancelled", count: INVOICES.filter((i) => i.status === "Cancelled").length, color: "bg-ud-text-muted" },
+              { status: "Draft",     count: invoices.filter((i) => i.status === "Draft").length,     color: "bg-ud-warning" },
+              { status: "Cancelled", count: invoices.filter((i) => i.status === "Cancelled").length, color: "bg-ud-text-muted" },
             ].map((s) => (
               <div key={s.status} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -74,7 +75,7 @@ export default function SalesPage() {
         {[
           { label: "Quotations", href: "/sales/quotations", icon: FileText },
           { label: "Payments",   href: "/sales/payments",   icon: CreditCard },
-          { label: "Top items",  href: "#",                  icon: TrendingUp },
+          { label: "Top items",  href: "/inventory/items",   icon: TrendingUp },
         ].map((q) => {
           const Icon = q.icon;
           return (

@@ -2,17 +2,20 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, GripVertical } from "lucide-react";
+import toast from "react-hot-toast";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
+import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
-import { PIPELINE_DEALS } from "@/lib/mock-data/pipeline";
+import { useDataStore } from "@/lib/store/dataStore";
 import type { PipelineDeal, DealStage } from "@/types";
 import { cn } from "@/lib/utils/cn";
-import toast from "react-hot-toast";
 
 const STAGES: { key: DealStage; label: string; color: string }[] = [
   { key: "Lead",        label: "Lead",        color: "bg-slate-400" },
@@ -22,13 +25,68 @@ const STAGES: { key: DealStage; label: string; color: string }[] = [
   { key: "Won",         label: "Won",         color: "bg-ud-success" },
 ];
 
+interface FormState {
+  dealName: string;
+  companyName: string;
+  contactName: string;
+  value: number;
+  probability: number;
+  stage: DealStage;
+  expectedCloseDate: string;
+  notes: string;
+}
+
+function emptyForm(): FormState {
+  const future = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0]!;
+  return {
+    dealName: "",
+    companyName: "",
+    contactName: "",
+    value: 0,
+    probability: 50,
+    stage: "Lead",
+    expectedCloseDate: future,
+    notes: "",
+  };
+}
+
 export default function PipelinePage() {
   const loading = useLoadingSimulation(800);
-  const [deals, setDeals] = useState<PipelineDeal[]>(PIPELINE_DEALS);
+  const deals = useDataStore((s) => s.deals);
+  const addDeal = useDataStore((s) => s.addDeal);
+  const moveDealAction = useDataStore((s) => s.moveDeal);
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm());
 
   function moveDeal(dealId: string, newStage: DealStage) {
-    setDeals((prev) => prev.map((d) => d.id === dealId ? { ...d, stage: newStage, daysInStage: 0 } : d));
+    moveDealAction(dealId, newStage);
     toast.success(`Moved to ${newStage}`);
+  }
+
+  function save() {
+    if (!form.dealName.trim() || !form.companyName.trim()) {
+      toast.error("Deal name and company are required");
+      return;
+    }
+    const initials = form.contactName.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "EM";
+    const deal: PipelineDeal = {
+      id: `deal_${Date.now()}`,
+      dealName: form.dealName.trim(),
+      companyName: form.companyName.trim(),
+      contactName: form.contactName,
+      value: form.value,
+      probability: form.probability,
+      stage: form.stage,
+      assignedTo: "Elia Mwangi",
+      assignedInitials: initials,
+      expectedCloseDate: form.expectedCloseDate,
+      daysInStage: 0,
+      notes: form.notes,
+    };
+    addDeal(deal);
+    toast.success(`Added ${deal.dealName}`);
+    setAddOpen(false);
+    setForm(emptyForm());
   }
 
   if (loading) {
@@ -39,9 +97,9 @@ export default function PipelinePage() {
     <PageWrapper>
       <PageHeader
         title="Sales Pipeline"
-        subtitle="Drag deals between stages — total value across active stages"
+        subtitle="Move deals between stages — total value across active stages"
         breadcrumbs={[{ label: "CRM", href: "/crm" }, { label: "Pipeline" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />}>Add deal</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add deal</Button>}
       />
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 min-h-[500px]">
@@ -98,6 +156,33 @@ export default function PipelinePage() {
           );
         })}
       </div>
+
+      <Modal
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        title="Add deal"
+        description="Add a new opportunity to the pipeline."
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={save}>Add deal</Button>
+          </>
+        }
+      >
+        <div className="space-y-4 text-sm">
+          <Input label="Deal name" value={form.dealName} onChange={(e) => setForm({ ...form, dealName: e.target.value })} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input label="Company"      value={form.companyName} onChange={(e) => setForm({ ...form, companyName: e.target.value })} />
+            <Input label="Contact"      value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
+            <Input label="Value (TZS)" type="number" value={String(form.value)} onChange={(e) => setForm({ ...form, value: Number(e.target.value) || 0 })} />
+            <Input label="Probability (%)" type="number" value={String(form.probability)} onChange={(e) => setForm({ ...form, probability: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} />
+            <Select label="Stage" value={form.stage} onValueChange={(v) => setForm({ ...form, stage: v as DealStage })} options={STAGES.map((s) => ({ value: s.key, label: s.label }))} />
+            <Input label="Expected close" type="date" value={form.expectedCloseDate} onChange={(e) => setForm({ ...form, expectedCloseDate: e.target.value })} />
+          </div>
+          <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional" />
+        </div>
+      </Modal>
     </PageWrapper>
   );
 }
