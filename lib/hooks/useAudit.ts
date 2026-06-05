@@ -1,7 +1,5 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { AUDIT_BACKEND_ENABLED } from "@/lib/flags";
-import { useDataStore } from "@/lib/store/dataStore";
 import {
   getAudit,
   setAuditStep as setStepAction,
@@ -28,18 +26,11 @@ const EMPTY_RESULTS: Record<AuditProcedure, AuditProcedureState> = {
 const PLACEHOLDER_ENGAGEMENT: AuditEngagement = { name: "", period: "", auditorName: "" };
 
 export function useAudit(): UseAudit {
-  const mockEngagement = useDataStore((s) => s.auditEngagement);
-  const mockResults = useDataStore((s) => s.auditState);
-  const mockSetStep = useDataStore((s) => s.setAuditStep);
-  const mockReset = useDataStore((s) => s.resetAuditProcedure);
-  const mockUpdateEng = useDataStore((s) => s.updateAuditEngagement);
-
   const [engagement, setEngagement] = useState<AuditEngagement>(PLACEHOLDER_ENGAGEMENT);
   const [results, setResults] = useState<Record<AuditProcedure, AuditProcedureState>>(EMPTY_RESULTS);
-  const [loading, setLoading] = useState(AUDIT_BACKEND_ENABLED);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!AUDIT_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       const snap = await getAudit();
@@ -54,17 +45,6 @@ export function useAudit(): UseAudit {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
     void refresh();
   }, [refresh]);
-
-  if (!AUDIT_BACKEND_ENABLED) {
-    return {
-      engagement: mockEngagement,
-      results: mockResults,
-      loading: false,
-      setStep: mockSetStep,
-      resetProcedure: mockReset,
-      updateEngagement: mockUpdateEng,
-    };
-  }
 
   return {
     engagement,

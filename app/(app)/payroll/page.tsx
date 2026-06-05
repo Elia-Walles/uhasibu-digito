@@ -10,7 +10,6 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
 import { formatDate } from "@/lib/utils/dates";
 import type { PayrollRun } from "@/types";
@@ -31,7 +30,7 @@ const COLS: Column<PayrollRun>[] = [
 
 export default function PayrollOverviewPage() {
   const { payrollRuns, loading: prLoading } = usePayrollRuns();
-  const loading = useLoadingSimulation(800) || prLoading;
+  const loading = prLoading;
   const current = payrollRuns[payrollRuns.length - 1];
   return (
     <PageWrapper>

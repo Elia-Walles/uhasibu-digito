@@ -11,7 +11,6 @@ import { ExportMenu } from "@/components/ui/ExportMenu";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useBanking } from "@/lib/hooks/useBanking";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
@@ -22,7 +21,7 @@ type Direction = "all" | "in" | "out";
 export default function BankAccountDetailPage() {
   const params = useParams<{ accountId: string }>();
   const { bankAccounts, loading: bankLoading } = useBanking();
-  const loading = useLoadingSimulation(800) || bankLoading;
+  const loading = bankLoading;
   const account = bankAccounts.find((a) => a.id === params.accountId);
 
   const [search, setSearch] = useState("");

@@ -17,7 +17,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useQuotations } from "@/lib/hooks/useQuotations";
 import { useCustomers } from "@/lib/hooks/useCustomers";
 import { useInvoices } from "@/lib/hooks/useInvoices";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
@@ -52,7 +51,7 @@ export default function QuotationsPage() {
   const { customers } = useCustomers();
   const { createInvoice } = useInvoices();
   const { quotations, createQuotation, updateQuotationStatus, loading: quotLoading } = useQuotations();
-  const loading = useLoadingSimulation(800) || quotLoading;
+  const loading = quotLoading;
 
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(customers[0]?.id ?? ""));

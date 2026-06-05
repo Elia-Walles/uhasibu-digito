@@ -12,7 +12,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useLeads } from "@/lib/hooks/useLeads";
 import { formatDate } from "@/lib/utils/dates";
 import type { Lead, LeadSource, LeadTemperature } from "@/types";
@@ -47,7 +46,7 @@ function emptyForm(): FormState {
 
 export default function LeadsPage() {
   const { leads, loading: dataLoading, addLead, updateLeadStatus } = useLeads();
-  const loading = useLoadingSimulation(800) || dataLoading;
+  const loading = dataLoading;
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [statusEdit, setStatusEdit] = useState<Lead | null>(null);

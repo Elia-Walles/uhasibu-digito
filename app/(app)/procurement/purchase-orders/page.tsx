@@ -13,7 +13,6 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useProcurement } from "@/lib/hooks/useProcurement";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
@@ -45,7 +44,7 @@ function emptyForm(supplierId: string): FormState {
 
 export default function PurchaseOrdersPage() {
   const { purchaseOrders, suppliers, createPurchaseOrder, updatePOMatch, loading: procLoading } = useProcurement();
-  const loading = useLoadingSimulation(800) || procLoading;
+  const loading = procLoading;
 
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(suppliers[0]?.id ?? ""));

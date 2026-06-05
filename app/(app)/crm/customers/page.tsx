@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useCustomers } from "@/lib/hooks/useCustomers";
 import type { Customer } from "@/types";
 
@@ -45,7 +44,7 @@ function emptyForm(): FormState {
 
 export default function CustomersPage() {
   const { customers, createCustomer, loading: custLoading } = useCustomers();
-  const loading = useLoadingSimulation(800) || custLoading;
+  const loading = custLoading;
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Customer | null>(null);
   const [addOpen, setAddOpen] = useState(false);

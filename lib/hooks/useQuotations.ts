@@ -1,15 +1,12 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { QUOTATIONS_BACKEND_ENABLED } from "@/lib/flags";
-import { useDataStore } from "@/lib/store/dataStore";
 import {
   listQuotations,
   createQuotation as createAction,
   updateQuotationStatus as updateAction,
 } from "@/lib/server/actions/quotations";
-import { ok, type Result } from "@/lib/server/result";
-import { computeInvoiceTotals } from "@/lib/utils/invoice-totals";
-import type { Quotation, InvoiceLine, QuotationStatus } from "@/types";
+import { type Result } from "@/lib/server/result";
+import type { Quotation, QuotationStatus } from "@/types";
 
 export interface CreateQuotationLine {
   description: string;
@@ -41,15 +38,10 @@ export interface UseQuotations {
 }
 
 export function useQuotations(): UseQuotations {
-  const mockQuotations = useDataStore((s) => s.quotations);
-  const mockAdd = useDataStore((s) => s.addQuotation);
-  const mockUpdate = useDataStore((s) => s.updateQuotationStatus);
-
   const [serverQuotations, setServerQuotations] = useState<Quotation[]>([]);
-  const [loading, setLoading] = useState(QUOTATIONS_BACKEND_ENABLED);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!QUOTATIONS_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       setServerQuotations(await listQuotations());
@@ -62,47 +54,6 @@ export function useQuotations(): UseQuotations {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
     void refresh();
   }, [refresh]);
-
-  if (!QUOTATIONS_BACKEND_ENABLED) {
-    return {
-      quotations: mockQuotations,
-      loading: false,
-      createQuotation: async (p) => {
-        const totals = computeInvoiceTotals(p.lines);
-        const stamp = Date.now();
-        const lines: InvoiceLine[] = p.lines.map((l, i) => ({
-          id: `ql_${stamp}_${i}`,
-          description: l.description,
-          quantity: l.quantity,
-          unitPrice: l.unitPrice,
-          discountPct: l.discountPct,
-          vatPct: l.vatPct,
-          lineTotal: totals.lineTotals[i] ?? 0,
-        }));
-        const q: Quotation = {
-          id: `quo_${stamp}`,
-          number: `QUO-2024-${String(stamp).slice(-5)}`,
-          customerId: p.customerId,
-          customerName: p.customerName,
-          date: p.date,
-          validUntil: p.validUntil,
-          lines,
-          subtotal: totals.subtotal,
-          vatAmount: totals.vatAmount,
-          total: totals.total,
-          status: p.status,
-          notes: p.notes,
-        };
-        mockAdd(q);
-        return ok(q);
-      },
-      updateQuotationStatus: async (id, status) => {
-        mockUpdate(id, status);
-        const found = mockQuotations.find((q) => q.id === id);
-        return ok(found ?? ({ id } as Quotation));
-      },
-    };
-  }
 
   return {
     quotations: serverQuotations,

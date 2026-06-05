@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useFixedAssets } from "@/lib/hooks/useFixedAssets";
 import { STANDARD_RATES } from "@/lib/utils/depreciation-rates";
 import { formatTZS } from "@/lib/utils/currency";
@@ -50,7 +49,7 @@ function emptyAddForm(): AddForm {
 
 export default function FixedAssetsPage() {
   const { assets, addAsset, disposeAsset, loading: assetsLoading } = useFixedAssets();
-  const loading = useLoadingSimulation(800) || assetsLoading;
+  const loading = assetsLoading;
 
   const [disposeTarget, setDisposeTarget] = useState<FixedAsset | null>(null);
   const [proceeds, setProceeds] = useState<string>("");

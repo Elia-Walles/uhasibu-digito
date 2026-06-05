@@ -1,13 +1,11 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { ASSETS_BACKEND_ENABLED } from "@/lib/flags";
-import { useDataStore } from "@/lib/store/dataStore";
 import {
   listAssets,
   createAsset as createAction,
   disposeAsset as disposeAction,
 } from "@/lib/server/actions/fixed-assets";
-import { ok, type Result } from "@/lib/server/result";
+import { type Result } from "@/lib/server/result";
 import type { FixedAsset } from "@/types";
 
 export interface UseFixedAssets {
@@ -32,15 +30,10 @@ function toCreateInput(a: FixedAsset) {
 }
 
 export function useFixedAssets(): UseFixedAssets {
-  const mockAssets = useDataStore((s) => s.assets);
-  const mockAdd = useDataStore((s) => s.addAsset);
-  const mockDispose = useDataStore((s) => s.disposeAsset);
-
   const [serverAssets, setServerAssets] = useState<FixedAsset[]>([]);
-  const [loading, setLoading] = useState(ASSETS_BACKEND_ENABLED);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!ASSETS_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       setServerAssets(await listAssets());
@@ -53,23 +46,6 @@ export function useFixedAssets(): UseFixedAssets {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
     void refresh();
   }, [refresh]);
-
-  if (!ASSETS_BACKEND_ENABLED) {
-    return {
-      assets: mockAssets,
-      loading: false,
-      addAsset: async (a) => {
-        mockAdd(a);
-        return ok(a);
-      },
-      disposeAsset: async (id, proceeds, date) => {
-        mockDispose(id, proceeds, date);
-        const a = mockAssets.find((x) => x.id === id);
-        const nbv = (a?.cost ?? 0) - (a?.accumulatedDepreciation ?? 0);
-        return ok({ id, gainLoss: proceeds - nbv });
-      },
-    };
-  }
 
   return {
     assets: serverAssets,

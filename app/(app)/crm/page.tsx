@@ -7,14 +7,13 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useCustomers } from "@/lib/hooks/useCustomers";
 import { usePipelineDeals } from "@/lib/hooks/usePipelineDeals";
 
 export default function CRMHome() {
   const { customers, loading: custLoading } = useCustomers();
   const { deals, loading: dealsLoading } = usePipelineDeals();
-  const loading = useLoadingSimulation(800) || custLoading || dealsLoading;
+  const loading = custLoading || dealsLoading;
   const totalDeals     = deals.reduce((s, d) => s + d.value, 0);
   const totalCustomers = customers.length;
   const topCustomers   = [...customers].sort((a, b) => b.totalRevenue - a.totalRevenue).slice(0, 5);

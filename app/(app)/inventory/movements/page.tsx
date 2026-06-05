@@ -11,7 +11,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useInventory } from "@/lib/hooks/useInventory";
 import { formatDate } from "@/lib/utils/dates";
 import { formatAmount } from "@/lib/utils/currency";
@@ -38,7 +37,7 @@ function emptyForm(): FormState {
 
 export default function StockMovementsPage() {
   const { stockMovements, inventory, recordMovement, loading: invLoading } = useInventory();
-  const loading = useLoadingSimulation(800) || invLoading;
+  const loading = invLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 

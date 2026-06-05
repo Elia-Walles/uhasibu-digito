@@ -1,13 +1,11 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { CRM_BACKEND_ENABLED } from "@/lib/flags";
-import { useDataStore } from "@/lib/store/dataStore";
 import {
   listDeals,
   createDeal as createAction,
   moveDeal as moveDealAction,
 } from "@/lib/server/actions/crm";
-import { ok, type Result } from "@/lib/server/result";
+import { type Result } from "@/lib/server/result";
 import type { PipelineDeal, DealStage } from "@/types";
 
 export interface UsePipelineDeals {
@@ -34,15 +32,10 @@ function toCreateInput(d: PipelineDeal) {
 }
 
 export function usePipelineDeals(): UsePipelineDeals {
-  const mockDeals = useDataStore((s) => s.deals);
-  const mockAdd = useDataStore((s) => s.addDeal);
-  const mockMove = useDataStore((s) => s.moveDeal);
-
   const [serverDeals, setServerDeals] = useState<PipelineDeal[]>([]);
-  const [loading, setLoading] = useState(CRM_BACKEND_ENABLED);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!CRM_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       setServerDeals(await listDeals());
@@ -55,21 +48,6 @@ export function usePipelineDeals(): UsePipelineDeals {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
     void refresh();
   }, [refresh]);
-
-  if (!CRM_BACKEND_ENABLED) {
-    return {
-      deals: mockDeals,
-      loading: false,
-      addDeal: async (deal) => {
-        mockAdd(deal);
-        return ok(deal);
-      },
-      moveDeal: async (id, stage) => {
-        mockMove(id, stage);
-        return ok({ id, stage });
-      },
-    };
-  }
 
   return {
     deals: serverDeals,

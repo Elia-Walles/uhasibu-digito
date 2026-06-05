@@ -12,7 +12,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useBudgetLines } from "@/lib/hooks/useBudgetLines";
 import type { BudgetLine } from "@/types";
 
@@ -29,7 +28,7 @@ function emptyForm(): FormState {
 
 export default function BudgetingPage() {
   const { budgetLines, loading: dataLoading, addBudgetLine } = useBudgetLines();
-  const loading = useLoadingSimulation(800) || dataLoading;
+  const loading = dataLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 

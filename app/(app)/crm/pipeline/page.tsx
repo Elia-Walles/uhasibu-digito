@@ -12,7 +12,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { usePipelineDeals } from "@/lib/hooks/usePipelineDeals";
 import type { PipelineDeal, DealStage } from "@/types";
 import { cn } from "@/lib/utils/cn";
@@ -52,7 +51,7 @@ function emptyForm(): FormState {
 
 export default function PipelinePage() {
   const { deals, loading: dataLoading, addDeal, moveDeal: moveDealAction } = usePipelineDeals();
-  const loading = useLoadingSimulation(800) || dataLoading;
+  const loading = dataLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 

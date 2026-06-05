@@ -1,9 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { CUSTOMERS_BACKEND_ENABLED } from "@/lib/flags";
-import { useDataStore } from "@/lib/store/dataStore";
 import { listCustomers, createCustomer as createCustomerAction } from "@/lib/server/actions/customers";
-import { ok, type Result } from "@/lib/server/result";
+import { type Result } from "@/lib/server/result";
 import type { Customer } from "@/types";
 
 export interface UseCustomers {
@@ -34,14 +32,10 @@ function toCreateInput(c: Customer) {
 }
 
 export function useCustomers(): UseCustomers {
-  const mockCustomers = useDataStore((s) => s.customers);
-  const mockAdd = useDataStore((s) => s.addCustomer);
-
   const [serverCustomers, setServerCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(CUSTOMERS_BACKEND_ENABLED);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!CUSTOMERS_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       setServerCustomers(await listCustomers());
@@ -54,17 +48,6 @@ export function useCustomers(): UseCustomers {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
     void refresh();
   }, [refresh]);
-
-  if (!CUSTOMERS_BACKEND_ENABLED) {
-    return {
-      customers: mockCustomers,
-      loading: false,
-      createCustomer: async (c) => {
-        mockAdd(c);
-        return ok(c);
-      },
-    };
-  }
 
   return {
     customers: serverCustomers,

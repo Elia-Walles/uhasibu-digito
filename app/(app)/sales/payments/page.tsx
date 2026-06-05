@@ -11,7 +11,6 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useInvoices } from "@/lib/hooks/useInvoices";
 import { formatDate } from "@/lib/utils/dates";
 import toast from "react-hot-toast";
@@ -30,7 +29,7 @@ const METHOD_ICON = { "M-Pesa": Smartphone, "Tigo Pesa": Smartphone, "Airtel": S
 
 export default function PaymentsPage() {
   const { invoices, loading: invLoading } = useInvoices();
-  const loading = useLoadingSimulation(800) || invLoading;
+  const loading = invLoading;
   const [open, setOpen] = useState(false);
 
   const payments: Payment[] = invoices

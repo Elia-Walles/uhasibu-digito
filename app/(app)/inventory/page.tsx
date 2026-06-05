@@ -7,7 +7,6 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { ChartSkeleton } from "@/components/skeletons/ChartSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useInventory } from "@/lib/hooks/useInventory";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as ChartTooltip } from "recharts";
 
@@ -15,7 +14,7 @@ const CATEGORY_COLORS = ["#0F7B5E", "#14A87E", "#F5C842", "#C47B2A", "#2563EB", 
 
 export default function InventoryHome() {
   const { inventory: INVENTORY, loading: invLoading } = useInventory();
-  const loading = useLoadingSimulation(800) || invLoading;
+  const loading = invLoading;
   const totalValue = INVENTORY.reduce((s, i) => s + i.totalValue, 0);
   const lowStock   = INVENTORY.filter((i) => i.status === "LowStock").length;
   const outOfStock = INVENTORY.filter((i) => i.status === "OutOfStock").length;

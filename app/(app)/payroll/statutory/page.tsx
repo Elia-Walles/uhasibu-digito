@@ -7,7 +7,6 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DigitalStamp } from "@/components/ui/DigitalStamp";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
 import type { StampData } from "@/types";
 
@@ -15,7 +14,7 @@ type TabKey = "paye" | "nssf" | "sdl" | "wcf";
 
 export default function StatutoryPage() {
   const { payrollRuns, loading: prLoading } = usePayrollRuns();
-  const loading = useLoadingSimulation(800) || prLoading;
+  const loading = prLoading;
   const current = payrollRuns[payrollRuns.length - 1];
   const [tab, setTab] = useState<TabKey>("paye");
   const [stamp, setStamp] = useState<StampData | null>(null);

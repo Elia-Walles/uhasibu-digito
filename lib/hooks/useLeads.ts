@@ -1,13 +1,11 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { CRM_BACKEND_ENABLED } from "@/lib/flags";
-import { useDataStore } from "@/lib/store/dataStore";
 import {
   listLeads,
   createLead as createAction,
   updateLeadStatus as updateStatusAction,
 } from "@/lib/server/actions/crm";
-import { ok, type Result } from "@/lib/server/result";
+import { type Result } from "@/lib/server/result";
 import type { Lead, LeadStatus } from "@/types";
 
 export interface UseLeads {
@@ -33,15 +31,10 @@ function toCreateInput(l: Lead) {
 }
 
 export function useLeads(): UseLeads {
-  const mockLeads = useDataStore((s) => s.leads);
-  const mockAdd = useDataStore((s) => s.addLead);
-  const mockUpdateStatus = useDataStore((s) => s.updateLeadStatus);
-
   const [serverLeads, setServerLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(CRM_BACKEND_ENABLED);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!CRM_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       setServerLeads(await listLeads());
@@ -54,21 +47,6 @@ export function useLeads(): UseLeads {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
     void refresh();
   }, [refresh]);
-
-  if (!CRM_BACKEND_ENABLED) {
-    return {
-      leads: mockLeads,
-      loading: false,
-      addLead: async (lead) => {
-        mockAdd(lead);
-        return ok(lead);
-      },
-      updateLeadStatus: async (id, status) => {
-        mockUpdateStatus(id, status);
-        return ok({ id, status });
-      },
-    };
-  }
 
   return {
     leads: serverLeads,

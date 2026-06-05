@@ -7,13 +7,12 @@ import { Badge } from "@/components/ui/Badge";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { Button } from "@/components/ui/Button";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useTaxFilings } from "@/lib/hooks/useTaxFilings";
 import { formatDate, daysUntil } from "@/lib/utils/dates";
 
 export default function TaxCenterPage() {
   const { taxFilings, loading: taxLoading } = useTaxFilings();
-  const loading = useLoadingSimulation(800) || taxLoading;
+  const loading = taxLoading;
   const upcoming = taxFilings.filter((t) => t.status !== "Filed");
 
   return (

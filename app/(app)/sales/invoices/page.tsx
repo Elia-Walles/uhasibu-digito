@@ -15,7 +15,6 @@ import { ExportMenu } from "@/components/ui/ExportMenu";
 import { Modal } from "@/components/ui/Modal";
 import { Attachments } from "@/components/ui/Attachments";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useInvoices } from "@/lib/hooks/useInvoices";
 import { useAppStore } from "@/lib/store/appStore";
 import { formatDate, isOverdue } from "@/lib/utils/dates";
@@ -45,7 +44,7 @@ const ALL_STATUSES: InvoiceStatus[] = ["Draft", "Sent", "Paid", "Overdue", "Canc
 
 export default function InvoicesPage() {
   const { invoices, updateInvoiceStatus, loading: invLoading } = useInvoices();
-  const loading = useLoadingSimulation(800) || invLoading;
+  const loading = invLoading;
   const emailPrefs = useAppStore((s) => s.emailNotifications);
   const addNotification = useAppStore((s) => s.addNotification);
   const [tab, setTab] = useState<TabKey>("All");

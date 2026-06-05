@@ -1,14 +1,12 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { PAYROLL_BACKEND_ENABLED } from "@/lib/flags";
-import { useDataStore } from "@/lib/store/dataStore";
 import {
   listEmployees,
   createEmployee as createAction,
   updateEmployee as updateAction,
   deleteEmployee as deleteAction,
 } from "@/lib/server/actions/payroll";
-import { ok, type Result } from "@/lib/server/result";
+import { type Result } from "@/lib/server/result";
 import type { Employee } from "@/types";
 
 export interface UseEmployees {
@@ -20,16 +18,10 @@ export interface UseEmployees {
 }
 
 export function useEmployees(): UseEmployees {
-  const mockEmployees = useDataStore((s) => s.employees);
-  const mockAdd = useDataStore((s) => s.addEmployee);
-  const mockUpdate = useDataStore((s) => s.updateEmployee);
-  const mockRemove = useDataStore((s) => s.removeEmployee);
-
   const [serverEmployees, setServerEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(PAYROLL_BACKEND_ENABLED);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!PAYROLL_BACKEND_ENABLED) return;
     setLoading(true);
     try {
       setServerEmployees(await listEmployees());
@@ -42,25 +34,6 @@ export function useEmployees(): UseEmployees {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
     void refresh();
   }, [refresh]);
-
-  if (!PAYROLL_BACKEND_ENABLED) {
-    return {
-      employees: mockEmployees,
-      loading: false,
-      addEmployee: async (e) => {
-        mockAdd(e);
-        return ok(e);
-      },
-      updateEmployee: async (id, e) => {
-        mockUpdate(id, e);
-        return ok(e);
-      },
-      removeEmployee: async (id) => {
-        mockRemove(id);
-        return ok({ id });
-      },
-    };
-  }
 
   return {
     employees: serverEmployees,

@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useEmployees } from "@/lib/hooks/useEmployees";
 import { useDepartments } from "@/lib/hooks/useDepartments";
 import type { Employee, AllowanceLine } from "@/types";
@@ -98,7 +97,7 @@ export default function EmployeesPage() {
 
   const { departments } = useDepartments();
   const { employees, addEmployee, updateEmployee, removeEmployee, loading: empLoading } = useEmployees();
-  const loading = useLoadingSimulation(800) || empLoading;
+  const loading = empLoading;
 
   const deptOptions = useMemo(
     () => departments.map((d) => ({ value: d.name, label: d.name })),

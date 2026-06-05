@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useInventory } from "@/lib/hooks/useInventory";
 import type { InventoryItem, CostingMethod } from "@/types";
 import { cn } from "@/lib/utils/cn";
@@ -43,7 +42,7 @@ function emptyForm(): FormState {
 
 export default function InventoryItemsPage() {
   const { inventory, addItem, loading: invLoading } = useInventory();
-  const loading = useLoadingSimulation(800) || invLoading;
+  const loading = invLoading;
   const [view, setView] = useState<"grid" | "list">("list");
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);

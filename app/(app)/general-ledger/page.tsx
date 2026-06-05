@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/Badge";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { useLoadingSimulation } from "@/lib/hooks/useLoadingSimulation";
 import { useGL } from "@/lib/hooks/useGL";
 import { formatDate } from "@/lib/utils/dates";
 import type { GLEntry } from "@/types";
@@ -19,7 +18,7 @@ import type { GLEntry } from "@/types";
 export default function GLPage() {
   const router = useRouter();
   const { glEntries, loading: glLoading } = useGL();
-  const loading = useLoadingSimulation(800) || glLoading;
+  const loading = glLoading;
   const [search, setSearch] = useState("");
 
   const cols: Column<GLEntry>[] = [
