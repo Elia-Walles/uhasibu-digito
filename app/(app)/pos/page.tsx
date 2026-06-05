@@ -3,11 +3,13 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingCart, X, Plus, Minus, Smartphone, Banknote, CheckCircle2, FileText } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useInventory } from "@/lib/hooks/useInventory";
 import { formatTZS, formatAmount } from "@/lib/utils/currency";
 import { cn } from "@/lib/utils/cn";
 import { useCustomers } from "@/lib/hooks/useCustomers";
 import { useInvoices } from "@/lib/hooks/useInvoices";
+import { useCompany } from "@/lib/hooks/useCompany";
 import { useAppStore } from "@/lib/store/appStore";
 import toast from "react-hot-toast";
 import type { Customer } from "@/types";
@@ -38,6 +40,8 @@ interface CartLine {
 type PaymentMethod = "mpesa" | "cash" | "card";
 
 export default function POSPage() {
+  const { data: session } = useSession();
+  const { company } = useCompany();
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [category, setCategory] = useState<string>("All");
@@ -165,7 +169,7 @@ export default function POSPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="font-display font-extrabold text-2xl">Point of Sale</h1>
-            <p className="text-xs text-white/45">EFD-TZ-2024-00847 · Cashier: Elia Mwangi</p>
+            <p className="text-xs text-white/45">{company?.efdSerial || "EFD pending"} · Cashier: {session?.user?.name ?? ""}</p>
           </div>
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 text-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-ud-success animate-pulse" />

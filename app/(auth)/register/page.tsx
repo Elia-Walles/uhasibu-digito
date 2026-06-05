@@ -56,7 +56,7 @@ export default function RegisterPage() {
       <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-16 bg-ud-surface">
         <div className="w-full max-w-sm mx-auto">
           <h1 className="font-display text-2xl font-extrabold">Create your account</h1>
-          <p className="mt-1 text-sm text-ud-text-muted">Free demo — no credit card required.</p>
+          <p className="mt-1 text-sm text-ud-text-muted">Set up your company in a couple of minutes.</p>
           <form onSubmit={onSubmit} className="mt-7 space-y-3">
             <Input label="Full name"    value={name}        onChange={(e) => setName(e.target.value)}        prefixIcon={<UserIcon className="w-4 h-4" />} required />
             <Input label="Company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} prefixIcon={<Building2 className="w-4 h-4" />} required />

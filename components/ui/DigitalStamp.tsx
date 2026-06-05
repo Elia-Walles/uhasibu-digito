@@ -2,8 +2,10 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldCheck, X } from "lucide-react";
+import { useSession } from "next-auth/react";
 import type { StampOpinion, StampData } from "@/types";
 import { useReducedMotion } from "@/lib/hooks/useMediaQuery";
+import { useCompany } from "@/lib/hooks/useCompany";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "./Button";
 
@@ -21,7 +23,7 @@ const OPINION_COLORS: Record<StampOpinion, { ink: string; ring: string; bg: stri
 };
 
 function generateHash(seed: string): string {
-  // Simple deterministic visual hash (NOT cryptographic — demo only)
+  // Simple deterministic visual hash (NOT cryptographic)
   let h = 0;
   for (let i = 0; i < seed.length; i++) {
     h = (h * 31 + seed.charCodeAt(i)) >>> 0;
@@ -30,6 +32,8 @@ function generateHash(seed: string): string {
 }
 
 export function DigitalStamp({ documentName, onApply, applied }: DigitalStampProps) {
+  const { data: session } = useSession();
+  const { company } = useCompany();
   const [open, setOpen] = useState(false);
   const [opinion, setOpinion] = useState<StampOpinion>("Unqualified");
   const [pin, setPin] = useState<string[]>(Array(6).fill(""));
@@ -55,15 +59,16 @@ export function DigitalStamp({ documentName, onApply, applied }: DigitalStampPro
     if (!pinComplete) return;
     setApplying(true);
     await new Promise((r) => setTimeout(r, reducedMotion ? 200 : 1100));
+    const signer = session?.user?.name ?? "Authorised signatory";
     const stamp: StampData = {
-      auditorName: "Joseph Mwakasege",
-      auditorFirm: "Mwakasege & Associates — Certified Auditors",
-      nbaaNumber: "NBAA-2018-F-4421",
+      auditorName: signer,
+      auditorFirm: company?.name ?? "",
+      nbaaNumber: company?.nbaaNumber ?? "",
       opinion,
       signedDate: new Date().toISOString().split("T")[0]!,
       documentHash: generateHash(documentName + opinion + Date.now()),
       appliedAt: new Date().toISOString(),
-      appliedBy: "Elia Mwangi (CFO)",
+      appliedBy: session?.user?.role ? `${signer} (${session.user.role})` : signer,
     };
     onApply?.(stamp);
     setApplying(false);
@@ -176,7 +181,7 @@ export function DigitalStamp({ documentName, onApply, applied }: DigitalStampPro
                     />
                   ))}
                 </div>
-                <p className="mt-2 text-[11px] text-ud-text-muted">Demo PIN — any 6 digits will work.</p>
+                <p className="mt-2 text-[11px] text-ud-text-muted">Enter your 6-digit signing PIN to apply the stamp.</p>
               </div>
 
               <Button

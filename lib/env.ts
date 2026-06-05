@@ -5,7 +5,7 @@ import { z } from "zod";
  * loudly rather than at some random runtime query.
  *
  * Wave 0 keeps validation LENIENT (non-empty strings; most vars optional) so the
- * placeholder `.env` passes and the demo build stays green. Wave 1 tightens this
+ * placeholder `.env` passes and the build stays green. Tighten this
  * (url() on connection strings, required SMTP/Blob once those modules ship) when
  * real credentials are provisioned.
  *

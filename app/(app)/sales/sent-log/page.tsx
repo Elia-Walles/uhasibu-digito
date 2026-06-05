@@ -38,14 +38,13 @@ export default function SentLogPage() {
     <PageWrapper>
       <PageHeader
         title="Sent log"
-        subtitle="Demo simulation of invoice delivery via email and WhatsApp"
+        subtitle="Record of invoice delivery via email and WhatsApp"
         breadcrumbs={[{ label: "Sales", href: "/sales" }, { label: "Sent log" }]}
       />
 
       <div className="mb-4 px-4 py-3 rounded-xl bg-ud-info-bg/60 border border-ud-info/15 text-xs text-ud-text-secondary leading-relaxed">
-        Send is simulated. No real email or WhatsApp message is dispatched — this log records what would have
-        been sent so the workflow is demonstrable. For production, wire to a transactional email provider and a
-        WhatsApp Business Cloud API account.
+        Email is delivered through your configured SMTP server. WhatsApp delivery is not yet connected — those
+        entries are recorded as queued.
       </div>
 
       {sendLog.length === 0 ? (

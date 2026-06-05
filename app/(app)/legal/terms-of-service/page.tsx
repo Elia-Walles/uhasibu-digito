@@ -16,11 +16,11 @@ export default function TermsOfServicePage() {
       <div className="mb-6 flex items-start gap-3 p-4 rounded-2xl border border-ud-warning/30 bg-ud-warning-bg">
         <AlertTriangle className="w-5 h-5 text-ud-warning flex-shrink-0 mt-0.5" />
         <div className="text-sm text-ud-text-secondary leading-relaxed">
-          <Badge variant="warning" size="sm" className="mb-1">Demo terms</Badge>
+          <Badge variant="warning" size="sm" className="mb-1">Review required</Badge>
           <p>
-            This is demo-grade legal copy intended to illustrate the contractual posture of the platform.
+            This is template legal copy.
             <span className="font-semibold text-ud-text-primary"> Final wording must be reviewed and approved by a Tanzanian-qualified lawyer</span>{" "}
-            before production deployment. Do not rely on this text as enforceable legal terms.
+            before you rely on it as enforceable terms.
           </p>
         </div>
       </div>

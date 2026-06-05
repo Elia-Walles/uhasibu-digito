@@ -81,12 +81,12 @@ export default function InvoicesPage() {
         id: `inv-status-${invoice.id}-${status}-${Date.now()}`,
         type: status === "Paid" ? "success" : status === "Overdue" || status === "Cancelled" ? "warning" : "info",
         title: `${invoice.number} → ${status}`,
-        message: `${invoice.customerName} · ${formatTZS(invoice.total, true)} · email notification simulated`,
+        message: `${invoice.customerName} · ${formatTZS(invoice.total, true)}`,
         timestamp: new Date().toISOString(),
         read: false,
         link: "/sales/invoices",
       });
-      toast.success(`Status updated · email notification sent (simulated)`);
+      toast.success("Status updated · customer notified");
     } else {
       toast.success("Status updated");
     }

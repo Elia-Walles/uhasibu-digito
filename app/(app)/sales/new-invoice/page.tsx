@@ -261,7 +261,7 @@ export default function NewInvoicePage() {
 
           <div className="mt-6 pt-4 border-t border-ud-border text-[10px] text-ud-text-muted">
             <div className="font-medium text-ud-text-secondary mb-1">Payment — local (TZS)</div>
-            <div>Bank: CRDB Bank · A/C 0150-1234-5678-9 · Kilimanjaro Trading Co. Ltd</div>
+            <div>Payable to {company?.name || "your company"}. Bank details appear on the issued invoice.</div>
             <div>EFD will be issued on payment. Thank you for your business.</div>
 
             {customer?.isInternational && (
@@ -273,7 +273,7 @@ export default function NewInvoicePage() {
                 <div>Beneficiary bank: {customer.beneficiaryBank ?? "Stanbic Bank Tanzania"}</div>
                 <div>SWIFT / BIC: <span className="font-mono">{customer.swiftBic ?? "SBICTZTX"}</span></div>
                 {customer.iban && <div>IBAN: <span className="font-mono">{customer.iban}</span></div>}
-                <div>Beneficiary: Kilimanjaro Trading Company Limited</div>
+                <div>Beneficiary: {company?.name ?? ""}</div>
                 <div>Receiving country: {customer.country ?? "Tanzania"}</div>
               </div>
             )}
@@ -325,7 +325,7 @@ export default function NewInvoicePage() {
               />
             </div>
             <div className="text-xs text-ud-text-muted">
-              This is a demo simulation — no real email or WhatsApp is sent. Delivery is logged to{" "}
+              Email is delivered via your SMTP server; WhatsApp is not yet connected. Every send is logged to{" "}
               <span className="text-ud-primary font-medium">Sales → Sent log</span>.
             </div>
           </div>

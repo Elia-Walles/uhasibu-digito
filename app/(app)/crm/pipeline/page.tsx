@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { useSession } from "next-auth/react";
 import { usePipelineDeals } from "@/lib/hooks/usePipelineDeals";
 import type { PipelineDeal, DealStage } from "@/types";
 import { cn } from "@/lib/utils/cn";
@@ -51,6 +52,7 @@ function emptyForm(): FormState {
 
 export default function PipelinePage() {
   const { deals, loading: dataLoading, addDeal, moveDeal: moveDealAction } = usePipelineDeals();
+  const { data: session } = useSession();
   const loading = dataLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
@@ -74,7 +76,7 @@ export default function PipelinePage() {
       value: form.value,
       probability: form.probability,
       stage: form.stage,
-      assignedTo: "Elia Mwangi",
+      assignedTo: session?.user?.name ?? "",
       assignedInitials: initials,
       expectedCloseDate: form.expectedCloseDate,
       daysInStage: 0,

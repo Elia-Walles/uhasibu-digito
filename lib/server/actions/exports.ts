@@ -11,8 +11,7 @@ import { buildModelWorkbook, modelFilename } from "@/lib/utils/model-export";
 
 // Wave 11 — xlsx generation moved server-side. Each action authenticates (directly or via a
 // reused tenant-scoped read action), builds the workbook with the shared pure builders, and
-// returns the bytes as base64 for the client to save. The demo (flag off) keeps building in
-// the browser; see lib/hooks/useExports.ts.
+// returns the bytes as base64 for the client to save (see lib/hooks/useExports.ts).
 export interface ExportFile {
   filename: string;
   base64: string;

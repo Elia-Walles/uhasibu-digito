@@ -3,7 +3,7 @@ import type { COAAccount } from "@/types";
 /**
  * Standard Tanzanian Chart of Accounts template — hierarchical, all balances zeroed.
  * Seeded into every new tenant so the GL, trial balance, and financial statements work out
- * of the box. This is genuine reference configuration (not demo data).
+ * of the box. This is genuine reference configuration.
  */
 export const STANDARD_COA: COAAccount[] = [
   { code: "1000", name: "Assets",                      type: "Asset",       parentCode: null,   openingBalance: 0, movement: 0, closingBalance: 0, level: 0 },

@@ -17,9 +17,9 @@ import type {
 // Mirrors DEFAULT_AUDIT_ENGAGEMENT in lib/store/dataStore.ts — used when a tenant has no
 // engagement row yet (the seed creates one, but a freshly-registered company won't have it).
 const DEFAULT_ENGAGEMENT = {
-  name: "Kilimanjaro Trading — FY 2024 Audit",
-  period: "01 Jan 2024 – 31 Dec 2024",
-  auditorName: "Elia Mwangi",
+  name: "Annual Audit",
+  period: "",
+  auditorName: "",
 } as const;
 
 const EMPTY_PROCEDURES: AuditProcedure[] = ["Expenses", "Purchases", "Sales"];
@@ -33,7 +33,15 @@ export async function getAudit(): Promise<AuditSnapshot> {
   return withAuth(async (ctx) => {
     let eng = await db.auditEngagement.findFirst({ orderBy: { createdAt: "desc" } });
     if (!eng) {
-      eng = await db.auditEngagement.create({ data: { tenantId: ctx.tenantId, ...DEFAULT_ENGAGEMENT } });
+      const company = await db.companyProfile.findFirst({ select: { name: true } });
+      eng = await db.auditEngagement.create({
+        data: {
+          tenantId: ctx.tenantId,
+          name: company?.name ? `${company.name} — Audit` : DEFAULT_ENGAGEMENT.name,
+          period: DEFAULT_ENGAGEMENT.period,
+          auditorName: DEFAULT_ENGAGEMENT.auditorName,
+        },
+      });
     }
 
     const rows = await db.auditStepResult.findMany();

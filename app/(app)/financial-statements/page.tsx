@@ -17,7 +17,7 @@ export default function FinancialStatementsHome() {
     <PageWrapper>
       <PageHeader
         title="Financial statements"
-        subtitle="Period ending 31 October 2024 · Kilimanjaro Trading Co Ltd"
+        subtitle="Income statement, balance sheet, cash flow, and changes in equity"
         actions={<ExportMenu fileLabel="financial statements" />}
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

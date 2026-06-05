@@ -12,6 +12,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
 import { useIsMobile } from "@/lib/hooks/useMediaQuery";
+import { useCompany } from "@/lib/hooks/useCompany";
 import { cn } from "@/lib/utils/cn";
 
 interface NavItem {
@@ -84,6 +85,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { sidebarOpen, sidebarCollapsed, setSidebarOpen, toggleCollapse } = useAppStore();
   const isMobile = useIsMobile();
+  const { company } = useCompany();
 
   const width = isMobile ? "w-[260px]" : sidebarCollapsed ? "w-[68px]" : "w-[260px]";
 
@@ -102,7 +104,7 @@ export function Sidebar() {
         {!sidebarCollapsed && (
           <div className="min-w-0">
             <div className="font-display font-bold text-sm leading-tight">Uhasibu Digito</div>
-            <div className="text-[10px] text-white/50 tracking-[0.1em] uppercase truncate">Kilimanjaro Trading</div>
+            <div className="text-[10px] text-white/50 tracking-[0.1em] uppercase truncate">{company?.shortName || company?.name || ""}</div>
           </div>
         )}
         {isMobile && (

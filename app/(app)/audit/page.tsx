@@ -47,12 +47,11 @@ export default function AuditLandingPage() {
       <div className="mb-4 flex items-start gap-3 p-4 rounded-2xl border border-ud-warning/30 bg-ud-warning-bg">
         <AlertTriangle className="w-5 h-5 text-ud-warning flex-shrink-0 mt-0.5" />
         <div className="text-sm text-ud-text-secondary leading-relaxed">
-          <Badge variant="warning" size="sm" className="mb-1">Demo audit shell</Badge>
+          <Badge variant="info" size="sm" className="mb-1">Audit workpapers</Badge>
           <p>
-            Audit procedures here demonstrate the workflow against the platform&apos;s mock data. A real
-            engagement requires sampling, materiality, working papers, and partner sign-off — out of scope for
-            the demo. Use this to walk an expert through the Tanzania purchase / sales / expense cycles end to
-            end and produce an Excel report.
+            Work through the Tanzania purchase, sales, and expense cycles. Mark each step Passed or Exception,
+            record notes, attach evidence files, and export an Excel audit report. A full statutory engagement
+            still requires sampling, materiality, and partner sign-off.
           </p>
         </div>
       </div>

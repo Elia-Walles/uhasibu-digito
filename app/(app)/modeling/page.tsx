@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
@@ -14,19 +14,37 @@ import { Badge } from "@/components/ui/Badge";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { useDataStore } from "@/lib/store/dataStore";
 import { useExports } from "@/lib/hooks/useExports";
+import { getStatements, type PeriodView } from "@/lib/server/actions/statements";
 import { formatTZS } from "@/lib/utils/currency";
 import type { ModelScenario } from "@/types";
 import toast from "react-hot-toast";
 
-const HIST = {
-  revenueFY2023: 739_600_000,
-  revenueFY2024: 847_230_000,
-  cogsFY2024:    418_820_000,
-  opexFY2024:    303_850_000,
-  cashFY2024:    312_800_000,
-  equityFY2024:  586_950_000,
-  ppeFY2024:     312_500_000,
+// The model's historical base is the company's real ledger (prior + current year). It is
+// zero until transactions are recorded.
+interface Hist {
+  revenuePrior: number; revenueCurrent: number; cogsCurrent: number; opexCurrent: number;
+  cashCurrent: number; equityCurrent: number; ppeCurrent: number; netPrior: number; netCurrent: number;
+}
+const ZERO_HIST: Hist = {
+  revenuePrior: 0, revenueCurrent: 0, cogsCurrent: 0, opexCurrent: 0,
+  cashCurrent: 0, equityCurrent: 0, ppeCurrent: 0, netPrior: 0, netCurrent: 0,
 };
+
+function histFromStatements(v: PeriodView): Hist {
+  const is = (label: string) => v.incomeStatement.find((l) => l.label === label);
+  const bs = (sub: string) => v.balanceSheet.find((l) => l.label.toLowerCase().includes(sub));
+  return {
+    revenuePrior: is("Revenue")?.prior ?? 0,
+    revenueCurrent: is("Revenue")?.current ?? 0,
+    cogsCurrent: is("Cost of sales")?.current ?? 0,
+    opexCurrent: is("Operating expenses")?.current ?? 0,
+    cashCurrent: bs("cash")?.current ?? 0,
+    equityCurrent: v.balanceSheet.find((l) => l.label === "Total equity")?.current ?? 0,
+    ppeCurrent: bs("property")?.current ?? 0,
+    netPrior: is("Net profit")?.prior ?? 0,
+    netCurrent: is("Net profit")?.current ?? 0,
+  };
+}
 
 const SCENARIO_ADJ: Record<ModelScenario, { growth: number; margin: number }> = {
   Base:     { growth:  0,    margin:  0 },
@@ -38,13 +56,23 @@ export default function FinancialModelingPage() {
   const assumptions = useDataStore((s) => s.modelAssumptions);
   const updateAssumptions = useDataStore((s) => s.updateAssumptions);
   const { exportModel } = useExports();
+  const [hist, setHist] = useState<Hist>(ZERO_HIST);
+  const baseYear = new Date().getFullYear();
+
+  useEffect(() => {
+    let active = true;
+    void getStatements("FY").then((v) => {
+      if (active) setHist(histFromStatements(v));
+    });
+    return () => { active = false; };
+  }, []);
 
   const adj = SCENARIO_ADJ[assumptions.scenario];
   const effectiveGrowth = assumptions.revenueGrowth + adj.growth;
   const effectiveMargin = assumptions.grossMarginTarget + adj.margin;
 
   const projections = useMemo(() => {
-    const years = [2025, 2026, 2027];
+    const years = [baseYear + 1, baseYear + 2, baseYear + 3];
     const data: {
       year: string;
       revenue: number;
@@ -59,11 +87,11 @@ export default function FinancialModelingPage() {
       equity: number;
     }[] = [];
 
-    let prevRev = HIST.revenueFY2024;
-    let prevOpex = HIST.opexFY2024;
-    let prevCash = HIST.cashFY2024;
-    let prevEquity = HIST.equityFY2024;
-    let prevPpe = HIST.ppeFY2024;
+    let prevRev = hist.revenueCurrent;
+    let prevOpex = hist.opexCurrent;
+    let prevCash = hist.cashCurrent;
+    let prevEquity = hist.equityCurrent;
+    let prevPpe = hist.ppeCurrent;
 
     for (const y of years) {
       const revenue = prevRev * (1 + effectiveGrowth);
@@ -84,19 +112,19 @@ export default function FinancialModelingPage() {
       prevPpe = ppe;
     }
     return data;
-  }, [effectiveGrowth, effectiveMargin, assumptions.opexGrowth, assumptions.capexAnnual, assumptions.taxRate]);
+  }, [hist, effectiveGrowth, effectiveMargin, assumptions.opexGrowth, assumptions.capexAnnual, assumptions.taxRate]);
 
   const chartData = useMemo(() => ([
-    { year: "2023",  revenue: HIST.revenueFY2023, profit: 69_160_000 },
-    { year: "2024",  revenue: HIST.revenueFY2024, profit: 80_500_000 },
+    { year: `${baseYear - 1}`, revenue: hist.revenuePrior,   profit: hist.netPrior },
+    { year: `${baseYear}`,     revenue: hist.revenueCurrent, profit: hist.netCurrent },
     ...projections.map((p) => ({ year: p.year, revenue: p.revenue, profit: p.net })),
-  ]), [projections]);
+  ]), [projections, hist, baseYear]);
 
   const cagr = useMemo(() => {
     const last = projections[projections.length - 1];
-    if (!last) return 0;
-    return Math.pow(last.revenue / HIST.revenueFY2024, 1 / projections.length) - 1;
-  }, [projections]);
+    if (!last || hist.revenueCurrent <= 0) return 0;
+    return Math.pow(last.revenue / hist.revenueCurrent, 1 / projections.length) - 1;
+  }, [projections, hist]);
 
   async function handleExport() {
     try {

@@ -26,7 +26,8 @@ const DEFAULT_COMPANY: ModelCompany = {
   tin: "", vatNumber: "", efdSerial: "", nbaaNumber: "", baseCurrency: "TZS",
 };
 
-const FORECAST_YEARS = [2025, 2026, 2027];
+const BASE_YEAR = new Date().getFullYear();
+const FORECAST_YEARS = [BASE_YEAR + 1, BASE_YEAR + 2, BASE_YEAR + 3];
 
 interface Historicals {
   revenueFY2023: number;
@@ -38,14 +39,15 @@ interface Historicals {
   ppeFY2024: number;
 }
 
+// Historical base starts at zero; it fills in as the ledger accrues real results.
 const HIST: Historicals = {
-  revenueFY2023: 739_600_000,
-  revenueFY2024: 847_230_000,
-  cogsFY2024: 418_820_000,
-  opexFY2024: 303_850_000,
-  cashFY2024: 312_800_000,
-  equityFY2024: 586_950_000,
-  ppeFY2024: 312_500_000,
+  revenueFY2023: 0,
+  revenueFY2024: 0,
+  cogsFY2024: 0,
+  opexFY2024: 0,
+  cashFY2024: 0,
+  equityFY2024: 0,
+  ppeFY2024: 0,
 };
 
 export function modelFilename(company: ModelCompany = DEFAULT_COMPANY): string {

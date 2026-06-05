@@ -25,8 +25,8 @@ export default function JournalEntryPage() {
     .map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` }));
   const uid = useId();
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]!);
-  // Derive a stable demo reference from useId — no Math.random in render
-  const initialRef = `JV-2024-${uid.replace(/[^0-9]/g, "").padStart(5, "0").slice(-5)}`;
+  // Derive a stable reference from useId — no Math.random in render
+  const initialRef = `JV-${new Date().getFullYear()}-${uid.replace(/[^0-9]/g, "").padStart(5, "0").slice(-5)}`;
   const [reference, setReference] = useState(editRef ?? initialRef);
   const [narration, setNarration] = useState("");
   const [shake, setShake] = useState(false);

@@ -5,7 +5,7 @@ import { sendMail, emailConfigured } from "@/lib/server/email";
 
 // System scheduled job — scans ALL tenants for tax filings due within 5 days and not yet
 // filed, emails each tenant's owner a reminder (SMTP configured → send; otherwise →
-// simulate), and writes an AuditLog. Uses the RAW unscoped client (no request context).
+// skip), and writes an AuditLog. Uses the RAW unscoped client (no request context).
 // Gated by CRON_SECRET via the Bearer header (Vercel Cron sends this automatically).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,7 +58,7 @@ export async function GET(req: Request): Promise<NextResponse> {
         module: "Tax",
         recordRef: filings.map((f) => f.id).join(","),
         ipAddress: "cron",
-        details: `Tax reminder: ${filings.length} filing(s) due in ≤5 days${delivered ? " (email sent)" : smtp ? " (send failed)" : " (simulated — SMTP not configured)"}`,
+        details: `Tax reminder: ${filings.length} filing(s) due in ≤5 days${delivered ? " (email sent)" : smtp ? " (send failed)" : " (SMTP not configured)"}`,
       },
     });
   }
