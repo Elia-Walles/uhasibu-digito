@@ -29,13 +29,12 @@ export default function POSReceiptsPage() {
     if (!search) return sales;
     const q = search.toLowerCase();
     return sales.filter(
-      (s) => s.receiptNumber.toLowerCase().includes(q) || s.efdNumber.toLowerCase().includes(q) || s.customerName.toLowerCase().includes(q),
+      (s) => s.receiptNumber.toLowerCase().includes(q) || s.customerName.toLowerCase().includes(q),
     );
   }, [sales, search]);
 
   const COLS: Column<POSSale>[] = [
     { key: "receiptNumber", label: "Receipt", sortable: true, className: "font-mono text-xs", width: "130px" },
-    { key: "efdNumber", label: "EFD #", className: "font-mono text-xs text-ud-text-muted" },
     { key: "soldAt", label: "Issued", sortable: true, accessor: (r) => r.soldAt, render: (r) => <span className="text-ud-text-secondary">{formatDateTime(r.soldAt)}</span> },
     { key: "customerName", label: "Customer", render: (r) => <span className="truncate">{r.customerName}</span> },
     { key: "paymentMethod", label: "Method", render: (r) => <Badge variant={PAYMENT_BADGE[r.paymentMethod]} size="sm">{r.paymentMethod.toUpperCase()}</Badge> },
@@ -46,19 +45,19 @@ export default function POSReceiptsPage() {
     <PageWrapper>
       <PageHeader
         title="Receipts"
-        subtitle="EFD receipts issued at the point of sale — tap a row to view or reprint"
+        subtitle="Receipts issued at the point of sale — tap a row to view or reprint"
         breadcrumbs={[{ label: "Point of Sale", href: "/pos" }, { label: "Receipts" }]}
       />
 
-      <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search by receipt, EFD or customer…" />
+      <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search by receipt or customer…" />
 
       {loading ? (
-        <TableSkeleton rows={10} columns={6} />
+        <TableSkeleton rows={10} columns={5} />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={FileText}
           title="No receipts yet"
-          description="Receipts appear here once you complete a sale on the Register."
+          description="Receipts appear here once you record a sale."
         />
       ) : (
         <DataTable

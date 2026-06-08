@@ -1,17 +1,17 @@
 "use server";
-import type { POSSale as DbPOSSale, POSSaleLine as DbPOSSaleLine, Prisma } from "@prisma/client";
+import type { POSSale as DbPOSSale, POSSaleLine as DbPOSSaleLine, InventoryItem as DbItem, Prisma } from "@prisma/client";
 import { db } from "@/lib/server/db";
 import { withAuth } from "@/lib/server/with-auth";
 import { applyStockMovement } from "@/lib/server/stock-movement";
-import { recordPOSSaleSchema, posAnalyticsFilterSchema } from "@/lib/server/schemas/pos";
+import { recordPOSSaleSchema, createPOSInvoiceSchema, posAnalyticsFilterSchema } from "@/lib/server/schemas/pos";
 import { ok, err, type Result } from "@/lib/server/result";
 import { decToNum, iso } from "@/lib/server/serialize";
-import { computeInvoiceTotals } from "@/lib/utils/invoice-totals";
 import type { POSSale, POSSaleLine, PaymentMethod, POSAnalytics } from "@/types";
 
 const WALK_IN_NAME = "Walk-in customer (POS)";
 
 type DbSaleWithLines = DbPOSSale & { lines: DbPOSSaleLine[] };
+type SaleLine = { itemId: string; quantity: number; unitPrice: number };
 
 function rowToSaleLine(l: DbPOSSaleLine): POSSaleLine {
   return {
@@ -30,7 +30,6 @@ function rowToSale(r: DbSaleWithLines): POSSale {
   return {
     id: r.id,
     receiptNumber: r.receiptNumber,
-    efdNumber: r.efdNumber,
     branchId: r.branchId,
     branchName: r.branchName,
     invoiceId: r.invoiceId,
@@ -39,9 +38,6 @@ function rowToSale(r: DbSaleWithLines): POSSale {
     customerName: r.customerName,
     paymentMethod: r.paymentMethod as PaymentMethod,
     soldAt: iso(r.soldAt),
-    subtotal: decToNum(r.subtotal),
-    vatAmount: decToNum(r.vatAmount),
-    discount: decToNum(r.discount),
     total: decToNum(r.total),
     costOfSales: decToNum(r.costOfSales),
     grossProfit: decToNum(r.grossProfit),
@@ -57,9 +53,28 @@ function dayRange(from?: string, to?: string): { gte?: Date; lte?: Date } {
 }
 
 /**
- * Records a completed POS sale atomically: ensures a walk-in customer, creates the EFD
- * invoice (status Paid), the POSSale + lines (with cost-of-sales captured), and decrements
- * stock for every line. Retries on the unique-number clash from concurrent sales.
+ * Loads the line items and enforces the stock rule: a sale/invoice can never exceed what is
+ * on hand. Returns the item map on success, or an out-of-stock error message asking the user
+ * to top up the inventory first. Items are read inside the caller's auth scope.
+ */
+async function loadAndCheckStock(lines: SaleLine[]): Promise<Result<Map<string, DbItem>>> {
+  const items = await db.inventoryItem.findMany({ where: { id: { in: lines.map((l) => l.itemId) } } });
+  const byId = new Map(items.map((i) => [i.id, i]));
+  for (const line of lines) {
+    const item = byId.get(line.itemId);
+    if (!item) return err("One or more products no longer exist");
+    const onHand = decToNum(item.onHand);
+    if (line.quantity > onHand) {
+      return err(`Out of stock: "${item.name}" has only ${onHand} left. Please adjust the stock before recording this sale.`);
+    }
+  }
+  return ok(byId);
+}
+
+/**
+ * Records a POS sale: validates stock, computes totals (NO VAT), captures cost-of-sales for
+ * profit reporting, creates the accounting Invoice (VAT 0), the POSSale + lines, and
+ * decrements stock — all atomically. Retries on the unique-number clash from concurrent sales.
  */
 export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
   const parsed = recordPOSSaleSchema.safeParse(input);
@@ -67,19 +82,15 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
   const d = parsed.data;
 
   return withAuth(async (ctx) => {
-    const itemIds = d.lines.map((l) => l.itemId);
-    const items = await db.inventoryItem.findMany({ where: { id: { in: itemIds } } });
-    const itemById = new Map(items.map((i) => [i.id, i]));
-    for (const line of d.lines) {
-      if (!itemById.has(line.itemId)) return err("One or more products no longer exist");
-    }
+    const stock = await loadAndCheckStock(d.lines);
+    if (!stock.ok) return stock;
+    const itemById = stock.data;
 
-    const { lineTotals, subtotal, vatAmount, total } = computeInvoiceTotals(
-      d.lines.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice, discountPct: 0 })),
-    );
+    const lineTotals = d.lines.map((l) => l.quantity * l.unitPrice);
     const lineCosts = d.lines.map((l) => decToNum(itemById.get(l.itemId)!.unitCost) * l.quantity);
+    const total = lineTotals.reduce((s, n) => s + n, 0);
     const costOfSales = lineCosts.reduce((s, n) => s + n, 0);
-    const grossProfit = subtotal - costOfSales;
+    const grossProfit = total - costOfSales;
     const customerName = d.customerName?.trim() || "Walk-in customer";
 
     let branchName = "";
@@ -89,7 +100,6 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
       branchName = branch.name;
     }
 
-    // Ensure the single walk-in POS customer exists (invoices require a customer FK).
     let walkIn = await db.customer.findFirst({ where: { name: WALK_IN_NAME } });
     if (!walkIn) {
       walkIn = await db.customer.create({
@@ -113,11 +123,8 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
     const receiptBase = (await db.pOSSale.count()) + 1;
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
-      const seq = invoiceBase + attempt;
-      const rseq = receiptBase + attempt;
-      const number = `INV-${year}-${String(seq).padStart(5, "0")}`;
-      const efdNumber = `EFD-${year}-${String(seq).padStart(8, "0")}`;
-      const receiptNumber = `POS-${year}-${String(rseq).padStart(5, "0")}`;
+      const number = `INV-${year}-${String(invoiceBase + attempt).padStart(5, "0")}`;
+      const receiptNumber = `POS-${year}-${String(receiptBase + attempt).padStart(5, "0")}`;
       try {
         const sale = await db.$transaction(async (tx) => {
           const invoice = await tx.invoice.create({
@@ -128,13 +135,13 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
               customerName,
               issueDate: soldAt,
               dueDate: soldAt,
-              subtotal,
+              subtotal: total,
               discount: 0,
-              vatAmount,
+              vatAmount: 0,
               total,
               status: "Paid",
               paidAt: soldAt,
-              efdNumber,
+              efdNumber: "",
               notes: `Point of Sale ${d.paymentMethod.toUpperCase()} sale${branchName ? ` · ${branchName}` : ""}`,
               lines: {
                 create: d.lines.map((l, i) => ({
@@ -143,7 +150,7 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
                   quantity: l.quantity,
                   unitPrice: l.unitPrice,
                   discountPct: 0,
-                  vatPct: 18,
+                  vatPct: 0,
                   lineTotal: lineTotals[i] ?? 0,
                 })),
               },
@@ -154,7 +161,6 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
             data: {
               tenantId: ctx.tenantId,
               receiptNumber,
-              efdNumber,
               ...(d.branchId ? { branchId: d.branchId } : {}),
               branchName,
               ...(ctx.userId ? { cashierId: ctx.userId } : {}),
@@ -162,9 +168,6 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
               customerName,
               paymentMethod: d.paymentMethod,
               soldAt,
-              subtotal,
-              vatAmount,
-              discount: 0,
               total,
               costOfSales,
               grossProfit,
@@ -207,6 +210,100 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
   });
 }
 
+/**
+ * Creates a customer invoice from the POS Invoice form: validates stock, finds-or-creates the
+ * named customer, creates the Invoice (status Sent, NO VAT) and decrements stock.
+ */
+export async function createPOSInvoice(input: unknown): Promise<Result<{ id: string; number: string }>> {
+  const parsed = createPOSInvoiceSchema.safeParse(input);
+  if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+  const d = parsed.data;
+
+  return withAuth(async (ctx) => {
+    const stock = await loadAndCheckStock(d.lines);
+    if (!stock.ok) return stock;
+    const itemById = stock.data;
+
+    const lineTotals = d.lines.map((l) => l.quantity * l.unitPrice);
+    const total = lineTotals.reduce((s, n) => s + n, 0);
+    const customerName = d.customerName.trim();
+
+    let customer = await db.customer.findFirst({ where: { name: customerName } });
+    if (!customer) {
+      customer = await db.customer.create({
+        data: {
+          tenantId: ctx.tenantId,
+          name: customerName,
+          contactPerson: "—",
+          tin: "",
+          phone: "",
+          email: "",
+          city: "",
+          address: "",
+          paymentTerms: "Cash",
+        },
+      });
+    }
+
+    const issueDate = new Date();
+    const year = issueDate.getFullYear();
+    const invoiceBase = (await db.invoice.count()) + 1;
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const number = `INV-${year}-${String(invoiceBase + attempt).padStart(5, "0")}`;
+      try {
+        const invoice = await db.$transaction(async (tx) => {
+          const created = await tx.invoice.create({
+            data: {
+              tenantId: ctx.tenantId,
+              number,
+              customerId: customer!.id,
+              customerName,
+              issueDate,
+              dueDate: issueDate,
+              subtotal: total,
+              discount: 0,
+              vatAmount: 0,
+              total,
+              status: "Sent",
+              efdNumber: "",
+              notes: "Point of Sale invoice",
+              lines: {
+                create: d.lines.map((l, i) => ({
+                  tenantId: ctx.tenantId,
+                  description: itemById.get(l.itemId)!.name,
+                  quantity: l.quantity,
+                  unitPrice: l.unitPrice,
+                  discountPct: 0,
+                  vatPct: 0,
+                  lineTotal: lineTotals[i] ?? 0,
+                })),
+              },
+            },
+          });
+
+          for (const line of d.lines) {
+            await applyStockMovement(tx, ctx.tenantId, {
+              itemId: line.itemId,
+              type: "OUT",
+              quantity: line.quantity,
+              unitCost: decToNum(itemById.get(line.itemId)!.unitCost),
+              narration: `POS invoice ${number}`,
+            });
+          }
+
+          return created;
+        });
+        return ok({ id: invoice.id, number: invoice.number });
+      } catch (e: unknown) {
+        if ((e as { code?: string }).code === "P2002") continue;
+        throw e;
+      }
+    }
+    return err("Could not allocate an invoice number — please retry");
+  });
+}
+
 export async function listPOSSales(input?: unknown): Promise<POSSale[]> {
   const parsed = posAnalyticsFilterSchema.safeParse(input ?? {});
   const f = parsed.success ? parsed.data : {};
@@ -231,8 +328,6 @@ export async function getPOSAnalytics(input?: unknown): Promise<POSAnalytics> {
   const totalSales = sales.reduce((s, x) => s + x.total, 0);
   const costOfSales = sales.reduce((s, x) => s + x.costOfSales, 0);
   const grossProfit = sales.reduce((s, x) => s + x.grossProfit, 0);
-  const vatCollected = sales.reduce((s, x) => s + x.vatAmount, 0);
-  const netSales = sales.reduce((s, x) => s + x.subtotal, 0);
   const transactionCount = sales.length;
 
   const branchMap = new Map<string, POSAnalytics["byBranch"][number]>();
@@ -286,10 +381,9 @@ export async function getPOSAnalytics(input?: unknown): Promise<POSAnalytics> {
     totalSales,
     costOfSales,
     grossProfit,
-    marginPct: netSales > 0 ? (grossProfit / netSales) * 100 : 0,
+    marginPct: totalSales > 0 ? (grossProfit / totalSales) * 100 : 0,
     transactionCount,
     averageBasket: transactionCount > 0 ? totalSales / transactionCount : 0,
-    vatCollected,
     byBranch: [...branchMap.values()].sort((a, b) => b.sales - a.sales),
     byPaymentMethod,
     daily,

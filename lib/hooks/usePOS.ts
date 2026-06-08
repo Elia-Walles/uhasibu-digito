@@ -1,8 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { listPOSSales, getPOSAnalytics, recordPOSSale as recordAction } from "@/lib/server/actions/pos";
+import { listPOSSales, getPOSAnalytics, recordPOSSale as recordAction, createPOSInvoice } from "@/lib/server/actions/pos";
 import type { Result } from "@/lib/server/result";
-import type { RecordPOSSaleInput } from "@/lib/server/schemas/pos";
+import type { RecordPOSSaleInput, CreatePOSInvoiceInput } from "@/lib/server/schemas/pos";
 import type { POSSale, POSAnalytics, PaymentMethod } from "@/types";
 
 export interface POSFilter {
@@ -12,9 +12,14 @@ export interface POSFilter {
   paymentMethod?: PaymentMethod;
 }
 
-/** Record a POS sale (used by the register). */
+/** Record a POS sale (used by the Sales page). */
 export function recordSale(input: RecordPOSSaleInput): Promise<Result<POSSale>> {
   return recordAction(input);
+}
+
+/** Create a customer invoice from the POS Invoice form. */
+export function createInvoice(input: CreatePOSInvoiceInput): Promise<Result<{ id: string; number: string }>> {
+  return createPOSInvoice(input);
 }
 
 export function usePOSSales(filter: POSFilter): { sales: POSSale[]; loading: boolean; refresh: () => Promise<void> } {

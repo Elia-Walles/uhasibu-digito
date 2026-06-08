@@ -246,7 +246,6 @@ export interface POSSaleLine {
 export interface POSSale {
   id: string;
   receiptNumber: string;
-  efdNumber: string;
   branchId: string | null;
   branchName: string;
   invoiceId: string | null;
@@ -255,9 +254,6 @@ export interface POSSale {
   customerName: string;
   paymentMethod: PaymentMethod;
   soldAt: string;
-  subtotal: number;
-  vatAmount: number;
-  discount: number;
   total: number;
   costOfSales: number;
   grossProfit: number;
@@ -272,7 +268,6 @@ export interface POSAnalytics {
   marginPct: number;
   transactionCount: number;
   averageBasket: number;
-  vatCollected: number;
   byBranch: { branchId: string | null; branchName: string; sales: number; grossProfit: number; transactions: number }[];
   byPaymentMethod: { method: PaymentMethod; sales: number; transactions: number }[];
   daily: { date: string; sales: number; costOfSales: number; grossProfit: number }[];

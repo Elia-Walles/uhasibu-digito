@@ -16,22 +16,26 @@ export const updateBranchSchema = createBranchSchema.partial().extend({
 
 const paymentMethod = z.enum(["mpesa", "cash", "card"]);
 
+const saleLine = z.object({
+  itemId: z.string().min(1),
+  quantity: z.number().positive(),
+  unitPrice: z.number().min(0),
+});
+
 export const recordPOSSaleSchema = z.object({
   branchId: z.string().trim().optional(),
   paymentMethod,
   customerName: z.string().trim().optional(),
-  discount: z.number().min(0).optional(),
-  lines: z
-    .array(
-      z.object({
-        itemId: z.string().min(1),
-        quantity: z.number().positive(),
-        unitPrice: z.number().min(0),
-      }),
-    )
-    .min(1, "Add at least one item to the sale"),
+  lines: z.array(saleLine).min(1, "Add at least one item to the sale"),
 });
 export type RecordPOSSaleInput = z.infer<typeof recordPOSSaleSchema>;
+
+export const createPOSInvoiceSchema = z.object({
+  customerName: z.string().trim().min(1, "Customer name is required"),
+  branchId: z.string().trim().optional(),
+  lines: z.array(saleLine).min(1, "Add at least one item to the invoice"),
+});
+export type CreatePOSInvoiceInput = z.infer<typeof createPOSInvoiceSchema>;
 
 export const posAnalyticsFilterSchema = z.object({
   from: z.string().optional(),

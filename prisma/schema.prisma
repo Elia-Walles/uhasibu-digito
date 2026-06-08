@@ -657,7 +657,6 @@ model POSSale {
   id            String   @id @default(cuid())
   tenantId      String   @map("tenant_id")
   receiptNumber String   @map("receipt_number")
-  efdNumber     String   @map("efd_number")
   branchId      String?  @map("branch_id")
   branchName    String   @default("") @map("branch_name")
   invoiceId     String?  @map("invoice_id")
@@ -666,9 +665,6 @@ model POSSale {
   customerName  String   @default("Walk-in customer") @map("customer_name")
   paymentMethod String   @map("payment_method") // PaymentMethod: mpesa | cash | card
   soldAt        DateTime @map("sold_at")
-  subtotal      Decimal  @default(0) @db.Decimal(20, 2)
-  vatAmount     Decimal  @default(0) @map("vat_amount") @db.Decimal(20, 2)
-  discount      Decimal  @default(0) @db.Decimal(20, 2)
   total         Decimal  @default(0) @db.Decimal(20, 2)
   costOfSales   Decimal  @default(0) @map("cost_of_sales") @db.Decimal(20, 2)
   grossProfit   Decimal  @default(0) @map("gross_profit") @db.Decimal(20, 2)

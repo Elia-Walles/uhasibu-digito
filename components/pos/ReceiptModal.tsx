@@ -14,7 +14,7 @@ export function ReceiptModal({ sale, onClose }: { sale: POSSale | null; onClose:
     <Modal
       open={sale !== null}
       onOpenChange={(o) => !o && onClose()}
-      title="EFD Receipt"
+      title="Receipt"
       description={sale ? sale.receiptNumber : ""}
       size="sm"
       footer={
@@ -34,7 +34,6 @@ export function ReceiptModal({ sale, onClose }: { sale: POSSale | null; onClose:
 
           <div className="py-3 space-y-1 border-b border-dashed border-ud-border">
             <Row label="Receipt" value={sale.receiptNumber} />
-            <Row label="EFD" value={sale.efdNumber} />
             <Row label="Date" value={formatDateTime(sale.soldAt)} />
             <Row label="Customer" value={sale.customerName} />
             <Row label="Payment" value={sale.paymentMethod.toUpperCase()} />
@@ -49,10 +48,8 @@ export function ReceiptModal({ sale, onClose }: { sale: POSSale | null; onClose:
             ))}
           </div>
 
-          <div className="py-3 space-y-1">
-            <Row label="Subtotal" value={formatTZS(sale.subtotal)} />
-            <Row label="VAT (18%)" value={formatTZS(sale.vatAmount)} />
-            <div className="flex justify-between font-bold text-sm pt-1">
+          <div className="py-3">
+            <div className="flex justify-between font-bold text-sm">
               <span>TOTAL</span>
               <span className="tabular-nums">{formatTZS(sale.total)}</span>
             </div>

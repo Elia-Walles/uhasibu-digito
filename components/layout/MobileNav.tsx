@@ -1,20 +1,19 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingCart, Boxes, Sparkles, Menu, MonitorSmartphone, Receipt, LineChart } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Boxes, Sparkles, Menu, Receipt, LineChart } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
 import { useTier } from "@/lib/hooks/useTier";
 import { TIER_RANK, type Tier } from "@/lib/auth/tiers";
 import { cn } from "@/lib/utils/cn";
 
 const TAB_CANDIDATES: { label: string; href: string; icon: typeof LayoutDashboard; minTier: Tier }[] = [
-  { label: "Dashboard", href: "/dashboard",     icon: LayoutDashboard,   minTier: "starter" },
-  { label: "Register",  href: "/pos",           icon: MonitorSmartphone, minTier: "starter" },
-  { label: "Sales",     href: "/pos/sales",     icon: Receipt,           minTier: "starter" },
-  { label: "Analytics", href: "/pos/analytics", icon: LineChart,         minTier: "starter" },
-  { label: "Inventory", href: "/inventory",     icon: Boxes,             minTier: "business" },
-  { label: "Invoices",  href: "/sales",         icon: ShoppingCart,      minTier: "business" },
-  { label: "AI",        href: "/ai-assistant",  icon: Sparkles,          minTier: "enterprise" },
+  { label: "Dashboard", href: "/dashboard",     icon: LayoutDashboard, minTier: "starter" },
+  { label: "Sales",     href: "/pos",           icon: ShoppingCart,    minTier: "starter" },
+  { label: "Inventory", href: "/pos/inventory", icon: Boxes,           minTier: "starter" },
+  { label: "Analytics", href: "/pos/analytics", icon: LineChart,       minTier: "starter" },
+  { label: "Invoices",  href: "/sales",         icon: Receipt,         minTier: "business" },
+  { label: "AI",        href: "/ai-assistant",  icon: Sparkles,        minTier: "enterprise" },
 ];
 
 export function MobileNav() {

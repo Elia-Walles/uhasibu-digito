@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, BookOpen, FileBarChart, BarChart3, TrendingUp,
-  ShoppingCart, Boxes, Users, Truck, MonitorSmartphone,
+  ShoppingCart, Boxes, Users, Truck,
   Wallet, FileSpreadsheet, ShieldCheck, Target, Landmark,
   Sparkles, FolderOpen, Settings, X, ChevronLeft, ClipboardCheck,
   Receipt, LineChart, FileText,
@@ -40,11 +40,11 @@ const NAV: NavSection[] = [
   {
     label: "POINT OF SALE",
     items: [
-      { label: "Register",      href: "/pos",           icon: MonitorSmartphone, minTier: "starter" },
-      { label: "Sales Records", href: "/pos/sales",     icon: Receipt,           minTier: "starter" },
-      { label: "Inventory",     href: "/pos/inventory", icon: Boxes,             minTier: "starter" },
-      { label: "Analytics",     href: "/pos/analytics", icon: LineChart,         minTier: "starter" },
-      { label: "Receipts",      href: "/pos/receipts",  icon: FileText,          minTier: "starter" },
+      { label: "Sales",     href: "/pos",           icon: ShoppingCart, minTier: "starter" },
+      { label: "Inventory", href: "/pos/inventory", icon: Boxes,        minTier: "starter" },
+      { label: "Invoice",   href: "/pos/invoice",   icon: FileText,     minTier: "starter" },
+      { label: "Receipts",  href: "/pos/receipts",  icon: Receipt,      minTier: "starter" },
+      { label: "Analytics", href: "/pos/analytics", icon: LineChart,    minTier: "starter" },
     ],
   },
   {

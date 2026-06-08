@@ -32,6 +32,7 @@ export interface UseInvoices {
   invoices: Invoice[];
   sendLog: SendLogEntry[];
   loading: boolean;
+  refresh: () => Promise<void>;
   createInvoice: (payload: CreateInvoicePayload) => Promise<Result<Invoice>>;
   updateInvoiceStatus: (id: string, status: InvoiceStatus) => Promise<Result<Invoice>>;
   sendInvoice: (invoiceId: string, channel: SendChannel, recipient: string) => Promise<Result<SendLogEntry>>;
@@ -62,6 +63,7 @@ export function useInvoices(): UseInvoices {
     invoices: serverInvoices,
     sendLog: serverSendLog,
     loading,
+    refresh,
     createInvoice: async (p) => {
       const res = await createInvoiceAction(p);
       if (res.ok) await refresh();
