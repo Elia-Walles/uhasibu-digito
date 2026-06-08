@@ -34,6 +34,8 @@ export interface Company {
   regNumber: string;
   address: string;
   branch: string;
+  region: string;
+  businessType: string;
   email: string;
   phone: string;
   website: string;
@@ -215,6 +217,66 @@ export interface StockMovement {
   totalValue: number;
   balanceAfter: number;
   narration: string;
+}
+
+// ---------- Point of Sale ----------
+export type PaymentMethod = "mpesa" | "cash" | "card";
+
+export interface Branch {
+  id: string;
+  name: string;
+  code: string;
+  region: string;
+  address: string;
+  phone: string;
+  isPrimary: boolean;
+}
+
+export interface POSSaleLine {
+  id: string;
+  itemId: string | null;
+  itemName: string;
+  quantity: number;
+  unitPrice: number;
+  unitCost: number;
+  lineTotal: number;
+  lineCost: number;
+}
+
+export interface POSSale {
+  id: string;
+  receiptNumber: string;
+  efdNumber: string;
+  branchId: string | null;
+  branchName: string;
+  invoiceId: string | null;
+  cashierId: string | null;
+  cashierName: string;
+  customerName: string;
+  paymentMethod: PaymentMethod;
+  soldAt: string;
+  subtotal: number;
+  vatAmount: number;
+  discount: number;
+  total: number;
+  costOfSales: number;
+  grossProfit: number;
+  lines: POSSaleLine[];
+}
+
+/** Aggregated POS metrics for the analytics dashboard. */
+export interface POSAnalytics {
+  totalSales: number;
+  costOfSales: number;
+  grossProfit: number;
+  marginPct: number;
+  transactionCount: number;
+  averageBasket: number;
+  vatCollected: number;
+  byBranch: { branchId: string | null; branchName: string; sales: number; grossProfit: number; transactions: number }[];
+  byPaymentMethod: { method: PaymentMethod; sales: number; transactions: number }[];
+  daily: { date: string; sales: number; costOfSales: number; grossProfit: number }[];
+  topItems: { itemName: string; quantity: number; sales: number; grossProfit: number }[];
 }
 
 // ---------- Employees & Payroll ----------

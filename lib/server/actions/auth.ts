@@ -47,7 +47,7 @@ export async function registerTenant(
   if (!parsed.success) {
     return err(parsed.error.issues[0]?.message ?? "Invalid input");
   }
-  const { name, companyName, email, password } = parsed.data;
+  const { name, companyName, email, password, phone, businessType, region } = parsed.data;
 
   const existing = await authDb.user.findUnique({ where: { email } });
   if (existing) {
@@ -65,7 +65,8 @@ export async function registerTenant(
         if (!clash) break;
         slug = `${baseSlug}-${attempt + 2}`;
       }
-      const tenant = await tx.tenant.create({ data: { name: companyName, slug } });
+      // New tenants start on the `free` tier — they pick a plan on /select-plan next.
+      const tenant = await tx.tenant.create({ data: { name: companyName, slug, tier: "free" } });
       const user = await tx.user.create({
         data: {
           name,
@@ -74,6 +75,28 @@ export async function registerTenant(
           role: "Admin",
           initials: initialsFrom(name),
           tenantId: tenant.id,
+          ...(phone ? { phone } : {}),
+        },
+      });
+      // Seed the company profile + primary branch so the app has somewhere to hang data.
+      await tx.companyProfile.create({
+        data: {
+          tenantId: tenant.id,
+          name: companyName,
+          email,
+          region,
+          businessType,
+          baseCurrency: "TZS",
+          ...(phone ? { phone } : {}),
+        },
+      });
+      await tx.branch.create({
+        data: {
+          tenantId: tenant.id,
+          name: "Main Branch",
+          code: "BR-001",
+          region,
+          isPrimary: true,
         },
       });
       return { userId: user.id, tenantId: tenant.id };

@@ -1,13 +1,15 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Users, Activity, Settings as SettingsIcon, Network, Scale } from "lucide-react";
+import { Building2, Users, Activity, Settings as SettingsIcon, Network, Scale, Store, CreditCard } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils/cn";
 
 const TABS = [
   { href: "/settings/company",      label: "Company",      icon: Building2 },
+  { href: "/settings/branches",     label: "Branches",     icon: Store },
+  { href: "/settings/subscription", label: "Subscription", icon: CreditCard },
   { href: "/settings/organisation", label: "Organisation", icon: Network },
   { href: "/settings/users",        label: "Users",        icon: Users },
   { href: "/settings/audit-trail",  label: "Audit trail",  icon: Activity },

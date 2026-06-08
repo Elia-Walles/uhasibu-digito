@@ -8,17 +8,22 @@ import {
   ShoppingCart, Boxes, Users, Truck, MonitorSmartphone,
   Wallet, FileSpreadsheet, ShieldCheck, Target, Landmark,
   Sparkles, FolderOpen, Settings, X, ChevronLeft, ClipboardCheck,
+  Receipt, LineChart, FileText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
 import { useIsMobile } from "@/lib/hooks/useMediaQuery";
 import { useCompany } from "@/lib/hooks/useCompany";
+import { useTier } from "@/lib/hooks/useTier";
+import { TIER_RANK, type Tier } from "@/lib/auth/tiers";
 import { cn } from "@/lib/utils/cn";
 
 interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** Minimum subscription tier required to see this item. Defaults to "starter". */
+  minTier?: Tier;
   badge?: { value: string; color: "danger" | "warning" | "teal" };
 }
 
@@ -30,48 +35,57 @@ interface NavSection {
 const NAV: NavSection[] = [
   {
     label: "OVERVIEW",
-    items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
+    items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, minTier: "starter" }],
+  },
+  {
+    label: "POINT OF SALE",
+    items: [
+      { label: "Register",      href: "/pos",           icon: MonitorSmartphone, minTier: "starter" },
+      { label: "Sales Records", href: "/pos/sales",     icon: Receipt,           minTier: "starter" },
+      { label: "Inventory",     href: "/pos/inventory", icon: Boxes,             minTier: "starter" },
+      { label: "Analytics",     href: "/pos/analytics", icon: LineChart,         minTier: "starter" },
+      { label: "Receipts",      href: "/pos/receipts",  icon: FileText,          minTier: "starter" },
+    ],
   },
   {
     label: "FINANCE",
     items: [
-      { label: "General Ledger",       href: "/general-ledger",       icon: BookOpen },
-      { label: "Financial Statements", href: "/financial-statements", icon: FileBarChart },
-      { label: "Management Accounts",  href: "/management",           icon: BarChart3 },
-      { label: "Financial Modeling",   href: "/modeling",             icon: TrendingUp },
+      { label: "General Ledger",       href: "/general-ledger",       icon: BookOpen,     minTier: "business" },
+      { label: "Financial Statements", href: "/financial-statements", icon: FileBarChart, minTier: "business" },
+      { label: "Management Accounts",  href: "/management",           icon: BarChart3,    minTier: "business" },
+      { label: "Financial Modeling",   href: "/modeling",             icon: TrendingUp,   minTier: "enterprise" },
     ],
   },
   {
     label: "OPERATIONS",
     items: [
-      { label: "Sales",        href: "/sales",        icon: ShoppingCart, badge: { value: "7", color: "danger" } },
-      { label: "Inventory",    href: "/inventory",    icon: Boxes },
-      { label: "CRM",          href: "/crm",          icon: Users },
-      { label: "Procurement",  href: "/procurement",  icon: Truck },
-      { label: "Point of Sale", href: "/pos",         icon: MonitorSmartphone },
+      { label: "Sales",        href: "/sales",        icon: ShoppingCart, minTier: "business", badge: { value: "7", color: "danger" } },
+      { label: "Inventory",    href: "/inventory",    icon: Boxes,        minTier: "business" },
+      { label: "CRM",          href: "/crm",          icon: Users,        minTier: "business" },
+      { label: "Procurement",  href: "/procurement",  icon: Truck,        minTier: "business" },
     ],
   },
   {
     label: "COMPLIANCE",
     items: [
-      { label: "Payroll",       href: "/payroll",       icon: Wallet },
-      { label: "Tax",           href: "/tax",           icon: FileSpreadsheet, badge: { value: "3", color: "warning" } },
-      { label: "Fixed Assets",  href: "/fixed-assets",  icon: ShieldCheck },
-      { label: "Audit",         href: "/audit",         icon: ClipboardCheck },
-      { label: "Budgeting",     href: "/budgeting",     icon: Target },
-      { label: "Banking",       href: "/banking",       icon: Landmark },
+      { label: "Payroll",       href: "/payroll",       icon: Wallet,          minTier: "enterprise" },
+      { label: "Tax",           href: "/tax",           icon: FileSpreadsheet, minTier: "enterprise", badge: { value: "3", color: "warning" } },
+      { label: "Fixed Assets",  href: "/fixed-assets",  icon: ShieldCheck,     minTier: "enterprise" },
+      { label: "Audit",         href: "/audit",         icon: ClipboardCheck,  minTier: "enterprise" },
+      { label: "Budgeting",     href: "/budgeting",     icon: Target,          minTier: "enterprise" },
+      { label: "Banking",       href: "/banking",       icon: Landmark,        minTier: "business" },
     ],
   },
   {
     label: "INTELLIGENCE",
     items: [
-      { label: "AI Assistant",    href: "/ai-assistant", icon: Sparkles, badge: { value: "9", color: "teal" } },
-      { label: "Reports Centre",  href: "/reports",      icon: FolderOpen },
+      { label: "AI Assistant",    href: "/ai-assistant", icon: Sparkles,   minTier: "enterprise", badge: { value: "9", color: "teal" } },
+      { label: "Reports Centre",  href: "/reports",      icon: FolderOpen, minTier: "business" },
     ],
   },
   {
     label: "SYSTEM",
-    items: [{ label: "Settings", href: "/settings", icon: Settings }],
+    items: [{ label: "Settings", href: "/settings", icon: Settings, minTier: "starter" }],
   },
 ];
 
@@ -86,8 +100,24 @@ export function Sidebar() {
   const { sidebarOpen, sidebarCollapsed, setSidebarOpen, toggleCollapse } = useAppStore();
   const isMobile = useIsMobile();
   const { company } = useCompany();
+  const { tier } = useTier();
 
   const width = isMobile ? "w-[260px]" : sidebarCollapsed ? "w-[68px]" : "w-[260px]";
+
+  // Only show sections/items the current plan unlocks; drop sections left empty.
+  const sections = NAV
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((i) => TIER_RANK[tier] >= TIER_RANK[i.minTier ?? "starter"]),
+    }))
+    .filter((section) => section.items.length > 0);
+
+  // The single active item is the one whose href is the longest prefix of the path —
+  // so /pos/sales activates "Sales Records", not the "/pos" Register parent.
+  const activeHref = sections
+    .flatMap((s) => s.items.map((i) => i.href))
+    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    .sort((a, b) => b.length - a.length)[0];
 
   const sidebarContent = (
     <nav className={cn("h-full flex flex-col text-white dark-scrollbar", width, "transition-[width] duration-200")}>
@@ -120,14 +150,14 @@ export function Sidebar() {
 
       {/* Nav */}
       <div className="flex-1 overflow-y-auto py-3 dark-scrollbar">
-        {NAV.map((section) => (
+        {sections.map((section) => (
           <div key={section.label} className="mb-4 last:mb-0">
             {!sidebarCollapsed && (
               <div className="px-5 mb-1.5 text-[10px] tracking-[0.14em] text-white/35 font-semibold">{section.label}</div>
             )}
             <div className="space-y-0.5 px-2">
               {section.items.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                const isActive = item.href === activeHref;
                 const Icon = item.icon;
                 return (
                   <Link

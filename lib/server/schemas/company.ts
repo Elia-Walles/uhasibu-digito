@@ -11,6 +11,8 @@ export const updateCompanySchema = z.object({
   regNumber: z.string().trim().optional(),
   address: z.string().trim().optional(),
   branch: z.string().trim().optional(),
+  region: z.string().trim().optional(),
+  businessType: z.string().trim().optional(),
   email: z.string().trim().optional(),
   phone: z.string().trim().optional(),
   website: z.string().trim().optional(),

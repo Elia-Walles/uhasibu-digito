@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { authConfig } from "./auth.config";
 import { authDb } from "@/lib/server/auth-db";
+import { normalizeTier } from "@/lib/auth/tiers";
 import type { UserRole } from "@/types";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -36,15 +37,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.picture = (session as { image: string }).image;
         return token;
       }
-      // On sign-in, fold tenantId + role from the User row into the token.
+      // Plan changes: re-read the tenant tier from the DB so the new plan takes effect
+      // without a re-login (the select-plan page calls session.update() after activating).
+      if (trigger === "update" && typeof token.sub === "string") {
+        const row = await authDb.user.findUnique({
+          where: { id: token.sub },
+          select: { tenant: { select: { tier: true } } },
+        });
+        token.tier = normalizeTier(row?.tenant?.tier);
+        return token;
+      }
+      // On sign-in, fold tenantId + role + tier from the User/Tenant rows into the token.
       if (user?.id) {
         const row = await authDb.user.findUnique({
           where: { id: user.id },
-          select: { tenantId: true, role: true, image: true },
+          select: { tenantId: true, role: true, image: true, tenant: { select: { tier: true } } },
         });
         token.tenantId = row?.tenantId ?? null;
         token.role = (row?.role as UserRole | undefined) ?? "Accountant";
         token.picture = row?.image ?? null;
+        token.tier = normalizeTier(row?.tenant?.tier);
       }
       return token;
     },
@@ -54,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.tenantId = typeof token.tenantId === "string" ? token.tenantId : "";
         session.user.role = (token.role as UserRole | undefined) ?? "Accountant";
         session.user.image = typeof token.picture === "string" ? token.picture : null;
+        session.user.tier = normalizeTier(token.tier);
       }
       return session;
     },

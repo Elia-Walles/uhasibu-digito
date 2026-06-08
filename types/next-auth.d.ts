@@ -1,14 +1,16 @@
 import type { DefaultSession } from "next-auth";
 import type { UserRole } from "@/types";
+import type { Tier } from "@/lib/auth/tiers";
 
-// Augment the Auth.js session so `session.user` carries the tenant + role that
-// the session callback reads off the User row (database session strategy).
+// Augment the Auth.js session so `session.user` carries the tenant + role + subscription
+// tier that the session callback reads off the User/Tenant rows (JWT session strategy).
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
       tenantId: string;
       role: UserRole;
+      tier: Tier;
     } & DefaultSession["user"];
   }
 
@@ -18,11 +20,12 @@ declare module "next-auth" {
   }
 }
 
-// JWT strategy: tenantId + role are loaded into the token on sign-in (jwt callback)
+// JWT strategy: tenantId + role + tier are loaded into the token on sign-in (jwt callback)
 // and copied onto session.user (session callback).
 declare module "next-auth/jwt" {
   interface JWT {
     tenantId?: string | null;
     role?: UserRole;
+    tier?: Tier;
   }
 }

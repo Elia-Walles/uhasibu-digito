@@ -18,6 +18,8 @@ function rowToCompany(c: DbCompany): Company {
     regNumber: c.regNumber,
     address: c.address,
     branch: c.branch,
+    region: c.region,
+    businessType: c.businessType,
     email: c.email,
     phone: c.phone,
     website: c.website,

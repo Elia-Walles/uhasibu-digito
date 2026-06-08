@@ -1,34 +1,18 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingCart, X, Plus, Minus, Smartphone, Banknote, CheckCircle2, FileText } from "lucide-react";
+import { Search, ShoppingCart, X, Plus, Minus, Smartphone, Banknote, CheckCircle2, FileText, Store } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useInventory } from "@/lib/hooks/useInventory";
 import { formatTZS, formatAmount } from "@/lib/utils/currency";
 import { cn } from "@/lib/utils/cn";
-import { useCustomers } from "@/lib/hooks/useCustomers";
-import { useInvoices } from "@/lib/hooks/useInvoices";
+import { useBranches } from "@/lib/hooks/useBranches";
+import { recordSale } from "@/lib/hooks/usePOS";
 import { useCompany } from "@/lib/hooks/useCompany";
 import { useAppStore } from "@/lib/store/appStore";
 import toast from "react-hot-toast";
-import type { Customer } from "@/types";
-
-const WALK_IN_CUSTOMER: Customer = {
-  id: "cust_pos_walkin",
-  name: "Walk-in customer (POS)",
-  contactPerson: "—",
-  tin: "000-000-000",
-  phone: "—",
-  email: "—",
-  city: "Dar es Salaam",
-  address: "Point of Sale",
-  creditLimit: 0,
-  outstandingBalance: 0,
-  status: "Active",
-  paymentTerms: "Cash",
-  totalRevenue: 0,
-};
+import type { PaymentMethod } from "@/types";
 
 interface CartLine {
   itemId: string;
@@ -36,8 +20,6 @@ interface CartLine {
   unitPrice: number;
   quantity: number;
 }
-
-type PaymentMethod = "mpesa" | "cash" | "card";
 
 export default function POSPage() {
   const { data: session } = useSession();
@@ -51,11 +33,18 @@ export default function POSPage() {
   const [cashGiven, setCashGiven] = useState("");
   const [phone, setPhone] = useState("+255 712 345 678");
   const [efdNumber, setEfdNumber] = useState("");
-  const [postedInvoiceId, setPostedInvoiceId] = useState<string | null>(null);
-  const { customers, createCustomer } = useCustomers();
-  const { createInvoice } = useInvoices();
-  const { inventory: INVENTORY, recordMovement } = useInventory();
+  const [postedReceipt, setPostedReceipt] = useState<string | null>(null);
+  const [branchId, setBranchId] = useState("");
+  const { branches } = useBranches();
+  const { inventory: INVENTORY, refresh: refreshInventory } = useInventory();
   const addNotification = useAppStore((s) => s.addNotification);
+
+  // Default the branch selector to the primary branch once branches load.
+  useEffect(() => {
+    if (!branchId && branches.length > 0) {
+      setBranchId(branches.find((b) => b.isPrimary)?.id ?? branches[0]!.id);
+    }
+  }, [branches, branchId]);
 
   const categories = useMemo(() => ["All", ...Array.from(new Set(INVENTORY.map((i) => i.category)))], [INVENTORY]);
   const filtered = useMemo(() => {
@@ -93,64 +82,31 @@ export default function POSPage() {
     setPaymentStatus("waiting");
     await new Promise((r) => setTimeout(r, paymentMethod === "mpesa" ? 3000 : 1500));
     const stamp = new Date();
-    const dateKey = stamp.toISOString().split("T")[0]!;
 
-    // Ensure a single walk-in POS customer exists (backend assigns the id).
-    let walkInId = customers.find((c) => c.name === WALK_IN_CUSTOMER.name)?.id;
-    if (!walkInId) {
-      const cres = await createCustomer(WALK_IN_CUSTOMER);
-      if (!cres.ok) {
-        toast.error(cres.error);
-        setPaymentStatus("idle");
-        return;
-      }
-      walkInId = cres.data.id;
-    }
-
-    const ires = await createInvoice({
-      customerId: walkInId,
-      issueDate: dateKey,
-      dueDate: dateKey,
-      notes: `Point of Sale cash sale (${paymentMethod.toUpperCase()})`,
-      status: "Paid",
-      paidAt: stamp.toISOString(),
-      lines: cart.map((l) => ({
-        description: l.name,
-        quantity: l.quantity,
-        unitPrice: l.unitPrice,
-        discountPct: 0,
-        vatPct: 18,
-      })),
+    // One atomic backend call: EFD invoice + POS sale (with cost/profit) + stock decrement.
+    const res = await recordSale({
+      paymentMethod,
+      ...(branchId ? { branchId } : {}),
+      lines: cart.map((l) => ({ itemId: l.itemId, quantity: l.quantity, unitPrice: l.unitPrice })),
     });
-    if (!ires.ok) {
-      toast.error(ires.error);
+    if (!res.ok) {
+      toast.error(res.error);
       setPaymentStatus("idle");
       return;
     }
-    const invoice = ires.data;
-    setEfdNumber(invoice.efdNumber);
-    setPostedInvoiceId(invoice.id);
-
-    // Decrement stock for each sold line (sequential; not atomic with the invoice).
-    for (const line of cart) {
-      const item = INVENTORY.find((i) => i.id === line.itemId);
-      await recordMovement({
-        itemId: line.itemId,
-        type: "OUT",
-        quantity: line.quantity,
-        unitCost: item?.unitCost ?? line.unitPrice,
-        narration: `POS sale ${invoice.number}`,
-      });
-    }
+    const sale = res.data;
+    setEfdNumber(sale.efdNumber);
+    setPostedReceipt(sale.receiptNumber);
+    void refreshInventory();
 
     addNotification({
-      id: `pos-${invoice.id}`,
+      id: `pos-${sale.id}`,
       type: "success",
       title: "POS sale recorded",
-      message: `${invoice.number} · ${formatTZS(total, true)} · ${paymentMethod.toUpperCase()}`,
+      message: `${sale.receiptNumber} · ${formatTZS(total, true)} · ${paymentMethod.toUpperCase()}`,
       timestamp: stamp.toISOString(),
       read: false,
-      link: "/sales/invoices",
+      link: "/pos/receipts",
     });
 
     setPaymentStatus("success");
@@ -159,7 +115,7 @@ export default function POSPage() {
     setPaymentStatus("idle");
     setCart([]);
     setCashGiven("");
-    toast.success("Sale completed · EFD issued · invoice posted");
+    toast.success("Sale completed · EFD issued · receipt posted");
   }
 
   return (
@@ -171,9 +127,26 @@ export default function POSPage() {
             <h1 className="font-display font-extrabold text-2xl">Point of Sale</h1>
             <p className="text-xs text-white/45">{company?.efdSerial || "EFD pending"} · Cashier: {session?.user?.name ?? ""}</p>
           </div>
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 text-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-ud-success animate-pulse" />
-            <span className="text-white/80">EFD connected · Online</span>
+          <div className="flex items-center gap-2">
+            {branches.length > 0 && (
+              <div className="relative">
+                <Store className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+                <select
+                  value={branchId}
+                  onChange={(e) => setBranchId(e.target.value)}
+                  aria-label="Branch"
+                  className="appearance-none pl-8 pr-7 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-white/85 focus:outline-none focus:ring-2 focus:ring-ud-primary cursor-pointer [&>option]:text-ud-text-primary"
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 text-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-ud-success animate-pulse" />
+              <span className="text-white/80">EFD connected · Online</span>
+            </div>
           </div>
         </div>
 
@@ -340,13 +313,13 @@ export default function POSPage() {
                     <div className="flex justify-between"><span className="text-white/45">Total</span><span className="font-bold">{formatTZS(total)}</span></div>
                     <div className="flex justify-between"><span className="text-white/45">Method</span><span className="uppercase">{paymentMethod}</span></div>
                   </div>
-                  {postedInvoiceId && (
+                  {postedReceipt && (
                     <Link
-                      href="/sales/invoices"
+                      href="/pos/receipts"
                       className="mt-5 inline-flex items-center justify-center gap-1.5 w-full px-3 py-2.5 rounded-xl bg-ud-primary text-white text-sm font-medium hover:bg-ud-primary-hover transition-colors"
                     >
                       <FileText className="w-4 h-4" />
-                      View invoice in Sales
+                      View receipts
                     </Link>
                   )}
                 </div>

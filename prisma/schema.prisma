@@ -155,6 +155,8 @@ model CompanyProfile {
   regNumber         String   @default("") @map("reg_number")
   address           String   @default("")
   branch            String   @default("")
+  region            String   @default("")
+  businessType      String   @default("") @map("business_type")
   email             String   @default("")
   phone             String   @default("")
   website           String   @default("")
@@ -623,6 +625,86 @@ model StockMovement {
   @@index([tenantId, itemId, date])
   @@index([itemId])
   @@map("stock_movements")
+}
+
+// ===================================================================
+// Point of Sale (branches + sales)
+// ===================================================================
+
+model Branch {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  name        String
+  code        String
+  region      String   @default("")
+  address     String   @default("")
+  phone       String   @default("")
+  isPrimary   Boolean  @default(false) @map("is_primary")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@map("branches")
+}
+
+// A completed point-of-sale transaction. Stores cost-of-sales + gross profit captured at
+// sale time (invoices don't keep cost basis) so profit/loss analytics are possible.
+// Hot-write table.
+model POSSale {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  receiptNumber String   @map("receipt_number")
+  efdNumber     String   @map("efd_number")
+  branchId      String?  @map("branch_id")
+  branchName    String   @default("") @map("branch_name")
+  invoiceId     String?  @map("invoice_id")
+  cashierId     String?  @map("cashier_id")
+  cashierName   String   @default("") @map("cashier_name")
+  customerName  String   @default("Walk-in customer") @map("customer_name")
+  paymentMethod String   @map("payment_method") // PaymentMethod: mpesa | cash | card
+  soldAt        DateTime @map("sold_at")
+  subtotal      Decimal  @default(0) @db.Decimal(20, 2)
+  vatAmount     Decimal  @default(0) @map("vat_amount") @db.Decimal(20, 2)
+  discount      Decimal  @default(0) @db.Decimal(20, 2)
+  total         Decimal  @default(0) @db.Decimal(20, 2)
+  costOfSales   Decimal  @default(0) @map("cost_of_sales") @db.Decimal(20, 2)
+  grossProfit   Decimal  @default(0) @map("gross_profit") @db.Decimal(20, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdById   String?  @map("created_by_id")
+
+  lines POSSaleLine[]
+
+  @@unique([tenantId, receiptNumber])
+  @@index([tenantId])
+  @@index([tenantId, soldAt])
+  @@index([tenantId, branchId, soldAt])
+  @@map("pos_sales")
+}
+
+model POSSaleLine {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  posSaleId   String   @map("pos_sale_id")
+  itemId      String?  @map("item_id")
+  itemName    String   @map("item_name")
+  quantity    Decimal  @default(0) @db.Decimal(20, 2)
+  unitPrice   Decimal  @default(0) @map("unit_price") @db.Decimal(20, 2)
+  unitCost    Decimal  @default(0) @map("unit_cost") @db.Decimal(20, 2)
+  lineTotal   Decimal  @default(0) @map("line_total") @db.Decimal(20, 2)
+  lineCost    Decimal  @default(0) @map("line_cost") @db.Decimal(20, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdById String?  @map("created_by_id")
+
+  posSale POSSale @relation(fields: [posSaleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([posSaleId])
+  @@map("pos_sale_lines")
 }
 
 // ===================================================================

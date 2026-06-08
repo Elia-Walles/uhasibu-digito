@@ -68,8 +68,8 @@ async function main() {
 
   const tenant = await prisma.tenant.upsert({
     where: { slug: COMPANY_SLUG },
-    update: { name: COMPANY_NAME, tier: "pro" },
-    create: { name: COMPANY_NAME, slug: COMPANY_SLUG, tier: "pro" },
+    update: { name: COMPANY_NAME, tier: "enterprise" },
+    create: { name: COMPANY_NAME, slug: COMPANY_SLUG, tier: "enterprise" },
   });
 
   await prisma.companyProfile.upsert({

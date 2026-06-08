@@ -2,6 +2,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Download, FileText, FileSpreadsheet, FileJson, Printer, ShieldCheck } from "lucide-react";
 import { Button } from "./Button";
+import { useTier } from "@/lib/hooks/useTier";
 import toast from "react-hot-toast";
 
 interface ExportMenuProps {
@@ -12,6 +13,10 @@ interface ExportMenuProps {
 }
 
 export function ExportMenu({ onApplyStamp, fileLabel = "report", onExportExcel }: ExportMenuProps) {
+  // Digital Stamp is an Enterprise-tier feature.
+  const { atLeast } = useTier();
+  const canStamp = atLeast("enterprise");
+
   function fakeExport(kind: string) {
     const t = toast.loading(`Generating ${kind} export…`);
     setTimeout(() => {
@@ -60,7 +65,7 @@ export function ExportMenu({ onApplyStamp, fileLabel = "report", onExportExcel }
           <Item icon={<Printer className="w-3.5 h-3.5" />} onClick={() => window.print()}>
             Print
           </Item>
-          {onApplyStamp && (
+          {onApplyStamp && canStamp && (
             <>
               <DropdownMenu.Separator className="my-1 h-px bg-ud-border" />
               <Item icon={<ShieldCheck className="w-3.5 h-3.5 text-ud-gold-dark" />} onClick={onApplyStamp}>

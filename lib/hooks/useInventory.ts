@@ -22,6 +22,7 @@ export interface UseInventory {
   inventory: InventoryItem[];
   stockMovements: StockMovement[];
   loading: boolean;
+  refresh: () => Promise<void>;
   addItem: (item: InventoryItem) => Promise<Result<InventoryItem>>;
   recordMovement: (input: RecordMovementInput) => Promise<Result<{ itemId: string; newOnHand: number }>>;
 }
@@ -67,6 +68,7 @@ export function useInventory(): UseInventory {
     inventory: serverInventory,
     stockMovements: serverMovements,
     loading,
+    refresh,
     addItem: async (item) => {
       const r = await createInventoryItem(toCreateInput(item));
       if (r.ok) await refresh();
