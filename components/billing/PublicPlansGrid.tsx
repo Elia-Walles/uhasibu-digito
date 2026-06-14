@@ -20,7 +20,7 @@ export function PublicPlansGrid({ plans }: { plans: Plan[] }) {
   }
 
   return (
-    <div className="grid gap-5 md:grid-cols-3 items-start">
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 items-start">
       {plans.map((plan) => (
         <PricingCard
           key={plan.id}

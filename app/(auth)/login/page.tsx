@@ -3,7 +3,8 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, ShieldCheck, Sparkles, TrendingUp, FileBarChart, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { Mail, Lock, ShieldCheck, Sparkles, TrendingUp, FileBarChart, Eye, EyeOff, Home } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { signIn } from "next-auth/react";
@@ -150,6 +151,13 @@ export default function LoginPage() {
           <div className="mt-6 text-xs text-ud-text-muted text-center">
             New to Uhasibu Digito? <a href="/register" className="text-ud-primary font-medium hover:underline">Create account</a>
           </div>
+
+          <Link
+            href="/"
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-ud-border bg-white px-4 py-2.5 text-sm font-medium text-ud-text-primary transition-colors hover:border-ud-primary hover:text-ud-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ud-primary focus-visible:ring-offset-2"
+          >
+            <Home className="w-4 h-4" /> Back to home
+          </Link>
         </div>
       </div>
     </div>

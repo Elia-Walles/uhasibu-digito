@@ -93,7 +93,7 @@ export function PricingCards({
 
       {/* Content */}
       <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
-        <div className="mx-auto flex max-w-5xl flex-col items-center gap-5 text-center">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-5 text-center">
           <h2 className="font-display text-pretty text-4xl font-extrabold lg:text-6xl">{heading}</h2>
           <p className="text-ud-text-muted lg:text-xl max-w-2xl text-balance">{description}</p>
 
@@ -103,7 +103,7 @@ export function PricingCards({
             <span className={cn(isYearly ? "text-ud-text-primary" : "text-ud-text-muted")}>Yearly</span>
           </div>
 
-          <div className="mt-4 flex flex-col items-stretch gap-5 md:flex-row md:flex-wrap md:justify-center">
+          <div className="mt-4 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-4 items-start">
             {plans.map((plan, i) => {
               const monthly = Math.round(plan.priceTzs / 12);
               const dark = plan.highlighted;
@@ -112,7 +112,7 @@ export function PricingCards({
                   key={plan.id}
                   style={{ animationDelay: `${0.25 + i * 0.08}s` }}
                   className={cn(
-                    "pc-card relative flex w-80 flex-col justify-between rounded-3xl border p-6 sm:p-7 text-left",
+                    "pc-card relative flex h-full flex-col justify-between rounded-3xl border p-5 text-left",
                     dark
                       ? "bg-ud-obsidian border-ud-obsidian text-white shadow-[0_24px_60px_-20px_rgba(15,123,94,0.45)] md:-translate-y-2"
                       : "bg-ud-surface border-ud-border shadow-card",
@@ -128,36 +128,36 @@ export function PricingCards({
                     <div className={cn("text-xs font-semibold uppercase tracking-[0.08em]", dark ? "text-ud-primary-glow" : "text-ud-primary")}>
                       {plan.name}
                     </div>
-                    <div className="mt-3 flex items-baseline gap-1.5">
-                      <span className="font-display text-3xl sm:text-4xl font-extrabold tabular-nums">
+                    <div className="mt-3 flex items-baseline gap-1 flex-wrap">
+                      <span className="font-display text-2xl font-extrabold tabular-nums break-all">
                         {formatTZS(isYearly ? plan.priceTzs : monthly)}
                       </span>
-                      <span className={cn("text-sm", dark ? "text-white/55" : "text-ud-text-muted")}>{isYearly ? "/year" : "/mo"}</span>
+                      <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>{isYearly ? "/year" : "/mo"}</span>
                     </div>
-                    <p className={cn("mt-1.5 text-sm", dark ? "text-white/65" : "text-ud-text-secondary")}>{plan.description}</p>
-                    <p className={cn("mt-1 text-xs", dark ? "text-white/45" : "text-ud-text-faint")}>
+                    <p className={cn("mt-1.5 text-[13px] leading-snug", dark ? "text-white/65" : "text-ud-text-secondary")}>{plan.description}</p>
+                    <p className={cn("mt-1 text-[11px]", dark ? "text-white/45" : "text-ud-text-faint")}>
                       {isYearly ? "Billed annually" : `Billed ${formatTZS(plan.priceTzs)} annually`}
                     </p>
 
-                    <div className={cn("my-5 h-px", dark ? "bg-white/10" : "bg-ud-border")} />
+                    <div className={cn("my-4 h-px", dark ? "bg-white/10" : "bg-ud-border")} />
 
-                    <ul className="space-y-2.5">
+                    <ul className="space-y-2">
                       {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-2.5 text-sm">
+                        <li key={index} className="flex items-start gap-2 text-[13px] leading-snug">
                           <span className={cn("mt-0.5 flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center", dark ? "bg-ud-primary-glow/20 text-ud-primary-glow" : "bg-ud-primary-50 text-ud-primary")}>
                             <Check className="w-3 h-3" />
                           </span>
-                          <span className={dark ? "text-white/80" : "text-ud-text-secondary"}>{feature.text}</span>
+                          <span className={cn("min-w-0 break-words", dark ? "text-white/80" : "text-ud-text-secondary")}>{feature.text}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <div className="mt-6">
+                  <div className="mt-5">
                     <Link
                       href={plan.button.url}
                       className={cn(
-                        "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                        "inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors",
                         dark
                           ? "bg-ud-gold text-ud-obsidian hover:bg-amber-400 shadow-gold-glow"
                           : "bg-ud-primary text-white hover:bg-ud-primary-hover shadow-sm",

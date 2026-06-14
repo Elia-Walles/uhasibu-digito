@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: "Simple, transparent pricing for Tanzania's intelligent financial platform. Billed yearly in TZS, upgrade any time.",
 };
 
+// Always read live, admin-managed plans (never statically cached).
+export const dynamic = "force-dynamic";
+
 export default async function PricingPage() {
   const plans = await getPublicPlans();
 
