@@ -74,8 +74,8 @@ async function main() {
 
   const tenant = await prisma.tenant.upsert({
     where: { slug: COMPANY_SLUG },
-    update: { name: COMPANY_NAME, tier: "enterprise" },
-    create: { name: COMPANY_NAME, slug: COMPANY_SLUG, tier: "enterprise" },
+    update: { name: COMPANY_NAME, tier: "premium" },
+    create: { name: COMPANY_NAME, slug: COMPANY_SLUG, tier: "premium" },
   });
 
   await prisma.companyProfile.upsert({
@@ -117,6 +117,8 @@ async function main() {
       },
     });
   }
+  // Drop any plan rows no longer in the catalogue (e.g. the legacy "enterprise" plan).
+  await prisma.plan.deleteMany({ where: { key: { notIn: PLANS.map((p) => p.id) } } });
 
   // Platform operator a super-admin with no tenant (manages the SaaS, not bookkeeping).
   const platformAdminHash = await hash(PLATFORM_ADMIN_PASSWORD, 12);

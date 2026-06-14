@@ -93,9 +93,9 @@ function SelectPlanInner() {
           </div>
         )}
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3 items-start">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 items-start">
           {loading
-            ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} className="h-96" />)
+            ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} className="h-96" />)
             : plans.map((plan) => (
                 <PricingCard
                   key={plan.id}

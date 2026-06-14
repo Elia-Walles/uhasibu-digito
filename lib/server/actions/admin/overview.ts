@@ -6,7 +6,7 @@ import { normalizeTier, type Tier } from "@/lib/auth/tiers";
 import { monthlyAmount } from "./_shared";
 import type { PlatformOverview } from "./types";
 
-const TIERS: Tier[] = ["free", "starter", "business", "enterprise"];
+const TIERS: Tier[] = ["free", "starter", "business", "standard", "premium"];
 
 export async function getPlatformOverview(): Promise<PlatformOverview> {
   return withAdminAuth(async () => {

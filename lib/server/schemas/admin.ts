@@ -12,7 +12,7 @@ export const createTenantSchema = z.object({
     .trim()
     .min(1, "Slug is required")
     .regex(/^[a-z0-9-]+$/, "Slug may only contain lowercase letters, numbers and hyphens"),
-  tier: z.enum(["free", "starter", "business", "enterprise"]).default("free"),
+  tier: z.enum(["free", "starter", "business", "standard", "premium"]).default("free"),
 });
 
 export const updateTenantSchema = z.object({
@@ -27,7 +27,7 @@ export const updateTenantSchema = z.object({
 
 export const setTenantTierSchema = z.object({
   tenantId: z.string().min(1),
-  tier: z.enum(["free", "starter", "business", "enterprise"]),
+  tier: z.enum(["free", "starter", "business", "standard", "premium"]),
 });
 
 // ── Users ──
@@ -41,7 +41,7 @@ export const grantSuperAdminSchema = z.object({ userId: z.string().min(1) });
 
 // ── Plans ──
 export const planSchema = z.object({
-  key: z.enum(["starter", "business", "enterprise"]),
+  key: z.enum(["starter", "business", "standard", "premium"]),
   name: z.string().trim().min(1, "Name is required"),
   tagline: z.string().trim().default(""),
   priceTzs: z.number().nonnegative("Price cannot be negative"),
@@ -58,7 +58,7 @@ export const togglePlanSchema = z.object({ id: z.string().min(1), isActive: z.bo
 // ── Subscriptions ──
 export const upsertSubscriptionSchema = z.object({
   tenantId: z.string().min(1),
-  planKey: z.enum(["starter", "business", "enterprise"]),
+  planKey: z.enum(["starter", "business", "standard", "premium"]),
   amountTzs: z.number().nonnegative(),
   currentPeriodEnd: z.coerce.date().optional(),
 });

@@ -6,7 +6,7 @@ import { ok, err, type Result } from "@/lib/server/result";
 import type { Tier } from "@/lib/auth/tiers";
 
 const selectPlanSchema = z.object({
-  tier: z.enum(["starter", "business", "enterprise"]),
+  tier: z.enum(["starter", "business", "standard", "premium"]),
 });
 
 /**

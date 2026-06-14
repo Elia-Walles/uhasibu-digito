@@ -50,6 +50,8 @@ const PILL_TONE: Record<string, string> = {
   free: "bg-ud-surface-2 text-ud-text-muted border border-ud-border",
   starter: "bg-ud-info-bg text-ud-info",
   business: "bg-ud-primary-50 text-ud-primary",
+  standard: "bg-ud-primary-100 text-ud-primary",
+  premium: "bg-ud-gold-50 text-ud-gold-dark",
   enterprise: "bg-ud-gold-50 text-ud-gold-dark",
 };
 

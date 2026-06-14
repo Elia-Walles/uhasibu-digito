@@ -52,7 +52,7 @@ export default function RegisterPage() {
       // Carry a plan picked on the public pricing page (/register?plan=key) into onboarding,
       // where it is auto-activated. Only forward a known plan key.
       const picked = new URLSearchParams(window.location.search).get("plan");
-      const validPlan = ["starter", "business", "enterprise"].includes(picked ?? "") ? picked : null;
+      const validPlan = ["starter", "business", "standard", "premium"].includes(picked ?? "") ? picked : null;
       toast.success("Account created. Choose your plan to get started.");
       router.push(validPlan ? `/select-plan?plan=${validPlan}` : "/select-plan");
     } catch {

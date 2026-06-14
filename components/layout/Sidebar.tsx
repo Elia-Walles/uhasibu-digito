@@ -54,7 +54,7 @@ const NAV: NavSection[] = [
       { label: "General Ledger",       href: "/general-ledger",       icon: BookOpen,     minTier: "business" },
       { label: "Financial Statements", href: "/financial-statements", icon: FileBarChart, minTier: "business" },
       { label: "Management Accounts",  href: "/management",           icon: BarChart3,    minTier: "business" },
-      { label: "Financial Modeling",   href: "/modeling",             icon: TrendingUp,   minTier: "enterprise" },
+      { label: "Financial Modeling",   href: "/modeling",             icon: TrendingUp,   minTier: "premium" },
     ],
   },
   {
@@ -69,18 +69,18 @@ const NAV: NavSection[] = [
   {
     label: "COMPLIANCE",
     items: [
-      { label: "Payroll",       href: "/payroll",       icon: Wallet,          minTier: "enterprise" },
-      { label: "Tax",           href: "/tax",           icon: FileSpreadsheet, minTier: "enterprise", badge: { value: "3", color: "warning" } },
-      { label: "Fixed Assets",  href: "/fixed-assets",  icon: ShieldCheck,     minTier: "enterprise" },
-      { label: "Audit",         href: "/audit",         icon: ClipboardCheck,  minTier: "enterprise" },
-      { label: "Budgeting",     href: "/budgeting",     icon: Target,          minTier: "enterprise" },
+      { label: "Payroll",       href: "/payroll",       icon: Wallet,          minTier: "standard" },
+      { label: "Tax",           href: "/tax",           icon: FileSpreadsheet, minTier: "standard", badge: { value: "3", color: "warning" } },
+      { label: "Fixed Assets",  href: "/fixed-assets",  icon: ShieldCheck,     minTier: "premium" },
+      { label: "Audit",         href: "/audit",         icon: ClipboardCheck,  minTier: "premium" },
+      { label: "Budgeting",     href: "/budgeting",     icon: Target,          minTier: "premium" },
       { label: "Banking",       href: "/banking",       icon: Landmark,        minTier: "business" },
     ],
   },
   {
     label: "INTELLIGENCE",
     items: [
-      { label: "AI Assistant",    href: "/ai-assistant", icon: Sparkles,   minTier: "enterprise", badge: { value: "9", color: "teal" } },
+      { label: "AI Assistant",    href: "/ai-assistant", icon: Sparkles,   minTier: "premium", badge: { value: "9", color: "teal" } },
       { label: "Reports Centre",  href: "/reports",      icon: FolderOpen, minTier: "business" },
     ],
   },

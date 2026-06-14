@@ -4,17 +4,18 @@
 // auth.config.ts (which runs in the edge proxy) as well as by client components and
 // server actions. Keep it pure (types + constants + plain functions).
 
-export type Tier = "free" | "starter" | "business" | "enterprise";
+export type Tier = "free" | "starter" | "business" | "standard" | "premium";
 
 /** Ordering for "at least this tier" comparisons. `free` = signed up, no plan chosen yet. */
 export const TIER_RANK: Record<Tier, number> = {
   free: -1,
   starter: 0,
   business: 1,
-  enterprise: 2,
+  standard: 2,
+  premium: 3,
 };
 
-/** The three purchasable plans, in display order. Prices are TZS / year. */
+/** The four purchasable plans, in display order. Prices are TZS / year. */
 export interface Plan {
   id: Exclude<Tier, "free">;
   name: string;
@@ -28,7 +29,7 @@ export const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    priceTzs: 150_000,
+    priceTzs: 180_000,
     tagline: "Point of Sale for shops & retailers",
     highlighted: false,
     features: [
@@ -43,7 +44,7 @@ export const PLANS: Plan[] = [
   {
     id: "business",
     name: "Business",
-    priceTzs: 450_000,
+    priceTzs: 540_000,
     tagline: "POS + full Finance & Accounting",
     highlighted: true,
     features: [
@@ -56,15 +57,26 @@ export const PLANS: Plan[] = [
     ],
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    priceTzs: 1_200_000,
-    tagline: "The complete financial platform",
+    id: "standard",
+    name: "Standard",
+    priceTzs: 750_000,
+    tagline: "Finance & Accounting + Payroll & Tax",
     highlighted: false,
     features: [
       "Everything in Business",
       "Payroll & statutory (PAYE, NSSF…)",
       "Tax returns (VAT, PAYE)",
+      "Tax calendar & filing tracker",
+    ],
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    priceTzs: 1_500_000,
+    tagline: "The complete financial platform",
+    highlighted: false,
+    features: [
+      "Everything in Standard",
       "Fixed assets & audit",
       "Budgeting & financial modeling",
       "AI assistant & Digital Stamp",
@@ -88,14 +100,15 @@ const ROUTE_MIN_TIER: { prefix: string; tier: Tier }[] = [
   { prefix: "/procurement", tier: "business" },
   { prefix: "/banking", tier: "business" },
   { prefix: "/reports", tier: "business" },
-  // Enterprise compliance, intelligence, modeling
-  { prefix: "/payroll", tier: "enterprise" },
-  { prefix: "/tax", tier: "enterprise" },
-  { prefix: "/fixed-assets", tier: "enterprise" },
-  { prefix: "/audit", tier: "enterprise" },
-  { prefix: "/budgeting", tier: "enterprise" },
-  { prefix: "/modeling", tier: "enterprise" },
-  { prefix: "/ai-assistant", tier: "enterprise" },
+  // Standard compliance (payroll + tax)
+  { prefix: "/payroll", tier: "standard" },
+  { prefix: "/tax", tier: "standard" },
+  // Premium intelligence, assurance & modeling
+  { prefix: "/fixed-assets", tier: "premium" },
+  { prefix: "/audit", tier: "premium" },
+  { prefix: "/budgeting", tier: "premium" },
+  { prefix: "/modeling", tier: "premium" },
+  { prefix: "/ai-assistant", tier: "premium" },
 ];
 
 /** The minimum tier required to view a route. Always-allowed routes return `free`. */
@@ -121,10 +134,17 @@ export function tierAtLeast(tier: Tier, min: Tier): boolean {
 
 /** Narrow an arbitrary stored value (e.g. legacy "free"/"pro", or an untyped JWT claim) to a known Tier. */
 export function normalizeTier(value: unknown): Tier {
-  if (value === "starter" || value === "business" || value === "enterprise" || value === "free") {
+  if (
+    value === "starter" ||
+    value === "business" ||
+    value === "standard" ||
+    value === "premium" ||
+    value === "free"
+  ) {
     return value;
   }
-  // Legacy values: "pro"/"paid" → enterprise so existing accounts keep full access.
-  if (value === "pro" || value === "paid") return "enterprise";
+  // Legacy values: the old top tier "enterprise" (and "pro"/"paid") → premium so existing
+  // accounts keep full access.
+  if (value === "enterprise" || value === "pro" || value === "paid") return "premium";
   return "free";
 }

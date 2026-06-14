@@ -13,7 +13,7 @@ const TAB_CANDIDATES: { label: string; href: string; icon: typeof LayoutDashboar
   { label: "Inventory", href: "/pos/inventory", icon: Boxes,           minTier: "starter" },
   { label: "Analytics", href: "/pos/analytics", icon: LineChart,       minTier: "starter" },
   { label: "Invoices",  href: "/sales",         icon: Receipt,         minTier: "business" },
-  { label: "AI",        href: "/ai-assistant",  icon: Sparkles,        minTier: "enterprise" },
+  { label: "AI",        href: "/ai-assistant",  icon: Sparkles,        minTier: "premium" },
 ];
 
 export function MobileNav() {

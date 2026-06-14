@@ -13,9 +13,9 @@ interface ExportMenuProps {
 }
 
 export function ExportMenu({ onApplyStamp, fileLabel = "report", onExportExcel }: ExportMenuProps) {
-  // Digital Stamp is an Enterprise-tier feature.
+  // Digital Stamp is a Premium-tier feature.
   const { atLeast } = useTier();
-  const canStamp = atLeast("enterprise");
+  const canStamp = atLeast("premium");
 
   function fakeExport(kind: string) {
     const t = toast.loading(`Generating ${kind} export…`);

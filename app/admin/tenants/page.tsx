@@ -18,7 +18,8 @@ const TIER_OPTIONS = [
   { value: "free", label: "Free" },
   { value: "starter", label: "Starter" },
   { value: "business", label: "Business" },
-  { value: "enterprise", label: "Enterprise" },
+  { value: "standard", label: "Standard" },
+  { value: "premium", label: "Premium" },
 ];
 
 export default function AdminTenantsPage() {

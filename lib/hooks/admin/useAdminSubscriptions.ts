@@ -4,7 +4,7 @@ import { listSubscriptions, upsertSubscription, cancelSubscription } from "@/lib
 import type { Result } from "@/lib/server/result";
 import type { AdminSubscriptionRow } from "@/lib/server/actions/admin/types";
 
-type PlanKey = "starter" | "business" | "enterprise";
+type PlanKey = "starter" | "business" | "standard" | "premium";
 
 export function useAdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<AdminSubscriptionRow[]>([]);

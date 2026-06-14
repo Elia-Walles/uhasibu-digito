@@ -20,9 +20,10 @@ import type { AdminTenantDetail, AdminSubscriptionRow } from "@/lib/server/actio
 const PLAN_OPTIONS = [
   { value: "starter", label: "Starter" },
   { value: "business", label: "Business" },
-  { value: "enterprise", label: "Enterprise" },
+  { value: "standard", label: "Standard" },
+  { value: "premium", label: "Premium" },
 ];
-type PlanKey = "starter" | "business" | "enterprise";
+type PlanKey = "starter" | "business" | "standard" | "premium";
 
 export default function TenantDetailPage() {
   const params = useParams<{ tenantId: string }>();
