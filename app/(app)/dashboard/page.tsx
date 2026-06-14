@@ -83,7 +83,7 @@ export default function DashboardPage() {
         initial="hidden"
         animate="show"
         variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
-        className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mb-6"
       >
         {kpis.map((kpi) => (
           <motion.div key={kpi.label} variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } }}>

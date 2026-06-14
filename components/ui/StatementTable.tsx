@@ -18,9 +18,9 @@ export function StatementTable({
       <table className="w-full text-sm">
         <thead className="bg-ud-surface-2">
           <tr>
-            <th className="text-left px-5 py-3 text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary" scope="col">Line item</th>
-            <th className="text-right px-5 py-3 text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary" scope="col">{currentLabel}</th>
-            <th className="text-right px-5 py-3 text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary" scope="col">{priorLabel}</th>
+            <th className="text-left px-3 sm:px-5 py-3 text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary" scope="col">Line item</th>
+            <th className="text-right px-3 sm:px-5 py-3 text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary" scope="col">{currentLabel}</th>
+            <th className="text-right px-3 sm:px-5 py-3 text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary" scope="col">{priorLabel}</th>
           </tr>
         </thead>
         <tbody>
@@ -39,14 +39,14 @@ export function StatementTable({
               >
                 <td
                   className={cn(
-                    "px-5 py-2.5",
+                    "px-3 sm:px-5 py-2.5",
                     isHeader && "font-bold uppercase tracking-[0.04em] text-ud-primary text-xs"
                   )}
                   style={{ paddingLeft: 20 + indent }}
                 >
                   {line.label}
                 </td>
-                <td className="px-5 py-2.5 text-right">
+                <td className="px-3 sm:px-5 py-2.5 text-right">
                   {line.current === 0 && (isHeader || isTotal) ? "" : (
                     <CurrencyDisplay
                       amount={line.current}
@@ -56,7 +56,7 @@ export function StatementTable({
                     />
                   )}
                 </td>
-                <td className="px-5 py-2.5 text-right text-ud-text-muted">
+                <td className="px-3 sm:px-5 py-2.5 text-right text-ud-text-muted">
                   {line.prior === 0 && (isHeader || isTotal) ? "" : (
                     <CurrencyDisplay amount={line.prior} showSymbol={false} className={cn(isTotal && "text-base font-semibold")} />
                   )}

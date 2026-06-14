@@ -105,7 +105,7 @@ export default function PipelinePage() {
         actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add deal</Button>}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 min-h-[500px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 sm:min-h-[500px]">
         {STAGES.map((stage) => {
           const stageDeals = deals.filter((d) => d.stage === stage.key);
           const total = stageDeals.reduce((s, d) => s + d.value, 0);

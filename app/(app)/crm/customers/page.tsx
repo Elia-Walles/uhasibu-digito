@@ -192,7 +192,7 @@ export default function CustomersPage() {
               <div className="flex items-center gap-2 col-span-2"><MapPin className="w-3.5 h-3.5 text-ud-text-muted" />{selected.address}</div>
             </div>
             <div className="divider-hairline" />
-            <div className="grid grid-cols-3 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               <div>
                 <div className="text-xs text-ud-text-muted">TIN</div>
                 <div className="font-mono font-medium">{selected.tin}</div>

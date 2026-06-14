@@ -114,7 +114,7 @@ export default function POSSalesPage() {
         actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openModal}>Record sale</Button>}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5 p-4 bg-white border border-ud-border rounded-2xl shadow-card">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-5 p-4 bg-white border border-ud-border rounded-2xl shadow-card">
         <div>
           <label className="block text-xs font-medium text-ud-text-secondary mb-1.5">From</label>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-ud-border text-sm focus:outline-none focus:ring-2 focus:ring-ud-primary" />

@@ -106,7 +106,7 @@ export function PricingCards({
             <span className={cn(isYearly ? "text-ud-text-primary" : "text-ud-text-muted")}>Yearly</span>
           </div>
 
-          <div className="mt-4 grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-4 items-start">
+          <div className="mt-4 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 items-start">
             {plans.map((plan, i) => {
               const monthly = Math.round(plan.priceTzs / 12);
               const dark = plan.highlighted;

@@ -16,12 +16,17 @@ export function TopBar() {
   const user = useCurrentUser();
   const signOut = useSignOut();
   const { company } = useCompany();
-  const { toggleSidebar, notifications } = useAppStore();
+  const { toggleSidebar, notifications, sidebarCollapsed } = useAppStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const unread = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-[260px] z-20 h-16 bg-white/90 backdrop-blur-md border-b border-ud-border transition-all">
+    <header
+      className={cn(
+        "fixed top-0 right-0 left-0 z-20 h-16 bg-white/90 backdrop-blur-md border-b border-ud-border transition-[left] duration-200",
+        sidebarCollapsed ? "md:left-[68px]" : "md:left-[260px]",
+      )}
+    >
       <div className="flex items-center h-full px-4 md:px-6 gap-3">
         {/* Mobile menu */}
         <button
