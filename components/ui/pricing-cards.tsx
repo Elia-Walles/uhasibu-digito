@@ -94,6 +94,9 @@ export function PricingCards({
       {/* Content */}
       <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-5 text-center">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-ud-primary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ud-primary">
+            <Sparkles className="w-3 h-3" /> Plans &amp; pricing
+          </div>
           <h2 className="font-display text-pretty text-4xl font-extrabold lg:text-6xl">{heading}</h2>
           <p className="text-ud-text-muted lg:text-xl max-w-2xl text-balance">{description}</p>
 
@@ -112,7 +115,7 @@ export function PricingCards({
                   key={plan.id}
                   style={{ animationDelay: `${0.25 + i * 0.08}s` }}
                   className={cn(
-                    "pc-card relative flex h-full flex-col justify-between rounded-3xl border p-5 text-left",
+                    "pc-card relative flex h-full flex-col justify-between rounded-3xl border p-5 text-left transition-shadow hover:shadow-elevated",
                     dark
                       ? "bg-ud-obsidian border-ud-obsidian text-white shadow-[0_24px_60px_-20px_rgba(15,123,94,0.45)] md:-translate-y-2"
                       : "bg-ud-surface border-ud-border shadow-card",

@@ -1,5 +1,8 @@
+"use client";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { ChevronRight, Home } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 export interface BreadcrumbItem {
@@ -13,9 +16,10 @@ interface PageHeaderProps {
   breadcrumbs?: BreadcrumbItem[];
   actions?: React.ReactNode;
   className?: string;
+  icon?: LucideIcon;
 }
 
-export function PageHeader({ title, subtitle, breadcrumbs, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, breadcrumbs, actions, className, icon: Icon }: PageHeaderProps) {
   return (
     <div className={cn("mb-6", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
@@ -37,15 +41,27 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions, className }:
           ))}
         </nav>
       )}
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="font-display text-2xl md:text-3xl font-extrabold text-ud-text-primary text-balance">
-            {title}
-          </h1>
-          {subtitle && <p className="mt-1 text-sm text-ud-text-muted text-balance">{subtitle}</p>}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+        className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
+      >
+        <div className="flex items-start gap-3">
+          {Icon && (
+            <div className="hidden sm:flex w-11 h-11 rounded-2xl bg-ud-primary-50 items-center justify-center flex-shrink-0">
+              <Icon className="w-5 h-5 text-ud-primary" />
+            </div>
+          )}
+          <div>
+            <h1 className="font-display text-2xl md:text-3xl font-extrabold text-ud-text-primary text-balance">
+              {title}
+            </h1>
+            {subtitle && <p className="mt-1 text-sm text-ud-text-muted text-balance">{subtitle}</p>}
+          </div>
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
-      </div>
+      </motion.div>
     </div>
   );
 }

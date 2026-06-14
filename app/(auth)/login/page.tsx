@@ -6,10 +6,11 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Mail, Lock, ShieldCheck, Sparkles, TrendingUp, FileBarChart,
-  Eye, EyeOff, ArrowLeft, ArrowRight, CheckCircle2,
+  Eye, EyeOff, ArrowLeft, ArrowRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
 import { signIn } from "next-auth/react";
 import toast from "react-hot-toast";
 
@@ -19,8 +20,6 @@ const FEATURES = [
   { icon: FileBarChart, label: "Statements" },
   { icon: Sparkles, label: "AI Insights" },
 ];
-
-const TRUST = ["TRA-compliant", "TZS-native", "Bank-grade security"];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,95 +49,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
       {/* LEFT: brand showcase */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 gradient-obsidian text-white overflow-hidden">
-        {/* ambient accents */}
-        <div className="absolute -top-32 -right-32 w-[28rem] h-[28rem] rounded-full bg-ud-primary opacity-20 blur-3xl" />
-        <div className="absolute -bottom-40 -left-24 w-[26rem] h-[26rem] rounded-full bg-ud-gold opacity-10 blur-3xl" />
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
-          }}
-        />
-
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative z-10 flex items-center gap-3"
-        >
-          <Image
-            src="/images/uhasibu-digito-circle.png"
-            alt="Uhasibu Digito"
-            width={44}
-            height={44}
-            priority
-            className="w-11 h-11 rounded-xl shadow-gold-glow"
-          />
-          <div>
-            <div className="font-display font-bold text-base leading-tight">Uhasibu Digito</div>
-            <div className="text-[11px] text-white/55 tracking-[0.18em] uppercase">Akaunti yako, nguvu yako</div>
-          </div>
-        </motion.div>
-
-        <div className="relative z-10 max-w-lg">
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.05 }}
-            className="font-display text-4xl xl:text-5xl font-extrabold leading-[1.06] text-balance"
-          >
-            The financial platform built for Tanzania.
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.12 }}
-            className="mt-4 text-white/65 leading-relaxed"
-          >
-            Twenty modules in one place: real-time insight from general ledger to payroll, TRA
-            compliance to a smart AI assistant.
-          </motion.p>
-
-          <div className="mt-8 grid grid-cols-2 gap-3">
-            {FEATURES.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <motion.div
-                  key={f.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 + i * 0.08 }}
-                  className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-white/10 bg-white/5 backdrop-blur"
-                >
-                  <Icon className="w-4 h-4 text-ud-primary-glow flex-shrink-0" />
-                  <span className="text-sm font-medium">{f.label}</span>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/70"
-          >
-            {TRUST.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-ud-primary-glow" /> {t}
-              </span>
-            ))}
-          </motion.div>
-        </div>
-
-        <div className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} Uhasibu Digito&trade;. All rights reserved · Made in Tanzania
-        </div>
-      </div>
+      <AuthBrandPanel
+        headline="The financial platform built for Tanzania."
+        subcopy="Twenty modules in one place: real-time insight from general ledger to payroll, TRA compliance to a smart AI assistant."
+        features={FEATURES}
+      />
 
       {/* RIGHT: sign-in form */}
       <div className="relative flex flex-col justify-center p-6 sm:p-10 lg:p-16 bg-ud-surface">

@@ -53,12 +53,17 @@ export function StatCard({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2, transition: { duration: 0.2 } }}
       className={cn(
-        "relative overflow-hidden rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-shadow",
+        "group relative overflow-hidden rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-shadow",
         v.bg,
         v.text,
         className
       )}
     >
+      {/* Light sweep on hover */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full motion-reduce:transition-none motion-reduce:hidden"
+      />
       {icon && (
         <div className={cn("absolute top-4 right-4 opacity-25 text-3xl")} aria-hidden="true">
           {icon}

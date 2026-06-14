@@ -4,11 +4,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   TrendingUp, Wallet, ArrowDownToLine, AlertCircle,
-  ShoppingCart, FilePlus2, Users, Boxes, Sparkles, Receipt,
+  ShoppingCart, FilePlus2, Users, Boxes, Sparkles, Receipt, CalendarDays,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import PageWrapper from "@/components/layout/PageWrapper";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
@@ -45,6 +44,9 @@ export default function DashboardPage() {
 
   const firstName = (session?.user?.name ?? "").split(" ")[0] || "there";
   const recentInvoices = invoices.slice(0, 6);
+  const now = new Date();
+  const greeting = now.getHours() < 12 ? "Good morning" : now.getHours() < 17 ? "Good afternoon" : "Good evening";
+  const todayLabel = formatDate(now.toISOString());
 
   const kpis = [
     { label: "Revenue MTD",     value: data.revenueMtd,   icon: <TrendingUp />,      variant: "teal" as const },
@@ -56,7 +58,26 @@ export default function DashboardPage() {
 
   return (
     <PageWrapper>
-      <PageHeader title={`Welcome back, ${firstName}`} subtitle="Here's how your business is doing today." />
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative overflow-hidden mb-6 rounded-2xl border border-ud-border bg-white shadow-card p-5 sm:p-6"
+      >
+        <div className="pointer-events-none absolute -top-16 -right-10 w-60 h-60 rounded-full bg-ud-primary opacity-[0.06] blur-3xl" />
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[0.08em] text-ud-primary">{greeting}</div>
+            <h1 className="mt-1 font-display text-2xl md:text-3xl font-extrabold text-ud-text-primary text-balance">
+              Welcome back, {firstName}
+            </h1>
+            <p className="mt-1 text-sm text-ud-text-muted">Here&apos;s how your business is doing today.</p>
+          </div>
+          <div className="inline-flex items-center gap-2 self-start rounded-xl bg-ud-surface-2 border border-ud-border px-3 py-2 text-sm text-ud-text-secondary">
+            <CalendarDays className="w-4 h-4 text-ud-primary" /> {todayLabel}
+          </div>
+        </div>
+      </motion.div>
 
       <motion.div
         initial="hidden"
@@ -80,8 +101,8 @@ export default function DashboardPage() {
           ) : (
             <div className="divide-y divide-ud-border -mx-5">
               {recentInvoices.map((inv) => (
-                <Link key={inv.id} href="/sales/invoices" className="flex items-center gap-3 px-5 py-3 hover:bg-ud-surface-2 transition-colors">
-                  <div className="w-9 h-9 rounded-xl bg-ud-primary-50 flex items-center justify-center flex-shrink-0">
+                <Link key={inv.id} href="/sales/invoices" className="group flex items-center gap-3 px-5 py-3 border-l-2 border-transparent hover:border-ud-primary hover:bg-ud-surface-2 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-ud-primary-50 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
                     <ShoppingCart className="w-4 h-4 text-ud-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -108,8 +129,8 @@ export default function DashboardPage() {
             {QUICK_ACTIONS.map((a) => {
               const Icon = a.icon;
               return (
-                <Link key={a.label} href={a.href} className="group p-3 rounded-xl border border-ud-border bg-white hover:border-ud-primary hover:shadow-card-hover transition-all">
-                  <div className={`w-9 h-9 rounded-xl ${a.color} flex items-center justify-center mb-2`}>
+                <Link key={a.label} href={a.href} className="group p-3 rounded-xl border border-ud-border bg-white hover:border-ud-primary hover:shadow-card-hover hover:-translate-y-0.5 transition-all">
+                  <div className={`w-9 h-9 rounded-xl ${a.color} flex items-center justify-center mb-2 transition-transform group-hover:scale-110`}>
                     <Icon className="w-4 h-4 text-white" />
                   </div>
                   <div className="text-sm font-medium text-ud-text-primary group-hover:text-ud-primary transition-colors">{a.label}</div>

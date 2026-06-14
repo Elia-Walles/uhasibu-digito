@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Lock, LogOut } from "lucide-react";
+import { Lock, LogOut, Sparkles } from "lucide-react";
 import { PricingCard } from "@/components/billing/PricingCard";
 import { normalizeTier, minTierForPath, type Tier } from "@/lib/auth/tiers";
 import { selectPlan } from "@/lib/server/actions/billing";
@@ -59,8 +59,11 @@ function SelectPlanInner() {
   }, [loading, plans, preselect]);
 
   return (
-    <div className="min-h-screen bg-ud-surface-3">
-      <header className="flex items-center justify-between px-5 sm:px-8 h-16 border-b border-ud-border bg-ud-surface/80 backdrop-blur-md">
+    <div className="relative min-h-screen bg-ud-surface-3 overflow-hidden">
+      <div className="pointer-events-none absolute -top-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-ud-primary opacity-10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-ud-gold opacity-10 blur-3xl" />
+
+      <header className="relative flex items-center justify-between px-5 sm:px-8 h-16 border-b border-ud-border bg-ud-surface/80 backdrop-blur-md">
         <div className="flex items-center gap-2.5">
           <Image src="/images/uhasibu-digito-circle.png" alt="Uhasibu Digito" width={32} height={32} className="w-8 h-8 rounded-lg" priority />
           <span className="font-display font-bold">Uhasibu Digito</span>
@@ -70,14 +73,17 @@ function SelectPlanInner() {
         </button>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-10 sm:py-14">
+      <main className="relative max-w-6xl mx-auto px-4 sm:px-8 py-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="text-center max-w-2xl mx-auto"
+          className="flex flex-col items-center text-center max-w-2xl mx-auto"
         >
-          <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-balance">Choose the plan that fits your business</h1>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-ud-primary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ud-primary">
+            <Sparkles className="w-3 h-3" /> Choose your plan
+          </div>
+          <h1 className="mt-4 font-display font-extrabold text-3xl sm:text-4xl text-balance">Choose the plan that fits your business</h1>
           <p className="mt-3 text-ud-text-secondary text-balance">
             Start with Point of Sale and upgrade any time as you grow into full accounting, tax and payroll.
           </p>

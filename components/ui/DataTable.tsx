@@ -144,7 +144,7 @@ export function DataTable<T>({
                 key={rowKey ? rowKey(row, start + i) : start + i}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={cn(
-                  "border-b border-ud-border last:border-b-0 transition-colors",
+                  "border-b border-ud-border last:border-b-0 transition-colors duration-150",
                   i % 2 === 1 && "bg-ud-surface-2/50",
                   onRowClick && "hover:bg-ud-primary-50 cursor-pointer"
                 )}
