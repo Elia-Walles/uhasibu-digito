@@ -47,7 +47,7 @@ export async function getCompany(): Promise<Company> {
 export async function updateCompany(input: unknown): Promise<Result<Company>> {
   const parsed = updateCompanySchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
-  // Strip undefined keys — Prisma's update input rejects `undefined` under exactOptionalPropertyTypes.
+  // Strip undefined keys Prisma's update input rejects `undefined` under exactOptionalPropertyTypes.
   const data: Prisma.CompanyProfileUpdateManyMutationInput = {};
   for (const [k, v] of Object.entries(parsed.data)) {
     if (v !== undefined) (data as Record<string, string>)[k] = v;

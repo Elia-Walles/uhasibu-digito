@@ -99,7 +99,7 @@ export async function createQuotation(input: unknown): Promise<Result<Quotation>
         throw e;
       }
     }
-    return err("Could not allocate a quotation number — please retry");
+    return err("Could not allocate a quotation number please retry");
   });
 }
 

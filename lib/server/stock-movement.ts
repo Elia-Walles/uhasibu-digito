@@ -22,7 +22,7 @@ function statusFor(onHand: number, reorderLevel: number): StockStatus {
 /**
  * The compound stock write: in one transaction, record the StockMovement AND recompute
  * the item's onHand / totalValue / status. Sign is owned here (IN +, OUT −, ADJUSTMENT
- * signed, TRANSFER 0) — the correct convention (the legacy mock store mis-signed OUT).
+ * signed, TRANSFER 0) the correct convention (the legacy mock store mis-signed OUT).
  * Scoped by tenantId explicitly so it's correct in $transaction and unit-testable.
  * Returns null if the item doesn't belong to the tenant.
  */
@@ -42,7 +42,7 @@ export async function applyStockMovement(
   const onHand = Number(item.onHand);
   const unitCost = Number(item.unitCost);
   const newOnHand = Math.max(0, onHand + delta);
-  const narration = input.narration || `${input.type} — ${item.name}`;
+  const narration = input.narration || `${input.type} ${item.name}`;
 
   const movement = await tx.stockMovement.create({
     data: {

@@ -74,7 +74,7 @@ async function loadAndCheckStock(lines: SaleLine[]): Promise<Result<Map<string, 
 /**
  * Records a POS sale: validates stock, computes totals (NO VAT), captures cost-of-sales for
  * profit reporting, creates the accounting Invoice (VAT 0), the POSSale + lines, and
- * decrements stock — all atomically. Retries on the unique-number clash from concurrent sales.
+ * decrements stock all atomically. Retries on the unique-number clash from concurrent sales.
  */
 export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
   const parsed = recordPOSSaleSchema.safeParse(input);
@@ -91,7 +91,7 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
     const total = lineTotals.reduce((s, n) => s + n, 0);
     const costOfSales = lineCosts.reduce((s, n) => s + n, 0);
     const grossProfit = total - costOfSales;
-    const customerName = d.customerName?.trim() || "Walk-in customer";
+    const customerName = d.customerName?.trim() ?? "";
 
     let branchName = "";
     if (d.branchId) {
@@ -106,10 +106,10 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
         data: {
           tenantId: ctx.tenantId,
           name: WALK_IN_NAME,
-          contactPerson: "—",
+          contactPerson: "",
           tin: "000-000-000",
-          phone: "—",
-          email: "—",
+          phone: "",
+          email: "",
           city: "Dar es Salaam",
           address: "Point of Sale",
           paymentTerms: "Cash",
@@ -206,7 +206,7 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
         throw e;
       }
     }
-    return err("Could not allocate a receipt number — please retry");
+    return err("Could not allocate a receipt number please retry");
   });
 }
 
@@ -234,7 +234,7 @@ export async function createPOSInvoice(input: unknown): Promise<Result<{ id: str
         data: {
           tenantId: ctx.tenantId,
           name: customerName,
-          contactPerson: "—",
+          contactPerson: "",
           tin: "",
           phone: "",
           email: "",
@@ -300,7 +300,7 @@ export async function createPOSInvoice(input: unknown): Promise<Result<{ id: str
         throw e;
       }
     }
-    return err("Could not allocate an invoice number — please retry");
+    return err("Could not allocate an invoice number please retry");
   });
 }
 

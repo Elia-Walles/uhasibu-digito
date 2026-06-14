@@ -51,12 +51,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user?.id) {
         const row = await authDb.user.findUnique({
           where: { id: user.id },
-          select: { tenantId: true, role: true, image: true, tenant: { select: { tier: true } } },
+          select: { tenantId: true, role: true, image: true, isSuperAdmin: true, tenant: { select: { tier: true } } },
         });
         token.tenantId = row?.tenantId ?? null;
         token.role = (row?.role as UserRole | undefined) ?? "Accountant";
         token.picture = row?.image ?? null;
         token.tier = normalizeTier(row?.tenant?.tier);
+        token.isSuperAdmin = row?.isSuperAdmin ?? false;
       }
       return token;
     },
@@ -67,6 +68,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = (token.role as UserRole | undefined) ?? "Accountant";
         session.user.image = typeof token.picture === "string" ? token.picture : null;
         session.user.tier = normalizeTier(token.tier);
+        session.user.isSuperAdmin = token.isSuperAdmin === true;
       }
       return session;
     },

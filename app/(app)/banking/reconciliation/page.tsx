@@ -59,7 +59,7 @@ export default function ReconciliationPage() {
               </div>
               <h3 className="font-display font-bold text-xl">Import bank statement</h3>
               <p className="text-sm text-ud-text-muted mt-2 max-w-md mx-auto">
-                Upload your CRDB bank statement (.OFX / .CSV) — Uhasibu Digito will match transactions automatically.
+                Upload your CRDB bank statement (.OFX / .CSV) Uhasibu Digito will match transactions automatically.
               </p>
               <Button variant="primary" size="lg" onClick={runReconciliation} className="mt-5" icon={<Upload className="w-4 h-4" />}>
                 Use sample statement

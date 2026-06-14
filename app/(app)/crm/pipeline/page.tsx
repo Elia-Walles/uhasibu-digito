@@ -100,7 +100,7 @@ export default function PipelinePage() {
     <PageWrapper>
       <PageHeader
         title="Sales Pipeline"
-        subtitle="Move deals between stages — total value across active stages"
+        subtitle="Move deals between stages total value across active stages"
         breadcrumbs={[{ label: "CRM", href: "/crm" }, { label: "Pipeline" }]}
         actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add deal</Button>}
       />

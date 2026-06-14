@@ -8,7 +8,7 @@ export default function AuditExpensesPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Audit — Expenses"
+        title="Audit Expenses"
         subtitle="Audit procedures applied to expense recognition and recording"
         breadcrumbs={[{ label: "Audit", href: "/audit" }, { label: "Expenses" }]}
       />

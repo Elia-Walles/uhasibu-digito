@@ -14,7 +14,7 @@ export const resetProcedureSchema = z.object({
   procedure: PROCEDURE,
 });
 
-// Patch — the engagement card updates one field at a time (name / period / auditor).
+// Patch the engagement card updates one field at a time (name / period / auditor).
 export const updateEngagementSchema = z.object({
   name: z.string().optional(),
   period: z.string().optional(),

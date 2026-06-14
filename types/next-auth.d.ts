@@ -11,6 +11,7 @@ declare module "next-auth" {
       tenantId: string;
       role: UserRole;
       tier: Tier;
+      isSuperAdmin: boolean;
     } & DefaultSession["user"];
   }
 
@@ -27,5 +28,6 @@ declare module "next-auth/jwt" {
     tenantId?: string | null;
     role?: UserRole;
     tier?: Tier;
+    isSuperAdmin?: boolean;
   }
 }

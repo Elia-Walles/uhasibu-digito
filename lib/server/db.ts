@@ -9,7 +9,7 @@ import { applyTenantScope, isTenantScopedModel, type ScopableArgs } from "./tena
  * injects the caller's `tenantId` into every query for a tenant-scoped model
  * (see lib/server/tenant-scope.ts). There is intentionally no other PrismaClient
  * in the project except the raw, unscoped client the Auth.js PrismaAdapter uses
- * for its own tables (User/Account/Session/VerificationToken) — those are written
+ * for its own tables (User/Account/Session/VerificationToken) those are written
  * before a tenant is bound, so they must not be scoped.
  *
  * Prisma 7 connects through a driver adapter; the connection string comes from
@@ -30,7 +30,14 @@ function createExtendedClient() {
       $allModels: {
         $allOperations({ model, operation, args, query }) {
           if (!isTenantScopedModel(model)) return query(args);
-          const { tenantId } = currentContext();
+          // Name the model/operation if context is missing far easier to trace than a bare
+          // "No request context" with no clue which query escaped withAuth.
+          let tenantId: string;
+          try {
+            ({ tenantId } = currentContext());
+          } catch {
+            throw new Error(`No request context for ${model}.${operation} must run inside withAuth / runWithContext.`);
+          }
           applyTenantScope(model, operation, args as ScopableArgs, tenantId);
           return query(args);
         },

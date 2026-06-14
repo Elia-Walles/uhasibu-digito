@@ -53,8 +53,8 @@ export default function TrialBalancePage() {
                     <tr key={a.code} className={i % 2 === 1 ? "bg-ud-surface-2/50" : ""}>
                       <td className="px-4 py-2.5 font-mono text-xs text-ud-text-muted">{a.code}</td>
                       <td className="px-4 py-2.5">{a.name}</td>
-                      <td className="px-4 py-2.5 text-right">{a.debit > 0 ? <CurrencyDisplay amount={a.debit} showSymbol={false} /> : <span className="text-ud-text-faint">—</span>}</td>
-                      <td className="px-4 py-2.5 text-right">{a.credit > 0 ? <CurrencyDisplay amount={a.credit} showSymbol={false} /> : <span className="text-ud-text-faint">—</span>}</td>
+                      <td className="px-4 py-2.5 text-right">{a.debit > 0 ? <CurrencyDisplay amount={a.debit} showSymbol={false} /> : <span className="text-ud-text-faint"></span>}</td>
+                      <td className="px-4 py-2.5 text-right">{a.credit > 0 ? <CurrencyDisplay amount={a.credit} showSymbol={false} /> : <span className="text-ud-text-faint"></span>}</td>
                     </tr>
                   ))}
                 </tbody>

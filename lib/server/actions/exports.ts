@@ -9,7 +9,7 @@ import { buildDepreciationWorkbook, DEPRECIATION_FILENAME } from "@/lib/utils/de
 import { buildAuditWorkbook, auditFilename } from "@/lib/utils/audit-export";
 import { buildModelWorkbook, modelFilename } from "@/lib/utils/model-export";
 
-// Wave 11 — xlsx generation moved server-side. Each action authenticates (directly or via a
+// Wave 11 xlsx generation moved server-side. Each action authenticates (directly or via a
 // reused tenant-scoped read action), builds the workbook with the shared pure builders, and
 // returns the bytes as base64 for the client to save (see lib/hooks/useExports.ts).
 export interface ExportFile {
@@ -18,7 +18,7 @@ export interface ExportFile {
 }
 
 export async function exportDepreciationXlsx(): Promise<ExportFile> {
-  // listAssets is itself withAuth + tenant-scoped — reuse it for the live data.
+  // listAssets is itself withAuth + tenant-scoped reuse it for the live data.
   const assets = await listAssets();
   const wb = await buildDepreciationWorkbook(assets);
   return { filename: DEPRECIATION_FILENAME, base64: await workbookToBase64(wb) };

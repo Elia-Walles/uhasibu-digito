@@ -209,7 +209,7 @@ export default function PurchaseOrdersPage() {
       <Modal
         open={matchEdit !== null}
         onOpenChange={(o) => !o && setMatchEdit(null)}
-        title={matchEdit ? `${matchEdit.number} — 3-way match` : ""}
+        title={matchEdit ? `${matchEdit.number} 3-way match` : ""}
         description="Toggle each document as it is received and verified."
         size="md"
       >

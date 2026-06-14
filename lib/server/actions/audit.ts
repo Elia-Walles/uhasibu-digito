@@ -14,7 +14,7 @@ import type {
   AuditStepStatus,
 } from "@/types";
 
-// Mirrors DEFAULT_AUDIT_ENGAGEMENT in lib/store/dataStore.ts — used when a tenant has no
+// Mirrors DEFAULT_AUDIT_ENGAGEMENT in lib/store/dataStore.ts used when a tenant has no
 // engagement row yet (the seed creates one, but a freshly-registered company won't have it).
 const DEFAULT_ENGAGEMENT = {
   name: "Annual Audit",
@@ -37,7 +37,7 @@ export async function getAudit(): Promise<AuditSnapshot> {
       eng = await db.auditEngagement.create({
         data: {
           tenantId: ctx.tenantId,
-          name: company?.name ? `${company.name} — Audit` : DEFAULT_ENGAGEMENT.name,
+          name: company?.name ? `${company.name} Audit` : DEFAULT_ENGAGEMENT.name,
           period: DEFAULT_ENGAGEMENT.period,
           auditorName: DEFAULT_ENGAGEMENT.auditorName,
         },
@@ -70,7 +70,7 @@ export async function setAuditStep(input: unknown): Promise<Result<{ procedure: 
   const { procedure, stepKey, status, notes } = parsed.data;
   return withAuth(async (ctx) => {
     const eng = await db.auditEngagement.findFirst({ orderBy: { createdAt: "desc" } });
-    // The @@unique([tenantId, procedure, stepKey]) makes this idempotent — the same step
+    // The @@unique([tenantId, procedure, stepKey]) makes this idempotent the same step
     // upserts in place as the auditor toggles status / edits notes.
     await db.auditStepResult.upsert({
       where: { tenantId_procedure_stepKey: { tenantId: ctx.tenantId, procedure, stepKey } },

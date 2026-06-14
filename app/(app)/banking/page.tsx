@@ -56,7 +56,7 @@ export default function BankingPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-3">Cash bridge — October</h3>
+          <h3 className="font-display font-bold text-base mb-3">Cash bridge October</h3>
           <CashFlowChart />
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">

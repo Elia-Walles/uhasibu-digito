@@ -3,9 +3,10 @@ import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { createMariaDbAdapter } from "../lib/server/db-adapter";
 import { STANDARD_COA, DEFAULT_DEPARTMENTS } from "@/lib/config/chart-of-accounts";
+import { PLANS } from "@/lib/auth/tiers";
 
 // Production seed for the AFYALEAD COMPANY tenant. Creates the owner account, company
-// profile, a standard Tanzanian Chart of Accounts, and default departments — NO fake
+// profile, a standard Tanzanian Chart of Accounts, and default departments NO fake
 // business data. Also wipes the legacy "kilimanjaro" demo tenant + its data. Idempotent.
 const prisma = new PrismaClient({ adapter: createMariaDbAdapter() });
 
@@ -14,6 +15,11 @@ const OWNER_NAME = "elia walles";
 const OWNER_PASSWORD = "Walles.777";
 const COMPANY_NAME = "AFYALEAD COMPANY";
 const COMPANY_SLUG = "afyalead";
+
+// Tenant-less platform super-admin (operator) has no tenant, lands straight in /admin.
+const PLATFORM_ADMIN_EMAIL = "uhasibudigito@gmail.com";
+const PLATFORM_ADMIN_NAME = "Uhasibu Digito Admin";
+const PLATFORM_ADMIN_PASSWORD = "Uhasibu@digito3035";
 
 /** Delete a tenant and every row scoped to it (children before parents), if it exists. */
 async function wipeTenant(slug: string) {
@@ -55,7 +61,7 @@ async function wipeTenant(slug: string) {
   await prisma.cOAAccount.deleteMany(where);
   await prisma.auditLog.deleteMany(where);
   await prisma.companyProfile.deleteMany(where);
-  // Users reference Department — delete users before departments.
+  // Users reference Department delete users before departments.
   await prisma.user.deleteMany(where);
   await prisma.department.deleteMany(where);
   await prisma.employee.deleteMany(where);
@@ -81,7 +87,7 @@ async function main() {
   const passwordHash = await hash(OWNER_PASSWORD, 12);
   await prisma.user.upsert({
     where: { email: OWNER_EMAIL },
-    update: { name: OWNER_NAME, role: "Admin", initials: "EW", passwordHash, tenantId: tenant.id },
+    update: { name: OWNER_NAME, role: "Admin", initials: "EW", passwordHash, tenantId: tenant.id, isSuperAdmin: true },
     create: {
       email: OWNER_EMAIL,
       name: OWNER_NAME,
@@ -89,6 +95,41 @@ async function main() {
       initials: "EW",
       passwordHash,
       tenantId: tenant.id,
+      isSuperAdmin: true,
+    },
+  });
+
+  // Platform subscription plans DB-backed source of truth for billing display, seeded
+  // from the canonical PLANS constant (lib/auth/tiers.ts). Idempotent (upsert by key).
+  for (let i = 0; i < PLANS.length; i++) {
+    const p = PLANS[i]!;
+    await prisma.plan.upsert({
+      where: { key: p.id },
+      update: { name: p.name, tagline: p.tagline, priceTzs: p.priceTzs, features: JSON.stringify(p.features), highlighted: p.highlighted, sortOrder: i },
+      create: {
+        key: p.id,
+        name: p.name,
+        tagline: p.tagline,
+        priceTzs: p.priceTzs,
+        features: JSON.stringify(p.features),
+        highlighted: p.highlighted,
+        sortOrder: i,
+      },
+    });
+  }
+
+  // Platform operator a super-admin with no tenant (manages the SaaS, not bookkeeping).
+  const platformAdminHash = await hash(PLATFORM_ADMIN_PASSWORD, 12);
+  await prisma.user.upsert({
+    where: { email: PLATFORM_ADMIN_EMAIL },
+    update: { name: PLATFORM_ADMIN_NAME, role: "Admin", initials: "UD", passwordHash: platformAdminHash, isSuperAdmin: true },
+    create: {
+      email: PLATFORM_ADMIN_EMAIL,
+      name: PLATFORM_ADMIN_NAME,
+      role: "Admin",
+      initials: "UD",
+      passwordHash: platformAdminHash,
+      isSuperAdmin: true,
     },
   });
 
@@ -116,7 +157,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded "${COMPANY_NAME}" (slug ${COMPANY_SLUG}) — owner ${OWNER_EMAIL}, ${STANDARD_COA.length} COA accounts, ${DEFAULT_DEPARTMENTS.length} departments. No business data.`,
+    `Seeded "${COMPANY_NAME}" (slug ${COMPANY_SLUG}) owner ${OWNER_EMAIL}, platform admin ${PLATFORM_ADMIN_EMAIL}, ${PLANS.length} plans, ${STANDARD_COA.length} COA accounts, ${DEFAULT_DEPARTMENTS.length} departments. No business data.`,
   );
 }
 

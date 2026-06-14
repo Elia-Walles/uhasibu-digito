@@ -68,7 +68,7 @@ export default function POSInventoryPage() {
       sellingPrice: form.sellingPrice,
       totalValue: form.onHand * form.unitCost,
       location: "POS",
-      supplier: "—",
+      supplier: "",
       costingMethod: "WeightedAverage" as CostingMethod,
       status,
     };

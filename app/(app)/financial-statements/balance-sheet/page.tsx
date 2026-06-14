@@ -37,8 +37,8 @@ export default function BalanceSheetPage() {
         ) : (
           <>
             <StatementTable lines={view.balanceSheet} currentLabel={view.currentLabel} priorLabel={view.priorLabel} />
-            {stamp && <div className="mt-6"><DigitalStamp documentName={`Balance Sheet — ${view.currentLabel}`} applied={stamp} /></div>}
-            {showStamp && !stamp && <div className="mt-6"><DigitalStamp documentName={`Balance Sheet — ${view.currentLabel}`} onApply={setStamp} /></div>}
+            {stamp && <div className="mt-6"><DigitalStamp documentName={`Balance Sheet ${view.currentLabel}`} applied={stamp} /></div>}
+            {showStamp && !stamp && <div className="mt-6"><DigitalStamp documentName={`Balance Sheet ${view.currentLabel}`} onApply={setStamp} /></div>}
           </>
         )}
       </div>

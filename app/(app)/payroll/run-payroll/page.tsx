@@ -171,7 +171,7 @@ export default function RunPayrollPage() {
                         <td className="px-3 py-2.5 text-right font-mono tabular-nums"><CurrencyDisplay amount={e.grossPay} compact showSymbol={false} /></td>
                         <td className="px-3 py-2.5 text-right font-mono tabular-nums text-ud-danger"><CurrencyDisplay amount={e.paye} compact showSymbol={false} /></td>
                         <td className="px-3 py-2.5 text-right font-mono tabular-nums text-ud-danger"><CurrencyDisplay amount={e.nssf_employee} compact showSymbol={false} /></td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-ud-danger">{e.heslb > 0 ? <CurrencyDisplay amount={e.heslb} compact showSymbol={false} /> : "—"}</td>
+                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-ud-danger">{e.heslb > 0 ? <CurrencyDisplay amount={e.heslb} compact showSymbol={false} /> : ""}</td>
                         <td className="px-3 py-2.5 text-right font-mono tabular-nums font-bold"><CurrencyDisplay amount={e.netPay} compact showSymbol={false} /></td>
                       </tr>
                     ))}
@@ -209,7 +209,7 @@ export default function RunPayrollPage() {
               <div className="p-4 rounded-xl bg-ud-warning-bg border border-ud-warning/20">
                 <div className="text-sm font-bold text-ud-warning mb-1">Statutory deadlines</div>
                 <ul className="text-xs text-ud-text-secondary space-y-0.5">
-                  <li>• PAYE, NSSF, SDL, WCF — due to TRA by 7 November 2024</li>
+                  <li>• PAYE, NSSF, SDL, WCF due to TRA by 7 November 2024</li>
                   <li>• Net pay will be disbursed from CRDB Payroll account ({employees.length} transfers)</li>
                   <li>• Once approved, this cannot be reversed without a full reversal journal entry</li>
                 </ul>

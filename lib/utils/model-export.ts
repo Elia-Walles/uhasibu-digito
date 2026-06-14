@@ -62,7 +62,7 @@ export function buildModelWorkbook(assumptions: ModelAssumptions, company: Model
     cover.getColumn(2).width = 60;
     cover.mergeCells("A1:B1");
     const title = cover.getCell("A1");
-    title.value = "Uhasibu Digito™ — Financial Model";
+    title.value = "Uhasibu Digito™ Financial Model";
     applyStyle(title, STYLE.header);
     title.alignment = { vertical: "middle", horizontal: "center" };
     cover.getRow(1).height = 32;
@@ -119,7 +119,7 @@ export function buildModelWorkbook(assumptions: ModelAssumptions, company: Model
       ["CapEx (annual TZS)",      assumptions.capexAnnual,        NUM_FMT_PLAIN],
       ["Corporate tax rate",      assumptions.taxRate,            NUM_FMT_PCT],
     ];
-    // Row positions of assumption values (1-based) — referenced from projection formulas.
+    // Row positions of assumption values (1-based) referenced from projection formulas.
     const A_INFL = 3, A_FX = 4, A_REVG = 5, A_GMG = 6, A_OPXG = 7, A_CAPEX = 8, A_TAX = 9;
     assumptionRows.forEach((row, i) => {
       const r = a.getRow(i + 3);

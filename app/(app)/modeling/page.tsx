@@ -154,7 +154,7 @@ export default function FinancialModelingPage() {
           <Badge variant="warning" size="sm" className="mb-1">Model hygiene</Badge>
           <p>
             Exported workbook follows the standard layout: <span className="font-semibold text-ud-text-primary">Cover · Dashboard · Assumptions · Historicals · IS / BS / CF projections</span>.
-            Inputs are <span className="font-semibold text-ud-info">blue</span>, formulas <span className="font-semibold text-ud-success">green</span>. No hard-coded values inside formulas — every driver flows through Assumptions.
+            Inputs are <span className="font-semibold text-ud-info">blue</span>, formulas <span className="font-semibold text-ud-success">green</span>. No hard-coded values inside formulas every driver flows through Assumptions.
           </p>
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function FinancialModelingPage() {
         {/* Chart */}
         <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-bold text-base">Revenue & net profit — historical + forecast</h3>
+            <h3 className="font-display font-bold text-base">Revenue & net profit historical + forecast</h3>
             <span className="text-xs text-ud-text-muted inline-flex items-center gap-1"><TrendingUp className="w-3 h-3" />Driven by assumptions</span>
           </div>
           <ResponsiveContainer width="100%" height={340}>

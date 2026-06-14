@@ -44,14 +44,14 @@ export async function applyAssetDisposal(
   });
 
   const lines: JournalLineInput[] = [
-    { accountCode: "1010", accountName: "CRDB Bank", description: `Proceeds — ${asset.name}`, debit: input.proceeds, credit: 0 },
-    { accountCode: "1501", accountName: "Accumulated Depreciation", description: `Disposal — ${asset.name}`, debit: accDep, credit: 0 },
-    { accountCode: "1500", accountName: "Property, Plant & Equipment", description: `Disposal — ${asset.name}`, debit: 0, credit: cost },
+    { accountCode: "1010", accountName: "CRDB Bank", description: `Proceeds ${asset.name}`, debit: input.proceeds, credit: 0 },
+    { accountCode: "1501", accountName: "Accumulated Depreciation", description: `Disposal ${asset.name}`, debit: accDep, credit: 0 },
+    { accountCode: "1500", accountName: "Property, Plant & Equipment", description: `Disposal ${asset.name}`, debit: 0, credit: cost },
   ];
   if (gainLoss > 0) {
-    lines.push({ accountCode: "4200", accountName: "Gain on Asset Disposal", description: `Gain — ${asset.name}`, debit: 0, credit: gainLoss });
+    lines.push({ accountCode: "4200", accountName: "Gain on Asset Disposal", description: `Gain ${asset.name}`, debit: 0, credit: gainLoss });
   } else if (gainLoss < 0) {
-    lines.push({ accountCode: "6500", accountName: "Loss on Asset Disposal", description: `Loss — ${asset.name}`, debit: -gainLoss, credit: 0 });
+    lines.push({ accountCode: "6500", accountName: "Loss on Asset Disposal", description: `Loss ${asset.name}`, debit: -gainLoss, credit: 0 });
   }
 
   await applyJournalEntry(tx, tenantId, ctx, {

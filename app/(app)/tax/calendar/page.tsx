@@ -24,7 +24,7 @@ export default function TaxCalendarPage() {
     <PageWrapper>
       <PageHeader
         title="Tax Calendar"
-        subtitle="All filings, deadlines, and status — per TRA filing requirements (chronological)"
+        subtitle="All filings, deadlines, and status per TRA filing requirements (chronological)"
         breadcrumbs={[{ label: "Tax", href: "/tax" }, { label: "Calendar" }]}
       />
       <div className="mb-4 px-4 py-3 rounded-xl bg-ud-primary-50/60 border border-ud-primary/15 text-xs text-ud-text-secondary leading-relaxed">

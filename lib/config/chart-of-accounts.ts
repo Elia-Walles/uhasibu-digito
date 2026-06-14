@@ -1,7 +1,7 @@
 import type { COAAccount } from "@/types";
 
 /**
- * Standard Tanzanian Chart of Accounts template — hierarchical, all balances zeroed.
+ * Standard Tanzanian Chart of Accounts template hierarchical, all balances zeroed.
  * Seeded into every new tenant so the GL, trial balance, and financial statements work out
  * of the box. This is genuine reference configuration.
  */

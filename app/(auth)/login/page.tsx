@@ -3,7 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Mail, Lock, ShieldCheck, Sparkles, TrendingUp, FileBarChart } from "lucide-react";
+import { Mail, Lock, ShieldCheck, Sparkles, TrendingUp, FileBarChart, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { signIn } from "next-auth/react";
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -35,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen grid md:grid-cols-2">
-      {/* LEFT — dark brand panel */}
+      {/* LEFT dark brand panel */}
       <div className="relative hidden md:flex flex-col justify-between p-10 gradient-obsidian text-white overflow-hidden">
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-ud-primary opacity-20 blur-3xl" />
         <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-ud-gold opacity-10 blur-3xl" />
@@ -92,7 +93,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT — form */}
+      {/* RIGHT form */}
       <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-16 bg-ud-surface">
         <div className="w-full max-w-sm mx-auto">
           <div className="md:hidden mb-6 flex items-center gap-3">
@@ -120,10 +121,21 @@ export default function LoginPage() {
             />
             <Input
               label="Password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               prefixIcon={<Lock className="w-4 h-4" />}
+              suffixIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="text-ud-text-muted hover:text-ud-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ud-primary rounded"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              }
               required
             />
             <Button type="submit" variant="primary" size="lg" loading={loading} fullWidth>

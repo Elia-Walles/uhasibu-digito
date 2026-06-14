@@ -1,4 +1,4 @@
-// Server-safe ExcelJS core. NO "use client" and NO DOM — these helpers only manipulate
+// Server-safe ExcelJS core. NO "use client" and NO DOM these helpers only manipulate
 // ExcelJS workbook objects and serialize to a buffer, so they import cleanly on BOTH the
 // server (Wave 11 export Server Actions) and the client (the off-flag browser download
 // path in lib/utils/excel.ts). The browser-only sinks (Blob / document) live in excel.ts.
@@ -14,11 +14,11 @@ export const STYLE = {
   link: {
     font: { color: { argb: "FF059669" } } as Partial<Cell["font"]>,
   },
-  /** Computed / given numbers — black. */
+  /** Computed / given numbers black. */
   computed: {
     font: { color: { argb: "FF111827" } } as Partial<Cell["font"]>,
   },
-  /** Section header — bold uppercase tracking on tinted background. */
+  /** Section header bold uppercase tracking on tinted background. */
   header: {
     font: { color: { argb: "FFFFFFFF" }, bold: true, size: 11 } as Partial<Cell["font"]>,
     fill: { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F7B5E" } } as Cell["fill"],
@@ -56,7 +56,7 @@ export const NUM_FMT_RATE   = "#,##0.00";
 
 /**
  * Create a workbook with deterministic metadata and run a builder against it. Returns the
- * built workbook — the caller decides the sink (browser download or server base64). Pure;
+ * built workbook the caller decides the sink (browser download or server base64). Pure;
  * no DOM, safe on the server.
  */
 export async function buildWorkbook(build: (wb: Workbook) => void | Promise<void>): Promise<Workbook> {
@@ -68,7 +68,7 @@ export async function buildWorkbook(build: (wb: Workbook) => void | Promise<void
   return wb;
 }
 
-/** Serialize a workbook to a base64 string (server side — uses node Buffer). */
+/** Serialize a workbook to a base64 string (server side uses node Buffer). */
 export async function workbookToBase64(wb: Workbook): Promise<string> {
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer).toString("base64");

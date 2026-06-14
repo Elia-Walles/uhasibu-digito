@@ -41,7 +41,7 @@ export default function StockMovementsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
-  const itemOptions = inventory.map((i) => ({ value: i.id, label: `${i.code} — ${i.name}` }));
+  const itemOptions = inventory.map((i) => ({ value: i.id, label: `${i.code} ${i.name}` }));
   const selectedItem = inventory.find((i) => i.id === form.itemId);
 
   function openAdd() {

@@ -45,12 +45,12 @@ function fromAddress(): string {
 
 /**
  * Send an email. Returns true if dispatched, false if SMTP is unconfigured (logged) or the
- * send failed (callers treat a false as "not delivered" and proceed — never throws).
+ * send failed (callers treat a false as "not delivered" and proceed never throws).
  */
 export async function sendMail({ to, subject, html, text }: MailInput): Promise<boolean> {
   const tx = transporter();
   if (!tx) {
-    console.warn(`[email] SMTP not configured — skipped send to ${to}: "${subject}"`);
+    console.warn(`[email] SMTP not configured skipped send to ${to}: "${subject}"`);
     return false;
   }
   try {

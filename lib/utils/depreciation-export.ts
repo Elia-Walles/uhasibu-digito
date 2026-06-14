@@ -32,7 +32,7 @@ export function buildDepreciationWorkbook(assets: FixedAsset[]): Promise<Workboo
       r.getCell(2).value = a.code;
       r.getCell(3).value = a.category;
 
-      // Inputs (blue) — cost, residual, life
+      // Inputs (blue) cost, residual, life
       r.getCell(4).value = a.cost;
       r.getCell(4).numFmt = NUM_FMT_PLAIN;
       applyStyle(r.getCell(4), STYLE.input);
@@ -44,7 +44,7 @@ export function buildDepreciationWorkbook(assets: FixedAsset[]): Promise<Workboo
       r.getCell(6).value = a.usefulLifeYears;
       applyStyle(r.getCell(6), STYLE.input);
 
-      // Computed (green formulas) — annual dep, accum dep, NBV
+      // Computed (green formulas) annual dep, accum dep, NBV
       r.getCell(7).value = { formula: `(D${i + 3}-E${i + 3})/F${i + 3}` };
       r.getCell(7).numFmt = NUM_FMT_PLAIN;
       applyStyle(r.getCell(7), STYLE.link);

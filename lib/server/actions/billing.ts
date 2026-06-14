@@ -10,7 +10,7 @@ const selectPlanSchema = z.object({
 });
 
 /**
- * Activates a subscription plan for the current tenant (instant activation — no payment
+ * Activates a subscription plan for the current tenant (instant activation no payment
  * gateway). Writes Tenant.tier via the unscoped auth client (Tenant is a tenancy root, not
  * a tenant-scoped model). The client refreshes its session afterwards so the new tier takes
  * effect (the jwt callback re-reads the tier on `update`).

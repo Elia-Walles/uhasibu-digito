@@ -244,7 +244,7 @@ export default function QuotationsPage() {
             </button>
           </div>
 
-          <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional — terms, delivery, etc." />
+          <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional terms, delivery, etc." />
 
           <div className="ml-auto w-full sm:w-64 text-sm space-y-1">
             <div className="flex justify-between"><span className="text-ud-text-muted">Subtotal</span><span className="font-mono">{subtotal.toLocaleString()}</span></div>

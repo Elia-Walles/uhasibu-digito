@@ -126,7 +126,7 @@ export function DigitalStamp({ documentName, onApply, applied }: DigitalStampPro
                   <h2 id="stamp-title" className="font-display font-bold text-lg leading-tight">
                     NBAA Digital Stamp
                   </h2>
-                  <p className="text-xs text-ud-text-muted">Tanzania — Auditor Certification</p>
+                  <p className="text-xs text-ud-text-muted">Tanzania Auditor Certification</p>
                 </div>
               </div>
 

@@ -45,7 +45,7 @@ export default function POSReceiptsPage() {
     <PageWrapper>
       <PageHeader
         title="Receipts"
-        subtitle="Receipts issued at the point of sale — tap a row to view or reprint"
+        subtitle="Receipts issued at the point of sale tap a row to view or reprint"
         breadcrumbs={[{ label: "Point of Sale", href: "/pos" }, { label: "Receipts" }]}
       />
 

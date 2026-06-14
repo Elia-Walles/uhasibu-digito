@@ -65,7 +65,7 @@ export async function registerTenant(
         if (!clash) break;
         slug = `${baseSlug}-${attempt + 2}`;
       }
-      // New tenants start on the `free` tier — they pick a plan on /select-plan next.
+      // New tenants start on the `free` tier they pick a plan on /select-plan next.
       const tenant = await tx.tenant.create({ data: { name: companyName, slug, tier: "free" } });
       const user = await tx.user.create({
         data: {
@@ -109,7 +109,7 @@ export async function registerTenant(
 
 /**
  * Starts a password reset: issues a single-use token (only its hash is stored), valid for
- * one hour, and emails the reset link. Always returns ok — never reveal whether an account
+ * one hour, and emails the reset link. Always returns ok never reveal whether an account
  * exists for the address.
  */
 export async function requestPasswordReset(input: unknown): Promise<Result<true>> {
@@ -128,7 +128,7 @@ export async function requestPasswordReset(input: unknown): Promise<Result<true>
     await sendMail({
       to: email,
       subject: "Reset your Uhasibu Digito password",
-      html: `<p>Hello${user.name ? ` ${user.name}` : ""},</p><p>We received a request to reset your password. Click the link below to choose a new one — it expires in one hour.</p><p><a href="${link}">Reset my password</a></p><p>If you didn't request this, you can safely ignore this email.</p>`,
+      html: `<p>Hello${user.name ? ` ${user.name}` : ""},</p><p>We received a request to reset your password. Click the link below to choose a new one it expires in one hour.</p><p><a href="${link}">Reset my password</a></p><p>If you didn't request this, you can safely ignore this email.</p>`,
     });
   }
   return ok(true);

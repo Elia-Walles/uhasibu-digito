@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// All fields optional — Settings → Company saves a partial patch.
+// All fields optional Settings → Company saves a partial patch.
 export const updateCompanySchema = z.object({
   name: z.string().trim().min(1).optional(),
   shortName: z.string().trim().optional(),

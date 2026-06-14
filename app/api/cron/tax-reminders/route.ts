@@ -3,7 +3,7 @@ import type { TaxFiling } from "@prisma/client";
 import { authDb } from "@/lib/server/auth-db";
 import { sendMail, emailConfigured } from "@/lib/server/email";
 
-// System scheduled job — scans ALL tenants for tax filings due within 5 days and not yet
+// System scheduled job scans ALL tenants for tax filings due within 5 days and not yet
 // filed, emails each tenant's owner a reminder (SMTP configured → send; otherwise →
 // skip), and writes an AuditLog. Uses the RAW unscoped client (no request context).
 // Gated by CRON_SECRET via the Bearer header (Vercel Cron sends this automatically).
@@ -37,7 +37,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     const owner = await authDb.user.findFirst({ where: { tenantId }, orderBy: { createdAt: "asc" } });
     const recipient = owner?.email ?? "";
     const summary = filings
-      .map((f) => `${f.type} ${f.period} — TZS ${Number(f.amount).toLocaleString()} due ${f.dueDate.toISOString().split("T")[0]}`)
+      .map((f) => `${f.type} ${f.period} TZS ${Number(f.amount).toLocaleString()} due ${f.dueDate.toISOString().split("T")[0]}`)
       .join("; ");
 
     let delivered = false;

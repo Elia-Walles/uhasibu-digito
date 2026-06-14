@@ -9,7 +9,7 @@ export interface StandardRate {
 
 /**
  * TRA / NBAA-aligned default depreciation rates by asset class.
- * Illustrative — final rates must be verified with a tax advisor for any
+ * Illustrative final rates must be verified with a tax advisor for any
  * specific engagement. Surface this caveat in any UI that uses these values.
  */
 export const STANDARD_RATES: Record<AssetCategory, StandardRate> = {

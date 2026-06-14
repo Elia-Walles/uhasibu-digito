@@ -82,7 +82,7 @@ export default function OrganisationSettingsPage() {
           <div>
             <h2 className="font-display font-bold text-lg">Departments</h2>
             <p className="text-sm text-ud-text-muted mt-0.5">
-              Define the departments used across Payroll, HR, and reporting. Uhasibu Digito does not dictate your org structure — these are yours.
+              Define the departments used across Payroll, HR, and reporting. Uhasibu Digito does not dictate your org structure these are yours.
             </p>
           </div>
         </div>

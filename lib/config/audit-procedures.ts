@@ -9,7 +9,7 @@ export const AUDIT_STEPS: Record<AuditProcedure, AuditStep[]> = {
       title: "Initial capture",
       description: "Verify the expense was captured promptly and against a real supporting document.",
       evidence: [
-        { label: "GL — expense entries", href: "/general-ledger" },
+        { label: "GL expense entries", href: "/general-ledger" },
         { label: "Source receipt" },
       ],
     },
@@ -101,7 +101,7 @@ export const AUDIT_STEPS: Record<AuditProcedure, AuditStep[]> = {
       title: "Payment voucher",
       description: "PV prepared and approved; references PR + PO + GRN + supplier invoice.",
       evidence: [
-        { label: "GL — payment entries", href: "/general-ledger" },
+        { label: "GL payment entries", href: "/general-ledger" },
       ],
     },
     {

@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
             <div className="mt-4 space-y-4">
               <p className="text-sm text-ud-text-secondary leading-relaxed">
                 If an account exists for <span className="font-medium">{email}</span>, a reset link is on its
-                way. Check your inbox (and spam) — the link expires in one hour.
+                way. Check your inbox (and spam) the link expires in one hour.
               </p>
               <a href="/login" className="text-sm text-ud-primary font-medium hover:underline">Back to sign in</a>
             </div>

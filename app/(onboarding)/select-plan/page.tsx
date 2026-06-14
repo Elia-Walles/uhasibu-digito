@@ -1,13 +1,15 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Lock, LogOut } from "lucide-react";
 import { PricingCard } from "@/components/billing/PricingCard";
-import { PLANS, normalizeTier, minTierForPath, type Tier } from "@/lib/auth/tiers";
+import { normalizeTier, minTierForPath, type Tier } from "@/lib/auth/tiers";
 import { selectPlan } from "@/lib/server/actions/billing";
+import { usePublicPlans } from "@/lib/hooks/usePublicPlans";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { useSignOut } from "@/lib/auth/client";
 import toast from "react-hot-toast";
 
@@ -21,11 +23,14 @@ function SelectPlanInner() {
   const params = useSearchParams();
   const { data: session, update } = useSession();
   const signOut = useSignOut();
+  const { plans, loading } = usePublicPlans();
   const [pending, setPending] = useState<Tier | null>(null);
 
   const currentTier = normalizeTier(session?.user?.tier);
   const from = params.get("from");
   const requiredTier = from ? minTierForPath(from) : null;
+  const preselect = params.get("plan");
+  const autoChosen = useRef(false);
 
   async function choose(tier: Exclude<Tier, "free">) {
     setPending(tier);
@@ -42,6 +47,16 @@ function SelectPlanInner() {
       setPending(null);
     }
   }
+
+  // Auto-activate a plan carried over from the public pricing page (/select-plan?plan=key).
+  useEffect(() => {
+    if (autoChosen.current || loading || !preselect) return;
+    const match = plans.find((p) => p.id === preselect);
+    if (!match || currentTier === match.id) return;
+    autoChosen.current = true;
+    void choose(match.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when plans resolve
+  }, [loading, plans, preselect]);
 
   return (
     <div className="min-h-screen bg-ud-surface-3">
@@ -79,15 +94,17 @@ function SelectPlanInner() {
         )}
 
         <div className="mt-10 grid gap-5 md:grid-cols-3 items-start">
-          {PLANS.map((plan) => (
-            <PricingCard
-              key={plan.id}
-              plan={plan}
-              isCurrent={currentTier === plan.id}
-              loading={pending === plan.id}
-              onSelect={() => void choose(plan.id)}
-            />
-          ))}
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} className="h-96" />)
+            : plans.map((plan) => (
+                <PricingCard
+                  key={plan.id}
+                  plan={plan}
+                  isCurrent={currentTier === plan.id}
+                  loading={pending === plan.id}
+                  onSelect={() => void choose(plan.id)}
+                />
+              ))}
         </div>
 
         <p className="mt-8 text-center text-xs text-ud-text-muted">

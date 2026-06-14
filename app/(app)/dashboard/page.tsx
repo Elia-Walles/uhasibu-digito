@@ -130,7 +130,7 @@ export default function DashboardPage() {
                 <div key={t.id} className="p-3 rounded-xl border border-ud-border bg-white">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-ud-text-primary">{t.type} — {t.period}</div>
+                      <div className="text-sm font-semibold text-ud-text-primary">{t.type} {t.period}</div>
                       <div className="text-xs text-ud-text-muted mt-0.5">Due {formatDate(t.dueDate)}</div>
                     </div>
                     <Badge variant={t.status === "Overdue" ? "danger" : t.status === "Pending" ? "warning" : "info"} pulse={t.status === "Overdue"}>

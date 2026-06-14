@@ -8,7 +8,7 @@ export default function AuditSalesPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Audit — Sales"
+        title="Audit Sales"
         subtitle="Quotation → customer PO → SO → delivery → fiscalised invoice → receipt"
         breadcrumbs={[{ label: "Audit", href: "/audit" }, { label: "Sales" }]}
       />

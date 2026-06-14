@@ -8,7 +8,7 @@ export default function AuditPurchasesPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Audit — Purchases"
+        title="Audit Purchases"
         subtitle="Full procurement cycle: PR → proforma → supplier invoice → DN → GRN → PV → EFD"
         breadcrumbs={[{ label: "Audit", href: "/audit" }, { label: "Purchases" }]}
       />

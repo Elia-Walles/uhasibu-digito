@@ -25,7 +25,7 @@ export interface JournalPayload {
  * rows, and for any line whose accountCode maps to a bank account, insert a matching
  * BankTransaction and move BankAccount.balance. Everything is scoped by tenantId
  * explicitly so it is correct regardless of whether the client extension fires inside
- * $transaction — and unit-testable with the raw tx client.
+ * $transaction and unit-testable with the raw tx client.
  */
 export async function applyJournalEntry(
   tx: Tx,

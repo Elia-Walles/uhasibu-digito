@@ -2,9 +2,9 @@ import type { NextAuthConfig } from "next-auth";
 import { TIER_RANK, minTierForPath, normalizeTier } from "@/lib/auth/tiers";
 
 // Edge-safe Auth.js config shared with the proxy/middleware. NO Node-only imports
-// here (no Prisma, no bcrypt) — it runs on the edge runtime and only decodes the JWT
+// here (no Prisma, no bcrypt) it runs on the edge runtime and only decodes the JWT
 // cookie to decide route access. lib/auth/tiers.ts is pure and edge-safe.
-const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/legal"];
+const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/legal", "/pricing"];
 
 // Routes any authenticated user may reach regardless of subscription tier (so a
 // plan-less `free` account can still pick a plan / manage settings).
@@ -16,8 +16,21 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const { pathname } = nextUrl;
+      // The public landing page exact match only (a "/" prefix would open every route).
+      if (pathname === "/") return true;
       if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) return true;
       if (!auth?.user) return false;
+
+      const isSuper = auth.user.isSuperAdmin === true;
+
+      // The /admin area is the platform super-admin's control room gate it strictly.
+      if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+        return isSuper ? true : Response.redirect(new URL("/dashboard", nextUrl.origin));
+      }
+
+      // Super-admins bypass all tier-gating on the rest of the app they may have no
+      // tenant/tier at all, and must never be bounced to /select-plan.
+      if (isSuper) return true;
 
       if (TIER_EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
         return true;
@@ -33,9 +46,12 @@ export const authConfig = {
       }
       return true;
     },
-    // Edge session: surface the tier from the JWT so `authorized` can read it.
+    // Edge session: surface the tier + super-admin flag from the JWT so `authorized` can read them.
     session({ session, token }) {
-      if (session.user) session.user.tier = normalizeTier(token.tier);
+      if (session.user) {
+        session.user.tier = normalizeTier(token.tier);
+        session.user.isSuperAdmin = token.isSuperAdmin === true;
+      }
       return session;
     },
   },

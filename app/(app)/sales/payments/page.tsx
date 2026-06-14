@@ -75,7 +75,7 @@ export default function PaymentsPage() {
         footer={<><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button variant="primary" onClick={() => { setOpen(false); toast.success("Payment recorded"); }}>Save</Button></>}
       >
         <div className="space-y-3">
-          <Select label="Invoice" options={invoices.slice(0, 8).map((i) => ({ value: i.id, label: `${i.number} — ${i.customerName}` }))} />
+          <Select label="Invoice" options={invoices.slice(0, 8).map((i) => ({ value: i.id, label: `${i.number} ${i.customerName}` }))} />
           <div className="grid grid-cols-2 gap-3">
             <Input label="Amount" type="number" placeholder="0" />
             <Select label="Method" options={["M-Pesa", "Tigo Pesa", "Bank Transfer", "Cash", "Cheque"].map((m) => ({ value: m, label: m }))} value="M-Pesa" />

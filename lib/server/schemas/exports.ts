@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// ModelAssumptions live only in client state (the modeling page's Zustand store) — they are
+// ModelAssumptions live only in client state (the modeling page's Zustand store) they are
 // never persisted to the DB, so the model-export action receives them in the call and
 // validates here before building the workbook server-side.
 export const modelAssumptionsSchema = z.object({

@@ -36,7 +36,7 @@ export default function AuditLandingPage() {
     <PageWrapper>
       <PageHeader
         title="Audit"
-        subtitle="Procedures, evidence, working papers — exportable audit report"
+        subtitle="Procedures, evidence, working papers exportable audit report"
         actions={
           <Button variant="primary" icon={<Download className="w-4 h-4" />} onClick={handleExport}>
             Export audit report

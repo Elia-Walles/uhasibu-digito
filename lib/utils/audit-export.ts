@@ -24,7 +24,7 @@ export function buildAuditWorkbook(
     cover.getColumn(2).width = 60;
     cover.mergeCells("A1:B1");
     const t = cover.getCell("A1");
-    t.value = "Audit Report — Uhasibu Digito™";
+    t.value = "Audit Report Uhasibu Digito™";
     applyStyle(t, STYLE.header);
     t.alignment = { vertical: "middle", horizontal: "center" };
     cover.getRow(1).height = 30;

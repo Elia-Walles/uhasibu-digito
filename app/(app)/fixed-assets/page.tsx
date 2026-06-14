@@ -126,7 +126,7 @@ export default function FixedAssetsPage() {
     { key: "actions", label: "", align: "right", render: (r) => (
       r.status === "Active"
         ? <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setDisposeTarget(r); setProceeds(""); }}>Dispose</Button>
-        : <span className="text-xs text-ud-text-faint">—</span>
+        : <span className="text-xs text-ud-text-faint"></span>
     ) },
   ];
 
@@ -148,8 +148,8 @@ export default function FixedAssetsPage() {
     const gl = res.data.gainLoss;
     toast.success(
       gl >= 0
-        ? `Asset disposed at a gain of ${formatTZS(gl, true)} — posted to GL`
-        : `Asset disposed at a loss of ${formatTZS(Math.abs(gl), true)} — posted to GL`
+        ? `Asset disposed at a gain of ${formatTZS(gl, true)} posted to GL`
+        : `Asset disposed at a loss of ${formatTZS(Math.abs(gl), true)} posted to GL`
     );
     setDisposeTarget(null);
   }
@@ -235,7 +235,7 @@ export default function FixedAssetsPage() {
               <span>
                 Capital gains realised on disposal of fixed assets are subject to{" "}
                 <span className="font-semibold text-ud-text-primary">Capital Gains Tax</span> under the Tanzania Income Tax Act. The
-                gain or loss above is for accounting purposes — consult your tax advisor regarding the tax treatment.
+                gain or loss above is for accounting purposes consult your tax advisor regarding the tax treatment.
               </span>
             </div>
           </div>

@@ -7,12 +7,12 @@
  * injected into the `where` clause (reads + targeted writes/deletes) and into
  * the `data`/`create` payload (writes). The injected `tenantId` is always
  * written LAST so a maliciously-supplied `tenantId` in the caller's args is
- * overridden — the extension wins.
+ * overridden the extension wins.
  */
 
 // Models the extension scopes by tenant. Auth.js tables (User, Account, Session,
 // VerificationToken) and the tenancy roots (Tenant, Membership) are intentionally
-// absent — they are written by the Auth.js adapter's raw, unscoped client.
+// absent they are written by the Auth.js adapter's raw, unscoped client.
 export const TENANT_SCOPED_MODELS = [
   "Department",
   "COAAccount",

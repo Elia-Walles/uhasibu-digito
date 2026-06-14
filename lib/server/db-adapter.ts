@@ -3,7 +3,7 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 /**
  * Builds the Prisma driver adapter for TiDB. The single place SSL is configured:
  * TiDB Serverless rejects insecure transport, and the mariadb driver does NOT read
- * Prisma's `?sslaccept=strict` query param — it needs an explicit `ssl` option. We
+ * Prisma's `?sslaccept=strict` query param it needs an explicit `ssl` option. We
  * parse DATABASE_URL into a PoolConfig and enable verified TLS (Node's CA store).
  */
 export function createMariaDbAdapter(): PrismaMariaDb {

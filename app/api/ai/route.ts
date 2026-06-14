@@ -37,7 +37,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const view = await getStatements("FY");
     const fmt = (n: number) => `TZS ${Math.round(n).toLocaleString()}`;
     const lines = view.incomeStatement.map((l) => `${l.label}: ${fmt(l.current)}`).join("; ");
-    grounding = `Company: ${view.companyName}. Income statement (${view.currentLabel}) — ${lines}.`;
+    grounding = `Company: ${view.companyName}. Income statement (${view.currentLabel}) ${lines}.`;
   } catch {
     grounding = "No financial summary is available yet.";
   }

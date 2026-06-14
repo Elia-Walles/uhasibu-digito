@@ -4,7 +4,7 @@ const LEAD_STATUS = z.enum(["New", "Contacted", "Qualified", "Lost"]);
 const DEAL_STAGE = z.enum(["Lead", "Qualified", "Proposal", "Negotiation", "Won", "Lost"]);
 
 // Budget lines arrive fully computed from the page (mtd/ytd derived from annual + actual),
-// so the action just persists what it's given — mirroring how useFixedAssets passes a whole
+// so the action just persists what it's given mirroring how useFixedAssets passes a whole
 // domain object through.
 export const createBudgetLineSchema = z.object({
   lineItem: z.string().trim().min(1, "Line item is required"),

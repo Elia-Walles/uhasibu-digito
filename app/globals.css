@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @import "tailwindcss";
 
@@ -16,7 +16,7 @@
   --color-ud-obsidian-2: #0D2B1E;
   --color-ud-obsidian-3: #112D22;
 
-  /* Dark accent zone surfaces (POS, AI Assistant) — per CLAUDE.md §4 */
+  /* Dark accent zone surfaces (POS, AI Assistant) per CLAUDE.md §4 */
   --color-ud-pos-bg:      #0F1923;
   --color-ud-pos-surface: #0A1219;
   --color-ud-ai-bg:       #0F1F17;
@@ -49,8 +49,8 @@
   --color-ud-text-faint: #9CA3AF;
 
   /* Fonts */
-  --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'PT Serif', Georgia, 'Times New Roman', serif;
+  --font-sans: 'PT Serif', Georgia, 'Times New Roman', serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Extended breakpoint */
@@ -91,7 +91,7 @@ body {
 .shadow-elevated    { box-shadow: var(--shadow-elevated); }
 .shadow-gold-glow   { box-shadow: var(--shadow-gold-glow); }
 
-/* Gradient endpoints — used only by the .gradient-* utility classes below. */
+/* Gradient endpoints used only by the .gradient-* utility classes below. */
 :root {
   --ud-grad-obsidian-deep: #051410;
   --ud-grad-gold-deep:     #E6B532;

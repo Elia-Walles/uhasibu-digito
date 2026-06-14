@@ -44,12 +44,12 @@ export default function IncomeStatementPage() {
             <StatementTable lines={view.incomeStatement} currentLabel={view.currentLabel} priorLabel={view.priorLabel} />
             {stamp && (
               <div className="mt-6">
-                <DigitalStamp documentName={`Income Statement — ${view.currentLabel}`} applied={stamp} />
+                <DigitalStamp documentName={`Income Statement ${view.currentLabel}`} applied={stamp} />
               </div>
             )}
             {showStamp && !stamp && (
               <div className="mt-6">
-                <DigitalStamp documentName={`Income Statement — ${view.currentLabel}`} onApply={setStamp} />
+                <DigitalStamp documentName={`Income Statement ${view.currentLabel}`} onApply={setStamp} />
               </div>
             )}
           </>

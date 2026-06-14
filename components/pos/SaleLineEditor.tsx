@@ -21,7 +21,7 @@ export function lineStockError(line: EditorLine, inventory: InventoryItem[]): st
   const item = inventory.find((i) => i.id === line.itemId);
   if (!item) return "Product not found";
   if (line.quantity > item.onHand) {
-    return `Only ${item.onHand} in stock — adjust the stock first`;
+    return `Only ${item.onHand} in stock adjust the stock first`;
   }
   return null;
 }

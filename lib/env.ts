@@ -9,7 +9,7 @@ import { z } from "zod";
  * (url() on connection strings, required SMTP/Blob once those modules ship) when
  * real credentials are provisioned.
  *
- * Server-only — never import from a Client Component (it reads secret env vars).
+ * Server-only never import from a Client Component (it reads secret env vars).
  * NEXT_PUBLIC_* values are client-safe and read directly where needed.
  */
 const serverEnvSchema = z.object({

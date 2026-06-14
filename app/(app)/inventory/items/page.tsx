@@ -36,7 +36,7 @@ function emptyForm(): FormState {
   return {
     code: "", name: "", category: "General", unit: "pcs",
     onHand: 0, reorderLevel: 10, unitCost: 0, sellingPrice: 0,
-    location: "DSM-Main", supplier: "—", costingMethod: "FIFO",
+    location: "DSM-Main", supplier: "", costingMethod: "FIFO",
   };
 }
 

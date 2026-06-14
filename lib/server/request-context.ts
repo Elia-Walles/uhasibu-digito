@@ -12,7 +12,18 @@ export interface RequestContext {
   role: UserRole;
 }
 
-export const requestContext = new AsyncLocalStorage<RequestContext>();
+// Cache the AsyncLocalStorage on globalThis so HMR (dev/Turbopack) can't create a second
+// instance: if `withAuth` set the store on one instance while the Prisma extension in
+// lib/server/db.ts read another, every scoped query would throw "No request context".
+// Same singleton pattern as the PrismaClient cache in lib/server/db.ts.
+const globalForCtx = globalThis as unknown as { __udRequestContext?: AsyncLocalStorage<RequestContext> };
+
+export const requestContext: AsyncLocalStorage<RequestContext> =
+  globalForCtx.__udRequestContext ?? new AsyncLocalStorage<RequestContext>();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForCtx.__udRequestContext = requestContext;
+}
 
 /**
  * Returns the active request context, throwing if called outside an
@@ -24,7 +35,7 @@ export function currentContext(): RequestContext {
   const ctx = requestContext.getStore();
   if (!ctx) {
     throw new Error(
-      "No request context — must be called inside an authenticated handler (withAuth / runWithContext).",
+      "No request context must be called inside an authenticated handler (withAuth / runWithContext).",
     );
   }
   return ctx;

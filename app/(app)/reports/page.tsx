@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 
 const CATEGORY_ORDER: ReportCategory[] = ["Financial", "Management", "Tax", "Operational", "Payroll"];
 
-// Report catalogue — the set of statements/registers the platform can produce.
+// Report catalogue the set of statements/registers the platform can produce.
 const REPORTS: Report[] = [
   { id: "r_is", name: "Income Statement", category: "Financial", description: "Revenue, costs, and profit for a period.", lastGenerated: null, isAvailable: true },
   { id: "r_bs", name: "Balance Sheet", category: "Financial", description: "Assets, liabilities, and equity at a date.", lastGenerated: null, isAvailable: true },

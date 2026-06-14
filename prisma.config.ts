@@ -7,7 +7,7 @@ import { defineConfig } from "prisma/config";
 // via `dotenv/config` above for local migrate/seed. We resolve DATABASE_URL with plain
 // `process.env` (NOT prisma's `env()` helper, which throws when the var is absent): this
 // config is loaded by `prisma generate` during the Vercel build, where DATABASE_URL is not
-// present — and generate doesn't connect, so an empty URL is fine. Only the CLI
+// present and generate doesn't connect, so an empty URL is fine. Only the CLI
 // (migrate/seed/studio) uses this URL; the runtime client connects via the driver adapter
 // in lib/server/db-adapter.ts, which reads DATABASE_URL itself at request time.
 // TiDB Serverless has no separate pooled/direct endpoint, so there is no DIRECT_DATABASE_URL.

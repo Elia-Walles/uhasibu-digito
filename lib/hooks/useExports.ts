@@ -15,7 +15,7 @@ export interface UseExports {
 
 /**
  * xlsx export facade. Generation happens server-side from the tenant's live data; the client
- * just saves the returned bytes — see lib/server/actions/exports.ts. Depreciation + audit read
+ * just saves the returned bytes see lib/server/actions/exports.ts. Depreciation + audit read
  * live data on the server, so the passed args are ignored on those paths.
  */
 export function useExports(): UseExports {

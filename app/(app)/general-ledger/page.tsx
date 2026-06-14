@@ -28,8 +28,8 @@ export default function GLPage() {
       render: (r) => <div><div className="text-sm font-medium">{r.account}</div><div className="text-xs text-ud-text-muted">{r.accountCode}</div></div> },
     { key: "narration", label: "Narration", render: (r) => <span className="text-ud-text-secondary">{r.narration}</span> },
     { key: "costCentre", label: "Cost Centre", render: (r) => <Badge variant="default" size="sm">{r.costCentre}</Badge> },
-    { key: "debit",  label: "Debit",  sortable: true, align: "right",  render: (r) => r.debit  > 0 ? <CurrencyDisplay amount={r.debit}  showSymbol={false} /> : <span className="text-ud-text-faint">—</span> },
-    { key: "credit", label: "Credit", sortable: true, align: "right",  render: (r) => r.credit > 0 ? <CurrencyDisplay amount={r.credit} showSymbol={false} /> : <span className="text-ud-text-faint">—</span> },
+    { key: "debit",  label: "Debit",  sortable: true, align: "right",  render: (r) => r.debit  > 0 ? <CurrencyDisplay amount={r.debit}  showSymbol={false} /> : <span className="text-ud-text-faint"></span> },
+    { key: "credit", label: "Credit", sortable: true, align: "right",  render: (r) => r.credit > 0 ? <CurrencyDisplay amount={r.credit} showSymbol={false} /> : <span className="text-ud-text-faint"></span> },
     { key: "actions", label: "", align: "right", render: (r) => (
       <button
         onClick={(e) => { e.stopPropagation(); router.push(`/general-ledger/journal-entry?ref=${encodeURIComponent(r.reference)}`); }}

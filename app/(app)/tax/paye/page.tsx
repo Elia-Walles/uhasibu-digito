@@ -10,7 +10,7 @@ import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
 import type { StampData, PayrollRun } from "@/types";
 
 const EMPTY_RUN: PayrollRun = {
-  id: "", period: "—", month: 0, year: 0, status: "Draft", processedAt: "",
+  id: "", period: "", month: 0, year: 0, status: "Draft", processedAt: "",
   totalGross: 0, totalPAYE: 0, totalNSSF: 0, totalSDL: 0, totalWCF: 0, totalNet: 0, employees: [],
 };
 
@@ -21,7 +21,7 @@ export default function PAYEReturnPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title={`PAYE Return — ${CURRENT_PAYROLL.period}`}
+        title={`PAYE Return ${CURRENT_PAYROLL.period}`}
         subtitle="Pay-As-You-Earn remittance to TRA · Due 7 November 2024"
         breadcrumbs={[{ label: "Tax", href: "/tax" }, { label: "PAYE" }]}
         actions={<ExportMenu fileLabel="PAYE Return" />}
@@ -77,7 +77,7 @@ export default function PAYEReturnPage() {
         </div>
 
         <div className="mt-6">
-          <DigitalStamp documentName={`PAYE Return — ${CURRENT_PAYROLL.period}`} onApply={setStamp} applied={stamp} />
+          <DigitalStamp documentName={`PAYE Return ${CURRENT_PAYROLL.period}`} onApply={setStamp} applied={stamp} />
         </div>
       </div>
     </PageWrapper>

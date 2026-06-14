@@ -22,10 +22,10 @@ export default function JournalEntryPage() {
   const { glEntries, postJournalEntry, editJournalEntry } = useGL();
   const accountOptions = accounts
     .filter((a) => a.level >= 1)
-    .map((a) => ({ value: a.code, label: `${a.code} — ${a.name}` }));
+    .map((a) => ({ value: a.code, label: `${a.code} ${a.name}` }));
   const uid = useId();
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]!);
-  // Derive a stable reference from useId — no Math.random in render
+  // Derive a stable reference from useId no Math.random in render
   const initialRef = `JV-${new Date().getFullYear()}-${uid.replace(/[^0-9]/g, "").padStart(5, "0").slice(-5)}`;
   const [reference, setReference] = useState(editRef ?? initialRef);
   const [narration, setNarration] = useState("");
@@ -109,7 +109,7 @@ export default function JournalEntryPage() {
     <PageWrapper>
       <PageHeader
         title={isEdit ? "Edit Journal Entry" : "New Journal Entry"}
-        subtitle={isEdit ? `Editing ${reference} — debits must equal credits. Bank-side balances update automatically.` : "Record a manual journal — debits must equal credits. Entries on bank accounts update bank balances automatically."}
+        subtitle={isEdit ? `Editing ${reference} debits must equal credits. Bank-side balances update automatically.` : "Record a manual journal debits must equal credits. Entries on bank accounts update bank balances automatically."}
         breadcrumbs={[{ label: "General Ledger", href: "/general-ledger" }, { label: isEdit ? "Edit Entry" : "New Entry" }]}
       />
 

@@ -4,8 +4,8 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Uhasibu Digito™ — Tanzania's Intelligent Financial Platform",
-  description: "Uhasibu Digito™ — Akaunti yako, nguvu yako. 20 modules for accounting, payroll, tax compliance, and financial intelligence.",
+  title: "Uhasibu Digito™ Tanzania's Intelligent Financial Platform",
+  description: "Uhasibu Digito™ Akaunti yako, nguvu yako. 20 modules for accounting, payroll, tax compliance, and financial intelligence.",
   applicationName: "Uhasibu Digito",
   authors: [{ name: "AfyaLead" }],
   manifest: "/manifest.json",

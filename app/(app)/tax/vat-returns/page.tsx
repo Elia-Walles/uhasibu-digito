@@ -11,7 +11,7 @@ import { formatDate } from "@/lib/utils/dates";
 import type { StampData, VATReturn } from "@/types";
 
 const EMPTY_VAT: VATReturn = {
-  period: "—",
+  period: "",
   outputVAT: 0,
   inputVAT: 0,
   vatPayable: 0,
@@ -28,7 +28,7 @@ export default function VATReturnsPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title={`VAT Return — ${VAT_RETURN_OCT.period}`}
+        title={`VAT Return ${VAT_RETURN_OCT.period}`}
         subtitle="Due 20 November 2024 · 14-day filing window"
         breadcrumbs={[{ label: "Tax", href: "/tax" }, { label: "VAT Returns" }]}
         actions={<ExportMenu fileLabel="VAT Return" />}
@@ -88,7 +88,7 @@ export default function VATReturnsPage() {
           )}
 
           <div className="mt-6">
-            <DigitalStamp documentName={`VAT Return — ${VAT_RETURN_OCT.period}`} onApply={setStamp} applied={stamp} />
+            <DigitalStamp documentName={`VAT Return ${VAT_RETURN_OCT.period}`} onApply={setStamp} applied={stamp} />
           </div>
         </div>
       </div>

@@ -244,7 +244,7 @@ export default function NewInvoicePage() {
             <tbody>
               {lines.map((l) => (
                 <tr key={l.id} className="border-b border-ud-border">
-                  <td className="px-2.5 py-2">{l.description || <span className="text-ud-text-faint">—</span>}</td>
+                  <td className="px-2.5 py-2">{l.description || <span className="text-ud-text-faint"></span>}</td>
                   <td className="px-2.5 py-2 text-right font-mono">{l.quantity}</td>
                   <td className="px-2.5 py-2 text-right font-mono">{l.unitPrice.toLocaleString()}</td>
                   <td className="px-2.5 py-2 text-right font-mono font-medium">{l.lineTotal.toLocaleString()}</td>
@@ -260,7 +260,7 @@ export default function NewInvoicePage() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-ud-border text-[10px] text-ud-text-muted">
-            <div className="font-medium text-ud-text-secondary mb-1">Payment — local (TZS)</div>
+            <div className="font-medium text-ud-text-secondary mb-1">Payment local (TZS)</div>
             <div>Payable to {company?.name || "your company"}. Bank details appear on the issued invoice.</div>
             <div>EFD will be issued on payment. Thank you for your business.</div>
 

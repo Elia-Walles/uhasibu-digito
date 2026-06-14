@@ -58,7 +58,7 @@ export default function AIAssistantPage() {
       content,
       timestamp: new Date().toISOString(),
     };
-    // History sent to Gemini must start with a user turn — drop the initial greeting.
+    // History sent to Gemini must start with a user turn drop the initial greeting.
     const history = [...messages, userMsg]
       .filter((m) => m.id !== "m_init")
       .map((m) => ({ role: m.role, content: m.content }));
@@ -80,7 +80,7 @@ export default function AIAssistantPage() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { id: nextId(), role: "assistant", content: "Network error — please try again.", timestamp: new Date().toISOString() },
+        { id: nextId(), role: "assistant", content: "Network error please try again.", timestamp: new Date().toISOString() },
       ]);
     } finally {
       setTyping(false);
@@ -198,7 +198,7 @@ export default function AIAssistantPage() {
                 </div>
                 <div className="mt-5 text-xs text-white/45 mb-2 inline-flex items-center gap-1.5">
                   <ClipboardCheck className="w-3 h-3 text-ud-gold" />
-                  Audit assist — checkpoint prompts
+                  Audit assist checkpoint prompts
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {AI_AUDIT_SUGGESTIONS.map((s) => (

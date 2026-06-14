@@ -37,8 +37,8 @@ export default function CashFlowPage() {
         ) : (
           <>
             <StatementTable lines={view.cashFlow} currentLabel={view.currentLabel} priorLabel={view.priorLabel} />
-            {stamp && <div className="mt-6"><DigitalStamp documentName={`Cash Flow Statement — ${view.currentLabel}`} applied={stamp} /></div>}
-            {showStamp && !stamp && <div className="mt-6"><DigitalStamp documentName={`Cash Flow Statement — ${view.currentLabel}`} onApply={setStamp} /></div>}
+            {stamp && <div className="mt-6"><DigitalStamp documentName={`Cash Flow Statement ${view.currentLabel}`} applied={stamp} /></div>}
+            {showStamp && !stamp && <div className="mt-6"><DigitalStamp documentName={`Cash Flow Statement ${view.currentLabel}`} onApply={setStamp} /></div>}
           </>
         )}
       </div>

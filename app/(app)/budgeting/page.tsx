@@ -118,7 +118,7 @@ export default function BudgetingPage() {
         open={addOpen}
         onOpenChange={setAddOpen}
         title="Add budget line"
-        description="Add a budget line. YTD actual is optional — leave at zero if you haven't spent against it yet."
+        description="Add a budget line. YTD actual is optional leave at zero if you haven't spent against it yet."
         size="md"
         footer={
           <>

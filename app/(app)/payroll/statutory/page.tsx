@@ -20,7 +20,7 @@ export default function StatutoryPage() {
   const [stamp, setStamp] = useState<StampData | null>(null);
 
   const totalMap: Record<TabKey, { label: string; rate: string; total: number; description: string }> = {
-    paye: { label: "PAYE",  rate: "0% / 8% / 20% / 25% / 30%", total: current?.totalPAYE ?? 0,  description: "Pay-As-You-Earn — remitted to TRA on behalf of employees." },
+    paye: { label: "PAYE",  rate: "0% / 8% / 20% / 25% / 30%", total: current?.totalPAYE ?? 0,  description: "Pay-As-You-Earn remitted to TRA on behalf of employees." },
     nssf: { label: "NSSF",  rate: "10% employee + 10% employer", total: (current?.totalNSSF ?? 0) * 2, description: "National Social Security Fund contribution." },
     sdl:  { label: "SDL",   rate: "4% of gross",  total: current?.totalSDL ?? 0,   description: "Skills Development Levy paid by the employer." },
     wcf:  { label: "WCF",   rate: "0.5% of gross", total: current?.totalWCF ?? 0,   description: "Workers' Compensation Fund." },
@@ -30,7 +30,7 @@ export default function StatutoryPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title={`Statutory returns — ${current?.period ?? "latest"}`}
+        title={`Statutory returns ${current?.period ?? "latest"}`}
         subtitle="Prepare and stamp PAYE, NSSF, SDL, and WCF returns for TRA filing"
         breadcrumbs={[{ label: "Payroll", href: "/payroll" }, { label: "Statutory" }]}
         actions={<ExportMenu fileLabel={`${meta.label} return`} />}
@@ -96,7 +96,7 @@ export default function StatutoryPage() {
           )}
 
           <div className="mt-6 flex flex-wrap items-start gap-4">
-            <DigitalStamp documentName={`${meta.label} Return — ${current?.period ?? "latest"}`} onApply={setStamp} applied={stamp} />
+            <DigitalStamp documentName={`${meta.label} Return ${current?.period ?? "latest"}`} onApply={setStamp} applied={stamp} />
             {!stamp && (
               <p className="text-xs text-ud-text-muted max-w-md">
                 Apply the NBAA digital stamp to certify this statutory return before submission to TRA.

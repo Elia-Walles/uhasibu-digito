@@ -19,7 +19,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         window.localStorage.setItem(key, JSON.stringify(value));
       }
     } catch {
-      // ignore — quota or serialization failure
+      // ignore quota or serialization failure
     }
   };
 

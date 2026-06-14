@@ -68,6 +68,7 @@ model User {
   passwordHash String? @map("password_hash")
   tenantId     String? @map("tenant_id")
   departmentId String? @map("department_id")
+  isSuperAdmin Boolean @default(false) @map("is_super_admin") // platform super-admin (cross-tenant operator)
 
   tenant              Tenant?              @relation(fields: [tenantId], references: [id])
   department          Department?          @relation(fields: [departmentId], references: [id])
@@ -81,6 +82,7 @@ model User {
 
   @@index([tenantId])
   @@index([departmentId])
+  @@index([isSuperAdmin])
   @@map("users")
 }
 
@@ -1082,4 +1084,91 @@ model AuditLog {
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@map("audit_logs")
+}
+
+// ===================================================================
+// Platform billing & governance (NOT tenant-scoped — managed by the
+// super-admin via lib/server/admin-db.ts; intentionally absent from
+// TENANT_SCOPED_MODELS in lib/server/tenant-scope.ts)
+// ===================================================================
+
+model Plan {
+  id        String   @id @default(cuid())
+  key       String   @unique // Tier key: "starter" | "business" | "enterprise" — drives gating (lib/auth/tiers.ts)
+  name      String
+  tagline   String   @default("")
+  priceTzs  Decimal  @default(0) @map("price_tzs") @db.Decimal(20, 2)
+  interval  String   @default("year") // "year" | "month"
+  features  String   @db.Text // JSON-encoded string[]
+  isActive  Boolean  @default(true) @map("is_active")
+  highlighted Boolean @default(false) // "Most popular" badge on pricing surfaces
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  tenantId         String    @map("tenant_id") // plain scalar — NOT extension-scoped
+  planId           String    @map("plan_id")
+  status           String    @default("active") // active | past_due | canceled | trialing
+  startedAt        DateTime  @default(now()) @map("started_at")
+  currentPeriodEnd DateTime? @map("current_period_end")
+  canceledAt       DateTime? @map("canceled_at")
+  amountTzs        Decimal   @default(0) @map("amount_tzs") @db.Decimal(20, 2)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  plan     Plan      @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([planId])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  tenantId       String   @map("tenant_id")
+  subscriptionId String?  @map("subscription_id")
+  amountTzs      Decimal  @default(0) @map("amount_tzs") @db.Decimal(20, 2)
+  method         String   @default("manual") // manual | mpesa | bank | cash
+  reference      String   @default("") // operator-entered receipt / txn ref
+  status         String   @default("recorded") // recorded | reversed
+  paidAt         DateTime @map("paid_at")
+  note           String   @db.Text
+  recordedById   String?  @map("recorded_by_id") // super-admin User.id
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@index([paidAt])
+  @@map("payments")
+}
+
+// Global, cross-tenant operator audit trail — distinct from the tenant-scoped AuditLog.
+model PlatformAuditLog {
+  id             String   @id @default(cuid())
+  actorUserId    String   @map("actor_user_id") // super-admin who acted
+  actorEmail     String   @map("actor_email")
+  action         String // e.g. "tenant.tier.change", "payment.record"
+  targetType     String   @map("target_type") // "Tenant" | "User" | "Subscription" | "Payment" | "Plan"
+  targetId       String   @map("target_id")
+  targetTenantId String?  @map("target_tenant_id")
+  details        String   @db.Text // JSON-encoded before/after
+  ipAddress      String   @default("") @map("ip_address")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([actorUserId])
+  @@index([targetTenantId])
+  @@index([createdAt])
+  @@map("platform_audit_logs")
 }

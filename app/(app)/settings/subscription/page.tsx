@@ -4,12 +4,13 @@ import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useTier } from "@/lib/hooks/useTier";
-import { PLANS } from "@/lib/auth/tiers";
+import { usePublicPlans } from "@/lib/hooks/usePublicPlans";
 import { formatAmount } from "@/lib/utils/currency";
 
 export default function SubscriptionSettingsPage() {
   const { tier } = useTier();
-  const current = PLANS.find((p) => p.id === tier);
+  const { plans } = usePublicPlans();
+  const current = plans.find((p) => p.id === tier);
 
   return (
     <div>

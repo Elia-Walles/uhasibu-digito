@@ -27,7 +27,7 @@ function ResetForm() {
         toast.error(res.error);
         return;
       }
-      toast.success("Password updated — please sign in");
+      toast.success("Password updated please sign in");
       router.push("/login");
     } catch {
       toast.error("Something went wrong. Please try again.");

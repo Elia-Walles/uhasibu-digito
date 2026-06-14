@@ -99,7 +99,7 @@ export default function POSSalesPage() {
   const COLS: Column<POSSale>[] = [
     { key: "receiptNumber", label: "Reference", sortable: true, className: "font-mono text-xs", width: "130px" },
     { key: "soldAt", label: "Date & time", sortable: true, accessor: (r) => r.soldAt, render: (r) => <span className="text-ud-text-secondary">{formatDateTime(r.soldAt)}</span> },
-    { key: "branchName", label: "Branch", render: (r) => <Badge variant="default" size="sm">{r.branchName || "—"}</Badge> },
+    { key: "branchName", label: "Branch", render: (r) => <Badge variant="default" size="sm">{r.branchName || ""}</Badge> },
     { key: "customerName", label: "Customer", render: (r) => <span className="truncate">{r.customerName}</span> },
     { key: "paymentMethod", label: "Method", render: (r) => <Badge variant={PAYMENT_BADGE[r.paymentMethod]} size="sm">{r.paymentMethod.toUpperCase()}</Badge> },
     { key: "grossProfit", label: "Profit", sortable: true, align: "right", accessor: (r) => r.grossProfit, render: (r) => <CurrencyDisplay amount={r.grossProfit} showSymbol={false} colored /> },
@@ -144,7 +144,7 @@ export default function POSSalesPage() {
         <EmptyState
           icon={ReceiptIcon}
           title="No sales yet"
-          description="Record your first sale — make sure your products have stock on the Inventory page first."
+          description="Record your first sale make sure your products have stock on the Inventory page first."
           action={{ label: "Record sale", onClick: openModal, icon: <Plus className="w-4 h-4" /> }}
         />
       ) : (
@@ -178,7 +178,7 @@ export default function POSSalesPage() {
               <Select label="Branch" value={branchId} onValueChange={setBranchId}
                 options={branches.map((b) => ({ value: b.id, label: b.name }))} />
             )}
-            <Input label="Customer (optional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Walk-in customer" />
+            <Input label="Customer (optional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Leave blank if not provided" />
           </div>
 
           <div className="flex justify-between items-center pt-2 border-t border-ud-border">

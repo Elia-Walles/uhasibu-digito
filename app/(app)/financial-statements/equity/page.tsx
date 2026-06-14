@@ -37,8 +37,8 @@ export default function EquityChangesPage() {
         ) : (
           <>
             <StatementTable lines={view.equityChanges} currentLabel={view.currentLabel} priorLabel={view.priorLabel} />
-            {stamp && <div className="mt-6"><DigitalStamp documentName={`Equity Changes — ${view.currentLabel}`} applied={stamp} /></div>}
-            {showStamp && !stamp && <div className="mt-6"><DigitalStamp documentName={`Equity Changes — ${view.currentLabel}`} onApply={setStamp} /></div>}
+            {stamp && <div className="mt-6"><DigitalStamp documentName={`Equity Changes ${view.currentLabel}`} applied={stamp} /></div>}
+            {showStamp && !stamp && <div className="mt-6"><DigitalStamp documentName={`Equity Changes ${view.currentLabel}`} onApply={setStamp} /></div>}
           </>
         )}
       </div>

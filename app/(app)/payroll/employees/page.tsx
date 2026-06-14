@@ -327,7 +327,7 @@ export default function EmployeesPage() {
         open={editForm !== null}
         onOpenChange={(o) => !o && setEditForm(null)}
         title={editingId ? "Edit employee" : "Add employee"}
-        description="Identity, compensation, allowances, and overtime — all configurable per employee."
+        description="Identity, compensation, allowances, and overtime all configurable per employee."
         size="lg"
         footer={editForm && (
           <>

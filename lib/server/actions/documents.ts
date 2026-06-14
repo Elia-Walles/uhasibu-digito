@@ -42,7 +42,7 @@ export async function deleteDocument(id: string): Promise<Result<{ id: string }>
     try {
       await del(doc.url);
     } catch {
-      // Blob already gone / storage unconfigured — still remove the DB row.
+      // Blob already gone / storage unconfigured still remove the DB row.
     }
     await db.document.deleteMany({ where: { id } });
     return ok({ id });

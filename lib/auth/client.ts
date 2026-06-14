@@ -9,6 +9,8 @@ export interface CurrentUser {
   role: UserRole;
   email: string;
   initials: string;
+  tenantId: string;
+  isSuperAdmin: boolean;
 }
 
 function initialsFor(source: string): string {
@@ -28,6 +30,8 @@ export function useCurrentUser(): CurrentUser | null {
     role: u.role,
     email: u.email ?? "",
     initials: initialsFor(name),
+    tenantId: u.tenantId ?? "",
+    isSuperAdmin: u.isSuperAdmin === true,
   };
 }
 

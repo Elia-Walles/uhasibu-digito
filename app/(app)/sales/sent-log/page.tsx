@@ -43,7 +43,7 @@ export default function SentLogPage() {
       />
 
       <div className="mb-4 px-4 py-3 rounded-xl bg-ud-info-bg/60 border border-ud-info/15 text-xs text-ud-text-secondary leading-relaxed">
-        Email is delivered through your configured SMTP server. WhatsApp delivery is not yet connected — those
+        Email is delivered through your configured SMTP server. WhatsApp delivery is not yet connected those
         entries are recorded as queued.
       </div>
 

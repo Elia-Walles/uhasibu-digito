@@ -8,12 +8,13 @@ import {
   ShoppingCart, Boxes, Users, Truck,
   Wallet, FileSpreadsheet, ShieldCheck, Target, Landmark,
   Sparkles, FolderOpen, Settings, X, ChevronLeft, ClipboardCheck,
-  Receipt, LineChart, FileText,
+  Receipt, LineChart, FileText, ShieldHalf,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
 import { useIsMobile } from "@/lib/hooks/useMediaQuery";
 import { useCompany } from "@/lib/hooks/useCompany";
+import { useCurrentUser } from "@/lib/auth/client";
 import { useTier } from "@/lib/hooks/useTier";
 import { TIER_RANK, type Tier } from "@/lib/auth/tiers";
 import { cn } from "@/lib/utils/cn";
@@ -101,6 +102,7 @@ export function Sidebar() {
   const isMobile = useIsMobile();
   const { company } = useCompany();
   const { tier } = useTier();
+  const user = useCurrentUser();
 
   const width = isMobile ? "w-[260px]" : sidebarCollapsed ? "w-[68px]" : "w-[260px]";
 
@@ -112,7 +114,15 @@ export function Sidebar() {
     }))
     .filter((section) => section.items.length > 0);
 
-  // The single active item is the one whose href is the longest prefix of the path —
+  // Super-admins get a dedicated link to the platform control room (bypasses tier gating).
+  if (user?.isSuperAdmin) {
+    sections.push({
+      label: "PLATFORM",
+      items: [{ label: "Platform Admin", href: "/admin", icon: ShieldHalf, minTier: "starter" }],
+    });
+  }
+
+  // The single active item is the one whose href is the longest prefix of the path 
   // so /pos/sales activates "Sales Records", not the "/pos" Register parent.
   const activeHref = sections
     .flatMap((s) => s.items.map((i) => i.href))

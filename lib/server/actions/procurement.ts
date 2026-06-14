@@ -159,7 +159,7 @@ export async function createPurchaseOrder(input: unknown): Promise<Result<Purcha
         throw e;
       }
     }
-    return err("Could not allocate a PO number — please retry");
+    return err("Could not allocate a PO number please retry");
   });
 }
 

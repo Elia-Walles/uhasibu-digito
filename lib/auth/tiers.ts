@@ -1,4 +1,4 @@
-// Subscription tiers — the single source of truth for SaaS packaging and module gating.
+// Subscription tiers the single source of truth for SaaS packaging and module gating.
 //
 // This module is EDGE-SAFE: it has no node-only imports, so it can be imported by
 // auth.config.ts (which runs in the edge proxy) as well as by client components and
@@ -78,7 +78,7 @@ const ROUTE_MIN_TIER: { prefix: string; tier: Tier }[] = [
   // Starter
   { prefix: "/dashboard", tier: "starter" },
   { prefix: "/pos", tier: "starter" },
-  // Business — Finance & Accounting core + operations
+  // Business Finance & Accounting core + operations
   { prefix: "/general-ledger", tier: "business" },
   { prefix: "/financial-statements", tier: "business" },
   { prefix: "/management", tier: "business" },
@@ -88,7 +88,7 @@ const ROUTE_MIN_TIER: { prefix: string; tier: Tier }[] = [
   { prefix: "/procurement", tier: "business" },
   { prefix: "/banking", tier: "business" },
   { prefix: "/reports", tier: "business" },
-  // Enterprise — compliance, intelligence, modeling
+  // Enterprise compliance, intelligence, modeling
   { prefix: "/payroll", tier: "enterprise" },
   { prefix: "/tax", tier: "enterprise" },
   { prefix: "/fixed-assets", tier: "enterprise" },

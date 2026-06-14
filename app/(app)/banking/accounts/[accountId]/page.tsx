@@ -65,12 +65,12 @@ export default function BankAccountDetailPage() {
     { key: "debit", label: "Debit", align: "right", sortable: true, render: (t) =>
       t.debit > 0
         ? <span className="font-mono tabular-nums text-ud-danger">({(t.debit).toLocaleString()})</span>
-        : <span className="text-ud-text-faint">—</span>
+        : <span className="text-ud-text-faint"></span>
     },
     { key: "credit", label: "Credit", align: "right", sortable: true, render: (t) =>
       t.credit > 0
         ? <span className="font-mono tabular-nums text-ud-success">{t.credit.toLocaleString()}</span>
-        : <span className="text-ud-text-faint">—</span>
+        : <span className="text-ud-text-faint"></span>
     },
     { key: "balance", label: "Balance", align: "right", render: (t) =>
       <span className="font-mono tabular-nums font-medium">{t.balance.toLocaleString()}</span>
@@ -83,7 +83,7 @@ export default function BankAccountDetailPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title={`${account.bankName} — ${account.accountName}`}
+        title={`${account.bankName} ${account.accountName}`}
         subtitle={`Account ${account.accountNumber} · ${account.currency}`}
         breadcrumbs={[{ label: "Banking", href: "/banking" }, { label: account.bankName }]}
         actions={<ExportMenu fileLabel={`${account.bankName} statement`} />}

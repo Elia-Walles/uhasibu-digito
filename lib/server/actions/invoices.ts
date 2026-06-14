@@ -132,7 +132,7 @@ export async function createInvoice(input: unknown): Promise<Result<Invoice>> {
         throw e;
       }
     }
-    return err("Could not allocate an invoice number — please retry");
+    return err("Could not allocate an invoice number please retry");
   });
 }
 
@@ -172,7 +172,7 @@ export async function sendInvoice(input: unknown): Promise<Result<SendLogEntry>>
       });
       status = delivered ? "Delivered" : "Failed";
     }
-    // WhatsApp-only sends remain "Queued" — no WhatsApp provider is wired yet.
+    // WhatsApp-only sends remain "Queued" no WhatsApp provider is wired yet.
 
     const entry = await db.sendLogEntry.create({
       data: {

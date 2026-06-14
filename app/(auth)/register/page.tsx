@@ -45,12 +45,16 @@ export default function RegisterPage() {
       }
       const signInRes = await signIn("credentials", { email, password, redirect: false });
       if (signInRes?.error) {
-        toast.success("Account created — please sign in");
+        toast.success("Account created please sign in");
         router.push("/login");
         return;
       }
+      // Carry a plan picked on the public pricing page (/register?plan=key) into onboarding,
+      // where it is auto-activated. Only forward a known plan key.
+      const picked = new URLSearchParams(window.location.search).get("plan");
+      const validPlan = ["starter", "business", "enterprise"].includes(picked ?? "") ? picked : null;
       toast.success("Account created. Choose your plan to get started.");
-      router.push("/select-plan");
+      router.push(validPlan ? `/select-plan?plan=${validPlan}` : "/select-plan");
     } catch {
       toast.error("Could not create your account");
     } finally {
@@ -67,7 +71,7 @@ export default function RegisterPage() {
             Run your shop and your books from one place.
           </h2>
           <p className="mt-4 text-white/65 text-sm leading-relaxed">
-            Start with Point of Sale, then grow into full Tanzanian-ready accounting, tax and payroll — all on Uhasibu Digito.
+            Start with Point of Sale, then grow into full Tanzanian-ready accounting, tax and payroll all on Uhasibu Digito.
           </p>
         </div>
       </div>

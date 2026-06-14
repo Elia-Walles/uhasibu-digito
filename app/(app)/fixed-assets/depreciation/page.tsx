@@ -77,7 +77,7 @@ export default function DepreciationPage() {
       </div>
 
       <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">
-        <h3 className="font-display font-bold text-base mb-3">Total NBV — historical & forecast</h3>
+        <h3 className="font-display font-bold text-base mb-3">Total NBV historical & forecast</h3>
         <DepreciationChart />
       </div>
 
