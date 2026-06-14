@@ -7,7 +7,7 @@ import { applyAssetDisposal } from "@/lib/server/asset-disposal";
 
 // Real-DB tenant-isolation gate. Opt-in: runs only with RUN_DB_TESTS=1 against a
 // scratch database (the Wave 0 unit suite stays the always-on gate). Modules are
-// imported dynamically inside the suite so this file is import-safe when skipped —
+// imported dynamically inside the suite so this file is import-safe when skipped 
 // nothing constructs a Prisma client unless the suite actually runs.
 const RUN = process.env.RUN_DB_TESTS === "1";
 
@@ -84,7 +84,7 @@ describe.skipIf(!RUN)("tenant isolation (real DB)", () => {
       await expect(db.department.delete({ where: { id: bDept.id } })).rejects.toThrow();
     });
 
-    // B still sees its own — proving the delete above did not fall through
+    // B still sees its own proving the delete above did not fall through
     const bList = await runWithContext(ctxB, async () => db.department.findMany());
     expect(bList.map((d) => d.name)).toContain("B-only");
   }, 60_000);

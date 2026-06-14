@@ -12,7 +12,7 @@ import type {
 } from "@/types";
 
 // Always-on unit gate for the Wave 11 server-safe xlsx builders. These run with no DOM and
-// no DB — exactly what the export Server Actions call — so a green run proves the builders
+// no DB exactly what the export Server Actions call so a green run proves the builders
 // are server-safe and produce a real workbook. Asserts sheet structure + a non-empty buffer.
 
 const SAMPLE_ASSETS: FixedAsset[] = [

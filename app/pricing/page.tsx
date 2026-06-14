@@ -5,7 +5,7 @@ import { getPublicPlans } from "@/lib/server/actions/public-plans";
 import { PricingCards, type PricingPlanCard } from "@/components/ui/pricing-cards";
 
 export const metadata: Metadata = {
-  title: "Pricing — Uhasibu Digito",
+  title: "Pricing · Uhasibu Digito",
   description: "Simple, transparent pricing for Tanzania's intelligent financial platform. Billed yearly in TZS, upgrade any time.",
 };
 
@@ -27,7 +27,7 @@ export default async function PricingPage() {
 
   return (
     <div className="relative bg-ud-surface-3">
-      {/* Header — matches the landing page nav */}
+      {/* Header: matches the landing page nav */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-5 sm:px-8 h-16 border-b border-ud-border bg-ud-surface/80 backdrop-blur-md">
         <Link href="/" className="flex items-center gap-2.5">
           <Image src="/images/uhasibu-digito-circle.png" alt="Uhasibu Digito" width={32} height={32} className="w-8 h-8 rounded-lg" priority />
