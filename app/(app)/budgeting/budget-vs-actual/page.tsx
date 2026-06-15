@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { BarChart3 } from "lucide-react";
 import { useBudgetLines } from "@/lib/hooks/useBudgetLines";
+import { useT } from "@/lib/hooks/useT";
 
 export default function BudgetVsActualPage() {
+  const t = useT();
   const { budgetLines, loading } = useBudgetLines();
   const worst = [...budgetLines].sort((a, b) => a.ytdVariance - b.ytdVariance).slice(0, 5);
 
@@ -20,7 +22,7 @@ export default function BudgetVsActualPage() {
       />
 
       {loading ? (
-        <p className="text-sm text-ud-text-muted">Loading…</p>
+        <p className="text-sm text-ud-text-muted">{t("Loading…")}</p>
       ) : budgetLines.length === 0 ? (
         <div className="bg-white border border-ud-border rounded-2xl shadow-card">
           <EmptyState
@@ -33,7 +35,7 @@ export default function BudgetVsActualPage() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
             <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-              <h3 className="font-display font-bold text-base mb-3">Worst performers</h3>
+              <h3 className="font-display font-bold text-base mb-3">{t("Worst performers")}</h3>
               <div className="space-y-2">
                 {worst.map((b) => (
                   <div key={b.id} className="flex items-center justify-between p-2 rounded-xl bg-ud-surface-2">
@@ -52,12 +54,12 @@ export default function BudgetVsActualPage() {
               <table className="w-full text-sm">
                 <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
                   <tr>
-                    <th className="text-left px-4 py-3" scope="col">Line item</th>
-                    <th className="text-left px-4 py-3" scope="col">Category</th>
-                    <th className="text-right px-4 py-3" scope="col">Annual budget</th>
-                    <th className="text-right px-4 py-3" scope="col">YTD budget</th>
-                    <th className="text-right px-4 py-3" scope="col">YTD actual</th>
-                    <th className="text-right px-4 py-3" scope="col">Variance</th>
+                    <th className="text-left px-4 py-3" scope="col">{t("Line item")}</th>
+                    <th className="text-left px-4 py-3" scope="col">{t("Category")}</th>
+                    <th className="text-right px-4 py-3" scope="col">{t("Annual budget")}</th>
+                    <th className="text-right px-4 py-3" scope="col">{t("YTD budget")}</th>
+                    <th className="text-right px-4 py-3" scope="col">{t("YTD actual")}</th>
+                    <th className="text-right px-4 py-3" scope="col">{t("Variance")}</th>
                     <th scope="col" />
                   </tr>
                 </thead>
@@ -72,8 +74,8 @@ export default function BudgetVsActualPage() {
                       <td className="px-4 py-2.5 text-right"><CurrencyDisplay amount={b.ytdVariance} showSymbol={false} className="font-medium" colored /></td>
                       <td className="px-4 py-2.5">
                         {b.ytdVariance < 0
-                          ? <Badge size="sm" variant="danger">Over</Badge>
-                          : <Badge size="sm" variant="success">Under</Badge>}
+                          ? <Badge size="sm" variant="danger">{t("Over")}</Badge>
+                          : <Badge size="sm" variant="success">{t("Under")}</Badge>}
                       </td>
                     </tr>
                   ))}

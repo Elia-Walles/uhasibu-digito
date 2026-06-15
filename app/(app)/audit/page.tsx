@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { useAudit } from "@/lib/hooks/useAudit";
 import { useExports } from "@/lib/hooks/useExports";
+import { useT } from "@/lib/hooks/useT";
 import { AUDIT_STEPS } from "@/lib/config/audit-procedures";
 import type { AuditProcedure } from "@/types";
 import toast from "react-hot-toast";
@@ -19,16 +20,17 @@ const PROCEDURE_META: Record<AuditProcedure, { title: string; description: strin
 };
 
 export default function AuditLandingPage() {
+  const t = useT();
   const { results: auditState, engagement, updateEngagement: updateAuditEngagement } = useAudit();
   const { exportAudit } = useExports();
 
   async function handleExport() {
     try {
       await exportAudit(engagement, auditState);
-      toast.success("Audit report exported");
+      toast.success(t("Audit report exported"));
     } catch (err) {
       console.error(err);
-      toast.error("Audit export failed");
+      toast.error(t("Audit export failed"));
     }
   }
 
@@ -39,7 +41,7 @@ export default function AuditLandingPage() {
         subtitle="Procedures, evidence, working papers exportable audit report"
         actions={
           <Button variant="primary" icon={<Download className="w-4 h-4" />} onClick={handleExport}>
-            Export audit report
+            {t("Export audit report")}
           </Button>
         }
       />
@@ -47,11 +49,9 @@ export default function AuditLandingPage() {
       <div className="mb-4 flex items-start gap-3 p-4 rounded-2xl border border-ud-warning/30 bg-ud-warning-bg">
         <AlertTriangle className="w-5 h-5 text-ud-warning flex-shrink-0 mt-0.5" />
         <div className="text-sm text-ud-text-secondary leading-relaxed">
-          <Badge variant="info" size="sm" className="mb-1">Audit workpapers</Badge>
+          <Badge variant="info" size="sm" className="mb-1">{t("Audit workpapers")}</Badge>
           <p>
-            Work through the Tanzania purchase, sales, and expense cycles. Mark each step Passed or Exception,
-            record notes, attach evidence files, and export an Excel audit report. A full statutory engagement
-            still requires sampling, materiality, and partner sign-off.
+            {t("Work through the Tanzania purchase, sales, and expense cycles. Mark each step Passed or Exception, record notes, attach evidence files, and export an Excel audit report. A full statutory engagement still requires sampling, materiality, and partner sign-off.")}
           </p>
         </div>
       </div>
@@ -59,12 +59,12 @@ export default function AuditLandingPage() {
       <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">
         <div className="flex items-center gap-2 mb-3">
           <ClipboardCheck className="w-4 h-4 text-ud-primary" />
-          <h2 className="font-display font-bold text-base">Engagement</h2>
+          <h2 className="font-display font-bold text-base">{t("Engagement")}</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Input label="Engagement name" value={engagement.name} onChange={(e) => updateAuditEngagement({ name: e.target.value })} />
-          <Input label="Period"          value={engagement.period} onChange={(e) => updateAuditEngagement({ period: e.target.value })} />
-          <Input label="Auditor"         value={engagement.auditorName} onChange={(e) => updateAuditEngagement({ auditorName: e.target.value })} />
+          <Input label={t("Engagement name")} value={engagement.name} onChange={(e) => updateAuditEngagement({ name: e.target.value })} />
+          <Input label={t("Period")}          value={engagement.period} onChange={(e) => updateAuditEngagement({ period: e.target.value })} />
+          <Input label={t("Auditor")}         value={engagement.auditorName} onChange={(e) => updateAuditEngagement({ auditorName: e.target.value })} />
         </div>
       </div>
 
@@ -87,14 +87,14 @@ export default function AuditLandingPage() {
                   <Icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-base">{meta.title}</h3>
-                  <p className="text-xs text-ud-text-muted mt-0.5 line-clamp-2">{meta.description}</p>
+                  <h3 className="font-display font-bold text-base">{t(meta.title)}</h3>
+                  <p className="text-xs text-ud-text-muted mt-0.5 line-clamp-2">{t(meta.description)}</p>
                 </div>
               </div>
               <div className="mt-4 flex items-center gap-2 flex-wrap text-xs">
-                <Badge variant="success" size="sm">{passed} passed</Badge>
-                {exceptions > 0 && <Badge variant="danger" size="sm" pulse>{exceptions} exception{exceptions === 1 ? "" : "s"}</Badge>}
-                <span className="text-ud-text-muted">of {steps.length} steps</span>
+                <Badge variant="success" size="sm">{t("{n} passed", { n: passed })}</Badge>
+                {exceptions > 0 && <Badge variant="danger" size="sm" pulse>{exceptions === 1 ? t("{n} exception", { n: exceptions }) : t("{n} exceptions", { n: exceptions })}</Badge>}
+                <span className="text-ud-text-muted">{t("of {n} steps", { n: steps.length })}</span>
               </div>
               <div className="mt-3 h-1.5 bg-ud-surface-2 rounded-full overflow-hidden">
                 <div
@@ -103,7 +103,7 @@ export default function AuditLandingPage() {
                 />
               </div>
               <div className="mt-3 text-xs text-ud-primary font-medium group-hover:underline">
-                Open procedure →
+                {t("Open procedure →")}
               </div>
             </Link>
           );

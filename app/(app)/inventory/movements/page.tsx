@@ -14,6 +14,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useInventory } from "@/lib/hooks/useInventory";
 import { formatDate } from "@/lib/utils/dates";
 import { formatAmount } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 import type { StockMovement, MovementType } from "@/types";
 
 const TYPE_META: Record<MovementType, { color: "success" | "danger" | "info" | "warning"; icon: typeof ArrowUp; label: string }> = {
@@ -36,6 +37,7 @@ function emptyForm(): FormState {
 }
 
 export default function StockMovementsPage() {
+  const t = useT();
   const { stockMovements, inventory, recordMovement, loading: invLoading } = useInventory();
   const loading = invLoading;
   const [addOpen, setAddOpen] = useState(false);
@@ -57,7 +59,7 @@ export default function StockMovementsPage() {
 
   async function save() {
     if (!form.itemId || form.quantity <= 0) {
-      toast.error("Pick an item and enter a quantity");
+      toast.error(t("Pick an item and enter a quantity"));
       return;
     }
     const res = await recordMovement({
@@ -71,7 +73,7 @@ export default function StockMovementsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`${TYPE_META[form.type].label} recorded`);
+    toast.success(t("{type} recorded", { type: t(TYPE_META[form.type].label) }));
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -83,7 +85,7 @@ export default function StockMovementsPage() {
     { key: "type", label: "Type", render: (r) => {
       const m = TYPE_META[r.type];
       const Icon = m.icon;
-      return <Badge variant={m.color}><Icon className="w-2.5 h-2.5" />{m.label}</Badge>;
+      return <Badge variant={m.color}><Icon className="w-2.5 h-2.5" />{t(m.label)}</Badge>;
     } },
     { key: "quantity", label: "Qty", sortable: true, align: "right", render: (r) => <span className={`font-mono font-medium ${r.quantity > 0 ? "text-ud-success" : "text-ud-danger"}`}>{r.quantity > 0 ? "+" : ""}{r.quantity}</span> },
     { key: "totalValue", label: "Value", align: "right", render: (r) => <span className="font-mono">{formatAmount(r.totalValue)}</span> },
@@ -94,9 +96,9 @@ export default function StockMovementsPage() {
     <PageWrapper>
       <PageHeader
         title="Stock Movements"
-        subtitle={`${stockMovements.length} movements recorded`}
+        subtitle={t("{n} movements recorded", { n: stockMovements.length })}
         breadcrumbs={[{ label: "Inventory", href: "/inventory" }, { label: "Movements" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openAdd}>Record movement</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openAdd}>{t("Record movement")}</Button>}
       />
       {loading ? <TableSkeleton rows={10} columns={7} /> :
         <DataTable data={stockMovements} columns={COLS} pageSize={15} initialSortKey="date" initialSortDir="desc" rowKey={(r) => r.id} />
@@ -110,8 +112,8 @@ export default function StockMovementsPage() {
         size="md"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Record</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Record")}</Button>
           </>
         }
       >
@@ -122,20 +124,20 @@ export default function StockMovementsPage() {
           }} options={itemOptions} />
 
           <div className="grid grid-cols-2 gap-2">
-            {(["IN", "OUT", "TRANSFER", "ADJUSTMENT"] as MovementType[]).map((t) => {
-              const m = TYPE_META[t];
+            {(["IN", "OUT", "TRANSFER", "ADJUSTMENT"] as MovementType[]).map((mt) => {
+              const m = TYPE_META[mt];
               const Icon = m.icon;
               return (
                 <button
-                  key={t}
+                  key={mt}
                   type="button"
-                  onClick={() => setForm({ ...form, type: t })}
+                  onClick={() => setForm({ ...form, type: mt })}
                   className={`p-3 rounded-xl border text-sm font-medium min-h-[56px] transition-all inline-flex items-center gap-2 ${
-                    form.type === t ? "border-ud-primary bg-ud-primary-50 text-ud-primary" : "border-ud-border hover:border-ud-primary/40"
+                    form.type === mt ? "border-ud-primary bg-ud-primary-50 text-ud-primary" : "border-ud-border hover:border-ud-primary/40"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
-                  {m.label}
+                  {t(m.label)}
                 </button>
               );
             })}
@@ -145,13 +147,13 @@ export default function StockMovementsPage() {
             <Input label="Quantity" type="number" value={String(form.quantity)} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) || 0 })} />
             <Input label="Unit cost (TZS)" type="number" value={String(form.unitCost)} onChange={(e) => setForm({ ...form, unitCost: Number(e.target.value) || 0 })} />
           </div>
-          <Input label="Narration" value={form.narration} onChange={(e) => setForm({ ...form, narration: e.target.value })} placeholder="Reason / reference" />
+          <Input label="Narration" value={form.narration} onChange={(e) => setForm({ ...form, narration: e.target.value })} placeholder={t("Reason / reference")} />
 
           {selectedItem && (
             <div className="p-3 rounded-xl bg-ud-surface-2 text-xs text-ud-text-secondary">
-              Current on-hand: <span className="font-mono font-bold">{selectedItem.onHand}</span> {selectedItem.unit}
+              {t("Current on-hand:")} <span className="font-mono font-bold">{selectedItem.onHand}</span> {selectedItem.unit}
               {form.quantity > 0 && (
-                <> · After this movement: <span className="font-mono font-bold text-ud-primary">
+                <> · {t("After this movement:")} <span className="font-mono font-bold text-ud-primary">
                   {form.type === "OUT"
                     ? Math.max(0, selectedItem.onHand - form.quantity)
                     : form.type === "ADJUSTMENT"

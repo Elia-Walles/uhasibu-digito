@@ -8,11 +8,13 @@ import { DigitalStamp } from "@/components/ui/DigitalStamp";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
+import { useT } from "@/lib/hooks/useT";
 import type { StampData } from "@/types";
 
 type TabKey = "paye" | "nssf" | "sdl" | "wcf";
 
 export default function StatutoryPage() {
+  const t = useT();
   const { payrollRuns, loading: prLoading } = usePayrollRuns();
   const loading = prLoading;
   const current = payrollRuns[payrollRuns.length - 1];
@@ -20,17 +22,17 @@ export default function StatutoryPage() {
   const [stamp, setStamp] = useState<StampData | null>(null);
 
   const totalMap: Record<TabKey, { label: string; rate: string; total: number; description: string }> = {
-    paye: { label: "PAYE",  rate: "0% / 8% / 20% / 25% / 30%", total: current?.totalPAYE ?? 0,  description: "Pay-As-You-Earn remitted to TRA on behalf of employees." },
-    nssf: { label: "NSSF",  rate: "10% employee + 10% employer", total: (current?.totalNSSF ?? 0) * 2, description: "National Social Security Fund contribution." },
-    sdl:  { label: "SDL",   rate: "4% of gross",  total: current?.totalSDL ?? 0,   description: "Skills Development Levy paid by the employer." },
-    wcf:  { label: "WCF",   rate: "0.5% of gross", total: current?.totalWCF ?? 0,   description: "Workers' Compensation Fund." },
+    paye: { label: "PAYE",  rate: "0% / 8% / 20% / 25% / 30%", total: current?.totalPAYE ?? 0,  description: t("Pay-As-You-Earn remitted to TRA on behalf of employees.") },
+    nssf: { label: "NSSF",  rate: "10% employee + 10% employer", total: (current?.totalNSSF ?? 0) * 2, description: t("National Social Security Fund contribution.") },
+    sdl:  { label: "SDL",   rate: "4% of gross",  total: current?.totalSDL ?? 0,   description: t("Skills Development Levy paid by the employer.") },
+    wcf:  { label: "WCF",   rate: "0.5% of gross", total: current?.totalWCF ?? 0,   description: t("Workers' Compensation Fund.") },
   };
   const meta = totalMap[tab];
 
   return (
     <PageWrapper>
       <PageHeader
-        title={`Statutory returns ${current?.period ?? "latest"}`}
+        title={t("Statutory returns {period}", { period: current?.period ?? t("latest") })}
         subtitle="Prepare and stamp PAYE, NSSF, SDL, and WCF returns for TRA filing"
         breadcrumbs={[{ label: "Payroll", href: "/payroll" }, { label: "Statutory" }]}
         actions={<ExportMenu fileLabel={`${meta.label} return`} />}
@@ -49,9 +51,9 @@ export default function StatutoryPage() {
         />
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card label="Total payable" value={<CurrencyDisplay amount={meta.total} className="text-xl font-display font-extrabold" />} accent="teal" />
-            <Card label="Rate" value={<span className="font-mono text-xs">{meta.rate}</span>} />
-            <Card label="Filing deadline" value={<span className="font-medium">7 November 2024</span>} accent="warning" />
+            <Card label={t("Total payable")} value={<CurrencyDisplay amount={meta.total} className="text-xl font-display font-extrabold" />} accent="teal" />
+            <Card label={t("Rate")} value={<span className="font-mono text-xs">{meta.rate}</span>} />
+            <Card label={t("Filing deadline")} value={<span className="font-medium">7 November 2024</span>} accent="warning" />
           </div>
 
           <p className="text-sm text-ud-text-muted mb-5">{meta.description}</p>
@@ -61,9 +63,9 @@ export default function StatutoryPage() {
               <table className="w-full text-sm">
                 <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
                   <tr>
-                    <th className="text-left px-4 py-3" scope="col">Employee</th>
+                    <th className="text-left px-4 py-3" scope="col">{t("Employee")}</th>
                     <th className="text-left px-4 py-3" scope="col">TIN</th>
-                    <th className="text-right px-4 py-3" scope="col">Gross</th>
+                    <th className="text-right px-4 py-3" scope="col">{t("Gross")}</th>
                     <th className="text-right px-4 py-3" scope="col">{meta.label}</th>
                   </tr>
                 </thead>
@@ -85,7 +87,7 @@ export default function StatutoryPage() {
                 </tbody>
                 <tfoot className="bg-ud-primary text-white">
                   <tr>
-                    <td colSpan={3} className="px-4 py-3 font-bold">Total {meta.label} payable</td>
+                    <td colSpan={3} className="px-4 py-3 font-bold">{t("Total {label} payable", { label: meta.label })}</td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums font-bold">
                       <CurrencyDisplay amount={meta.total} compact showSymbol={false} />
                     </td>
@@ -96,10 +98,10 @@ export default function StatutoryPage() {
           )}
 
           <div className="mt-6 flex flex-wrap items-start gap-4">
-            <DigitalStamp documentName={`${meta.label} Return ${current?.period ?? "latest"}`} onApply={setStamp} applied={stamp} />
+            <DigitalStamp documentName={t("{label} Return {period}", { label: meta.label, period: current?.period ?? t("latest") })} onApply={setStamp} applied={stamp} />
             {!stamp && (
               <p className="text-xs text-ud-text-muted max-w-md">
-                Apply the NBAA digital stamp to certify this statutory return before submission to TRA.
+                {t("Apply the NBAA digital stamp to certify this statutory return before submission to TRA.")}
               </p>
             )}
           </div>

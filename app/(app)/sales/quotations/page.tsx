@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useQuotations } from "@/lib/hooks/useQuotations";
 import { useCustomers } from "@/lib/hooks/useCustomers";
 import { useInvoices } from "@/lib/hooks/useInvoices";
+import { useT } from "@/lib/hooks/useT";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
@@ -47,6 +48,7 @@ function emptyForm(customerId: string): FormState {
 }
 
 export default function QuotationsPage() {
+  const t = useT();
   const router = useRouter();
   const { customers } = useCustomers();
   const { createInvoice } = useInvoices();
@@ -92,11 +94,11 @@ export default function QuotationsPage() {
   async function save(status: "Draft" | "Sent") {
     const customer = customers.find((c) => c.id === form.customerId);
     if (!customer) {
-      toast.error("Pick a customer");
+      toast.error(t("Pick a customer"));
       return;
     }
     if (form.lines.every((l) => l.lineTotal === 0)) {
-      toast.error("Add at least one line item with a value");
+      toast.error(t("Add at least one line item with a value"));
       return;
     }
     const res = await createQuotation({
@@ -118,7 +120,7 @@ export default function QuotationsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(status === "Sent" ? "Quotation sent" : "Quotation saved as draft");
+    toast.success(status === "Sent" ? t("Quotation sent") : t("Quotation saved as draft"));
     setAddOpen(false);
   }
 
@@ -142,7 +144,7 @@ export default function QuotationsPage() {
       return;
     }
     await updateQuotationStatus(q.id, "Converted", res.data.id);
-    toast.success(`Converted to ${res.data.number}`);
+    toast.success(t("Converted to {n}", { n: res.data.number }));
     router.push("/sales/invoices");
   }
 
@@ -152,18 +154,18 @@ export default function QuotationsPage() {
     { key: "date",       label: "Date",        sortable: true, render: (r) => formatDate(r.date) },
     { key: "validUntil", label: "Valid until", render: (r) => formatDate(r.validUntil) },
     { key: "total",      label: "Total",       sortable: true, align: "right", render: (r) => <CurrencyDisplay amount={r.total} className="font-medium" /> },
-    { key: "status",     label: "Status",      render: (r) => <Badge variant={STATUS_BADGE[r.status]}>{r.status}</Badge> },
+    { key: "status",     label: "Status",      render: (r) => <Badge variant={STATUS_BADGE[r.status]}>{t(r.status)}</Badge> },
     { key: "actions",    label: "", align: "right", render: (r) => (
       <div className="flex justify-end gap-1">
         {r.status === "Draft" && (
-          <button onClick={(e) => { e.stopPropagation(); updateQuotationStatus(r.id, "Sent"); toast.success("Marked sent"); }}
-                  className="p-1.5 rounded-lg hover:bg-ud-info-bg text-ud-text-muted hover:text-ud-info" aria-label="Mark sent">
+          <button onClick={(e) => { e.stopPropagation(); updateQuotationStatus(r.id, "Sent"); toast.success(t("Marked sent")); }}
+                  className="p-1.5 rounded-lg hover:bg-ud-info-bg text-ud-text-muted hover:text-ud-info" aria-label={t("Mark sent")}>
             <Send className="w-3.5 h-3.5" />
           </button>
         )}
         {(r.status === "Sent" || r.status === "Accepted") && (
           <button onClick={(e) => { e.stopPropagation(); void convert(r); }}
-                  className="p-1.5 rounded-lg hover:bg-ud-primary-50 text-ud-text-muted hover:text-ud-primary" aria-label="Convert to invoice">
+                  className="p-1.5 rounded-lg hover:bg-ud-primary-50 text-ud-text-muted hover:text-ud-primary" aria-label={t("Convert to invoice")}>
             <FileCheck2 className="w-3.5 h-3.5" />
           </button>
         )}
@@ -177,7 +179,7 @@ export default function QuotationsPage() {
         title="Quotations"
         subtitle={`${quotations.length} quotations · ${quotations.filter((q) => q.status === "Accepted").length} accepted · ${quotations.filter((q) => q.status === "Converted").length} converted`}
         breadcrumbs={[{ label: "Sales", href: "/sales" }, { label: "Quotations" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openAdd}>New quotation</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openAdd}>{t("New quotation")}</Button>}
       />
       {loading ? <TableSkeleton rows={10} columns={7} /> :
         quotations.length === 0 ? (
@@ -200,21 +202,21 @@ export default function QuotationsPage() {
         size="xl"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="outline" onClick={() => void save("Draft")}>Save draft</Button>
-            <Button variant="primary" onClick={() => void save("Sent")} icon={<Send className="w-4 h-4" />}>Save & send</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="outline" onClick={() => void save("Draft")}>{t("Save draft")}</Button>
+            <Button variant="primary" onClick={() => void save("Sent")} icon={<Send className="w-4 h-4" />}>{t("Save & send")}</Button>
           </>
         }
       >
         <div className="space-y-4 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Select label="Customer" value={form.customerId} onValueChange={(v) => setForm({ ...form, customerId: v })} options={customers.map((c) => ({ value: c.id, label: c.name }))} />
-            <Input  label="Date"        type="date" value={form.date}        onChange={(e) => setForm({ ...form, date: e.target.value })} />
-            <Input  label="Valid until" type="date" value={form.validUntil}  onChange={(e) => setForm({ ...form, validUntil: e.target.value })} />
+            <Input  label={t("Date")}        type="date" value={form.date}        onChange={(e) => setForm({ ...form, date: e.target.value })} />
+            <Input  label={t("Valid until")} type="date" value={form.validUntil}  onChange={(e) => setForm({ ...form, validUntil: e.target.value })} />
           </div>
 
           <div className="space-y-2">
-            <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">Line items</div>
+            <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{t("Line items")}</div>
             <AnimatePresence>
               {form.lines.map((l) => (
                 <motion.div
@@ -225,13 +227,13 @@ export default function QuotationsPage() {
                   exit={{ opacity: 0 }}
                   className="flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-2 p-2.5 rounded-xl bg-ud-surface-2"
                 >
-                  <div className="sm:col-span-5"><Input value={l.description} onChange={(e) => updateLine(l.id, { description: e.target.value })} placeholder="Description" /></div>
-                  <div className="sm:col-span-2"><Input type="number" value={l.quantity || ""}  onChange={(e) => updateLine(l.id, { quantity:  Number(e.target.value) || 0 })} placeholder="Qty" className="text-right" /></div>
-                  <div className="sm:col-span-3"><Input type="number" value={l.unitPrice || ""} onChange={(e) => updateLine(l.id, { unitPrice: Number(e.target.value) || 0 })} placeholder="Unit Price" className="text-right font-mono" /></div>
+                  <div className="sm:col-span-5"><Input value={l.description} onChange={(e) => updateLine(l.id, { description: e.target.value })} placeholder={t("Description")} /></div>
+                  <div className="sm:col-span-2"><Input type="number" value={l.quantity || ""}  onChange={(e) => updateLine(l.id, { quantity:  Number(e.target.value) || 0 })} placeholder={t("Qty")} className="text-right" /></div>
+                  <div className="sm:col-span-3"><Input type="number" value={l.unitPrice || ""} onChange={(e) => updateLine(l.id, { unitPrice: Number(e.target.value) || 0 })} placeholder={t("Unit Price")} className="text-right font-mono" /></div>
                   <div className="sm:col-span-2 flex items-center gap-1">
                     <span className="font-mono text-sm tabular-nums">{formatTZS(l.lineTotal, true).replace("TSh ", "")}</span>
                     {form.lines.length > 1 && (
-                      <button onClick={() => removeLine(l.id)} className="ml-auto p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label="Remove">
+                      <button onClick={() => removeLine(l.id)} className="ml-auto p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label={t("Remove")}>
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -240,16 +242,16 @@ export default function QuotationsPage() {
               ))}
             </AnimatePresence>
             <button onClick={addLine} className="inline-flex items-center gap-1.5 text-sm text-ud-primary font-medium hover:underline">
-              <Plus className="w-3.5 h-3.5" />Add line
+              <Plus className="w-3.5 h-3.5" />{t("Add line")}
             </button>
           </div>
 
-          <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional terms, delivery, etc." />
+          <Input label={t("Notes")} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder={t("Optional terms, delivery, etc.")} />
 
           <div className="ml-auto w-full sm:w-64 text-sm space-y-1">
-            <div className="flex justify-between"><span className="text-ud-text-muted">Subtotal</span><span className="font-mono">{subtotal.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-ud-text-muted">VAT (18%)</span><span className="font-mono">{vat.toLocaleString()}</span></div>
-            <div className="flex justify-between font-bold pt-2 border-t border-ud-border"><span>Total (TZS)</span><span className="font-mono">{total.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-ud-text-muted">{t("Subtotal")}</span><span className="font-mono">{subtotal.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-ud-text-muted">{t("VAT (18%)")}</span><span className="font-mono">{vat.toLocaleString()}</span></div>
+            <div className="flex justify-between font-bold pt-2 border-t border-ud-border"><span>{t("Total (TZS)")}</span><span className="font-mono">{total.toLocaleString()}</span></div>
           </div>
         </div>
       </Modal>

@@ -5,8 +5,10 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { getManagementMetrics, type ManagementMetrics } from "@/lib/server/actions/analytics";
+import { useT } from "@/lib/hooks/useT";
 
 export default function ManagementAccountingPage() {
+  const t = useT();
   const [m, setM] = useState<ManagementMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +27,7 @@ export default function ManagementAccountingPage() {
       <PageHeader title="Management Accounts" subtitle="Margins and profitability from your live ledger" />
 
       {loading || !m ? (
-        <p className="text-sm text-ud-text-muted">Loading…</p>
+        <p className="text-sm text-ud-text-muted">{t("Loading…")}</p>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -36,18 +38,18 @@ export default function ManagementAccountingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-              <div className="text-xs uppercase tracking-[0.08em] text-ud-text-muted mb-1">Revenue (FY)</div>
+              <div className="text-xs uppercase tracking-[0.08em] text-ud-text-muted mb-1">{t("Revenue (FY)")}</div>
               <CurrencyDisplay amount={m.revenue} className="text-2xl font-display font-extrabold" />
             </div>
             <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-              <div className="text-xs uppercase tracking-[0.08em] text-ud-text-muted mb-1">Net profit (FY)</div>
+              <div className="text-xs uppercase tracking-[0.08em] text-ud-text-muted mb-1">{t("Net profit (FY)")}</div>
               <CurrencyDisplay amount={m.netProfit} className="text-2xl font-display font-extrabold" />
             </div>
           </div>
 
           {m.revenue === 0 && (
             <p className="mt-4 text-sm text-ud-text-muted">
-              Post sales and expenses to the general ledger and your margins will populate here.
+              {t("Post sales and expenses to the general ledger and your margins will populate here.")}
             </p>
           )}
         </>

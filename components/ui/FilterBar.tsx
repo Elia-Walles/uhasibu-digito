@@ -1,6 +1,7 @@
 "use client";
 import { Search } from "lucide-react";
 import { Input } from "./Input";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 
 interface FilterBarProps {
@@ -20,6 +21,7 @@ export function FilterBar({
   actions,
   className,
 }: FilterBarProps) {
+  const t = useT();
   return (
     <div
       className={cn(
@@ -34,7 +36,7 @@ export function FilterBar({
             <Input
               value={searchValue ?? ""}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={t(searchPlaceholder)}
               prefixIcon={<Search className="w-4 h-4" />}
             />
           </div>

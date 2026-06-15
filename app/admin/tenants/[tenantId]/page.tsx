@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { formatTZS } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 import type { Tier } from "@/lib/auth/tiers";
 import type { AdminTenantDetail, AdminSubscriptionRow } from "@/lib/server/actions/admin/types";
 
@@ -26,6 +27,7 @@ const PLAN_OPTIONS = [
 type PlanKey = "starter" | "business" | "standard" | "premium";
 
 export default function TenantDetailPage() {
+  const t = useT();
   const params = useParams<{ tenantId: string }>();
   const tenantId = params.tenantId;
 
@@ -54,7 +56,7 @@ export default function TenantDetailPage() {
   const changeTier = async (tier: Tier) => {
     const res = await setTenantTier({ tenantId, tier });
     if (res.ok) {
-      toast.success("Tier updated");
+      toast.success(t("Tier updated"));
       void load();
     } else toast.error(res.error);
   };
@@ -64,7 +66,7 @@ export default function TenantDetailPage() {
     const res = await upsertSubscription({ tenantId, planKey, amountTzs: Number(amount) });
     setSavingSub(false);
     if (res.ok) {
-      toast.success("Subscription activated");
+      toast.success(t("Subscription activated"));
       setAmount("");
       void load();
     } else toast.error(res.error);
@@ -73,7 +75,7 @@ export default function TenantDetailPage() {
   if (loading || !detail) {
     return (
       <div>
-        <AdminPageTitle title="Tenant" subtitle="Loading…" />
+        <AdminPageTitle title={t("Tenant")} subtitle={t("Loading…")} />
         <div className="h-40 rounded-2xl bg-ud-surface border border-ud-border animate-pulse" />
       </div>
     );
@@ -82,28 +84,28 @@ export default function TenantDetailPage() {
   return (
     <div>
       <Link href="/admin/tenants" className="inline-flex items-center gap-1.5 text-sm text-ud-text-muted hover:text-ud-text-primary mb-3">
-        <ArrowLeft className="w-4 h-4" /> Tenants
+        <ArrowLeft className="w-4 h-4" /> {t("Tenants")}
       </Link>
       <AdminPageTitle
         title={detail.name}
-        subtitle={`${detail.slug} · joined ${detail.createdAt.slice(0, 10)}`}
+        subtitle={`${detail.slug} · ${t("joined")} ${detail.createdAt.slice(0, 10)}`}
         actions={
           <Button icon={<Receipt className="w-4 h-4" />} onClick={() => setPayOpen(true)}>
-            Record payment
+            {t("Record payment")}
           </Button>
         }
       />
 
       <div className="grid lg:grid-cols-3 gap-4">
-        <AdminPanel title="Profile">
+        <AdminPanel title={t("Profile")}>
           <dl className="space-y-2 text-sm">
             {[
-              ["Company", detail.companyName ?? ""],
-              ["TIN", detail.tin ?? ""],
-              ["Email", detail.email ?? ""],
-              ["Phone", detail.phone ?? ""],
-              ["Region", detail.region ?? ""],
-              ["Users", String(detail.userCount)],
+              [t("Company"), detail.companyName ?? ""],
+              [t("TIN"), detail.tin ?? ""],
+              [t("Email"), detail.email ?? ""],
+              [t("Phone"), detail.phone ?? ""],
+              [t("Region"), detail.region ?? ""],
+              [t("Users"), String(detail.userCount)],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-3">
                 <dt className="text-ud-text-muted">{k}</dt>
@@ -113,26 +115,26 @@ export default function TenantDetailPage() {
           </dl>
         </AdminPanel>
 
-        <AdminPanel title="Subscription">
+        <AdminPanel title={t("Subscription")}>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-ud-text-muted">Current tier</span>
+              <span className="text-ud-text-muted">{t("Current tier")}</span>
               <StatusPill value={detail.tier} />
             </div>
             <div className="flex justify-between">
-              <span className="text-ud-text-muted">Status</span>
-              {sub ? <StatusPill value={sub.status} /> : <span className="text-ud-text-faint">No active plan</span>}
+              <span className="text-ud-text-muted">{t("Status")}</span>
+              {sub ? <StatusPill value={sub.status} /> : <span className="text-ud-text-faint">{t("No active plan")}</span>}
             </div>
             <div className="flex justify-between">
-              <span className="text-ud-text-muted">MRR</span>
+              <span className="text-ud-text-muted">{t("MRR")}</span>
               <span className="font-mono">{formatTZS(detail.mrrTzs, true)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-ud-text-muted">Total paid</span>
+              <span className="text-ud-text-muted">{t("Total paid")}</span>
               <span className="font-mono">{formatTZS(detail.totalPaidTzs, true)}</span>
             </div>
             <div className="pt-2 border-t border-ud-border">
-              <label className="block text-[11px] uppercase tracking-[0.08em] text-ud-text-muted mb-1.5">Quick tier change</label>
+              <label className="block text-[11px] uppercase tracking-[0.08em] text-ud-text-muted mb-1.5">{t("Quick tier change")}</label>
               <Select
                 value={detail.tier}
                 onValueChange={(v) => changeTier(v as Tier)}
@@ -142,10 +144,10 @@ export default function TenantDetailPage() {
           </div>
         </AdminPanel>
 
-        <AdminPanel title="Activate plan">
+        <AdminPanel title={t("Activate plan")}>
           <div className="space-y-3">
             <Select label="Plan" value={planKey} onValueChange={(v) => setPlanKey(v as PlanKey)} options={PLAN_OPTIONS} />
-            <Input label="Amount (TZS / year)" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="450000" />
+            <Input label={t("Amount (TZS / year)")} type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="450000" />
             <Button
               fullWidth
               icon={<CreditCard className="w-4 h-4" />}
@@ -153,14 +155,14 @@ export default function TenantDetailPage() {
               loading={savingSub}
               disabled={!(Number(amount) > 0)}
             >
-              Activate subscription
+              {t("Activate subscription")}
             </Button>
-            <p className="text-xs text-ud-text-muted">Sets the tenant tier and starts a new active subscription.</p>
+            <p className="text-xs text-ud-text-muted">{t("Sets the tenant tier and starts a new active subscription.")}</p>
           </div>
         </AdminPanel>
       </div>
 
-      <AdminPanel title="Business data" className="mt-6">
+      <AdminPanel title={t("Business data")} className="mt-6">
         <TenantDrilldown tenantId={tenantId} />
       </AdminPanel>
 

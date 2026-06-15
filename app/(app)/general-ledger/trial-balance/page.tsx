@@ -7,8 +7,10 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Scale } from "lucide-react";
 import { useTrialBalance } from "@/lib/hooks/useTrialBalance";
+import { useT } from "@/lib/hooks/useT";
 
 export default function TrialBalancePage() {
+  const t = useT();
   const router = useRouter();
   const { data, loading } = useTrialBalance();
 
@@ -23,12 +25,12 @@ export default function TrialBalancePage() {
       <div className="bg-white border border-ud-border rounded-2xl p-6 shadow-card">
         <div className="text-center mb-5">
           <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{data?.companyName ?? ""}</div>
-          <h2 className="font-display font-extrabold text-2xl mt-1">Trial Balance</h2>
-          <div className="text-sm text-ud-text-muted mt-1">{data ? `As at ${data.asAt}` : ""} (TZS)</div>
+          <h2 className="font-display font-extrabold text-2xl mt-1">{t("Trial Balance")}</h2>
+          <div className="text-sm text-ud-text-muted mt-1">{data ? t("As at {date}", { date: data.asAt }) : ""} (TZS)</div>
         </div>
 
         {loading ? (
-          <p className="text-sm text-ud-text-muted text-center py-8">Loading…</p>
+          <p className="text-sm text-ud-text-muted text-center py-8">{t("Loading…")}</p>
         ) : !data || data.rows.length === 0 ? (
           <EmptyState
             icon={Scale}
@@ -42,10 +44,10 @@ export default function TrialBalancePage() {
               <table className="w-full text-sm">
                 <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
                   <tr>
-                    <th className="text-left px-4 py-3" scope="col">Code</th>
-                    <th className="text-left px-4 py-3" scope="col">Account</th>
-                    <th className="text-right px-4 py-3" scope="col">Debit</th>
-                    <th className="text-right px-4 py-3" scope="col">Credit</th>
+                    <th className="text-left px-4 py-3" scope="col">{t("Code")}</th>
+                    <th className="text-left px-4 py-3" scope="col">{t("Account")}</th>
+                    <th className="text-right px-4 py-3" scope="col">{t("Debit")}</th>
+                    <th className="text-right px-4 py-3" scope="col">{t("Credit")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -60,7 +62,7 @@ export default function TrialBalancePage() {
                 </tbody>
                 <tfoot className="bg-ud-primary text-white">
                   <tr>
-                    <td colSpan={2} className="px-4 py-3 font-bold">Total</td>
+                    <td colSpan={2} className="px-4 py-3 font-bold">{t("Total")}</td>
                     <td className="px-4 py-3 text-right font-mono font-bold"><CurrencyDisplay amount={data.totalDebit} showSymbol={false} /></td>
                     <td className="px-4 py-3 text-right font-mono font-bold"><CurrencyDisplay amount={data.totalCredit} showSymbol={false} /></td>
                   </tr>
@@ -69,8 +71,8 @@ export default function TrialBalancePage() {
             </div>
             <div className="mt-4 text-xs text-ud-text-muted text-center">
               {data.totalDebit === data.totalCredit
-                ? <>Books are balanced. Total debits = total credits = <span className="font-mono font-medium text-ud-primary">{data.totalDebit.toLocaleString()}</span></>
-                : <span className="text-ud-danger">Out of balance by {Math.abs(data.totalDebit - data.totalCredit).toLocaleString()}</span>}
+                ? <>{t("Books are balanced. Total debits = total credits =")} <span className="font-mono font-medium text-ud-primary">{data.totalDebit.toLocaleString()}</span></>
+                : <span className="text-ud-danger">{t("Out of balance by {amount}", { amount: Math.abs(data.totalDebit - data.totalCredit).toLocaleString() })}</span>}
             </div>
           </>
         )}

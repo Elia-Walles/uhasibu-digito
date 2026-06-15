@@ -8,11 +8,13 @@ import { Button } from "@/components/ui/Button";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { ChartSkeleton } from "@/components/skeletons/ChartSkeleton";
 import { useInventory } from "@/lib/hooks/useInventory";
+import { useT } from "@/lib/hooks/useT";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as ChartTooltip } from "recharts";
 
 const CATEGORY_COLORS = ["#0F7B5E", "#14A87E", "#F5C842", "#C47B2A", "#2563EB", "#94A3B8"];
 
 export default function InventoryHome() {
+  const t = useT();
   const { inventory: INVENTORY, loading: invLoading } = useInventory();
   const loading = invLoading;
   const totalValue = INVENTORY.reduce((s, i) => s + i.totalValue, 0);
@@ -29,11 +31,11 @@ export default function InventoryHome() {
     <PageWrapper>
       <PageHeader
         title="Inventory"
-        subtitle={`${INVENTORY.length} SKUs across ${categoryData.length} categories`}
+        subtitle={t("{skus} SKUs across {cats} categories", { skus: INVENTORY.length, cats: categoryData.length })}
         actions={
           <>
-            <Link href="/inventory/movements"><Button variant="outline" icon={<ArrowLeftRight className="w-4 h-4" />}>Movements</Button></Link>
-            <Link href="/inventory/items"><Button variant="primary" icon={<Boxes className="w-4 h-4" />}>Manage items</Button></Link>
+            <Link href="/inventory/movements"><Button variant="outline" icon={<ArrowLeftRight className="w-4 h-4" />}>{t("Movements")}</Button></Link>
+            <Link href="/inventory/items"><Button variant="primary" icon={<Boxes className="w-4 h-4" />}>{t("Manage items")}</Button></Link>
           </>
         }
       />
@@ -42,14 +44,14 @@ export default function InventoryHome() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard label="Total stock value" value={totalValue}        prefix="TSh" variant="teal"    icon={<Package />} format="compact" />
           <StatCard label="SKUs in stock"     value={INVENTORY.filter((i) => i.status === "InStock").length} variant="emerald" format="raw" />
-          <StatCard label="Low stock"         value={lowStock}          variant="amber" trendValue={-3} trendInvert format="raw"   footer="Action recommended" />
-          <StatCard label="Out of stock"      value={outOfStock}        variant="blue"  format="raw"   footer="Reorder needed" />
+          <StatCard label="Low stock"         value={lowStock}          variant="amber" trendValue={-3} trendInvert format="raw"   footer={t("Action recommended")} />
+          <StatCard label="Out of stock"      value={outOfStock}        variant="blue"  format="raw"   footer={t("Reorder needed")} />
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-3">Inventory by category</h3>
+          <h3 className="font-display font-bold text-base mb-3">{t("Inventory by category")}</h3>
           {loading ? <ChartSkeleton /> : (
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
@@ -63,7 +65,7 @@ export default function InventoryHome() {
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-display font-bold text-base">Low stock alerts</h3>
+            <h3 className="font-display font-bold text-base">{t("Low stock alerts")}</h3>
             <AlertTriangle className="w-4 h-4 text-ud-warning" />
           </div>
           <div className="space-y-2.5">

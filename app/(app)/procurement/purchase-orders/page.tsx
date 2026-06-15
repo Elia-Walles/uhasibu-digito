@@ -14,6 +14,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useProcurement } from "@/lib/hooks/useProcurement";
+import { useT } from "@/lib/hooks/useT";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
 import type { PurchaseOrder, POLine } from "@/types";
@@ -43,6 +44,7 @@ function emptyForm(supplierId: string): FormState {
 }
 
 export default function PurchaseOrdersPage() {
+  const t = useT();
   const { purchaseOrders, suppliers, createPurchaseOrder, updatePOMatch, loading: procLoading } = useProcurement();
   const loading = procLoading;
 
@@ -85,11 +87,11 @@ export default function PurchaseOrdersPage() {
   async function save() {
     const supplier = suppliers.find((s) => s.id === form.supplierId);
     if (!supplier) {
-      toast.error("Pick a supplier");
+      toast.error(t("Pick a supplier"));
       return;
     }
     if (form.lines.every((l) => l.lineTotal === 0)) {
-      toast.error("Add at least one line");
+      toast.error(t("Add at least one line"));
       return;
     }
     const res = await createPurchaseOrder({
@@ -103,7 +105,7 @@ export default function PurchaseOrdersPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`PO ${res.data.number} created`);
+    toast.success(t("PO {number} created", { number: res.data.number }));
     setAddOpen(false);
   }
 
@@ -121,7 +123,7 @@ export default function PurchaseOrdersPage() {
       </div>
     ) },
     { key: "status", label: "Status", render: (r) => (
-      <Badge variant={r.status === "Received" ? "success" : r.status === "Sent" ? "info" : r.status === "Draft" ? "warning" : "default"}>{r.status}</Badge>
+      <Badge variant={r.status === "Received" ? "success" : r.status === "Sent" ? "info" : r.status === "Draft" ? "warning" : "default"}>{t(r.status)}</Badge>
     ) },
   ];
 
@@ -131,7 +133,7 @@ export default function PurchaseOrdersPage() {
         title="Purchase Orders"
         subtitle={`${purchaseOrders.length} POs · 3-way matched against GRN and supplier invoices`}
         breadcrumbs={[{ label: "Procurement", href: "/procurement" }, { label: "Purchase Orders" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openAdd}>Create PO</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openAdd}>{t("Create PO")}</Button>}
       />
       {loading ? <TableSkeleton rows={10} columns={7} /> :
         <DataTable
@@ -154,20 +156,20 @@ export default function PurchaseOrdersPage() {
         size="xl"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Create PO</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Create PO")}</Button>
           </>
         }
       >
         <div className="space-y-4 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Select label="Supplier" value={form.supplierId} onValueChange={(v) => setForm({ ...form, supplierId: v })} options={suppliers.map((s) => ({ value: s.id, label: s.name }))} />
-            <Input  label="Date"              type="date" value={form.date}             onChange={(e) => setForm({ ...form, date: e.target.value })} />
-            <Input  label="Expected delivery" type="date" value={form.expectedDelivery} onChange={(e) => setForm({ ...form, expectedDelivery: e.target.value })} />
+            <Input  label={t("Date")}              type="date" value={form.date}             onChange={(e) => setForm({ ...form, date: e.target.value })} />
+            <Input  label={t("Expected delivery")} type="date" value={form.expectedDelivery} onChange={(e) => setForm({ ...form, expectedDelivery: e.target.value })} />
           </div>
 
           <div className="space-y-2">
-            <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">Line items</div>
+            <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{t("Line items")}</div>
             <AnimatePresence>
               {form.lines.map((l) => (
                 <motion.div
@@ -178,13 +180,13 @@ export default function PurchaseOrdersPage() {
                   exit={{ opacity: 0 }}
                   className="flex flex-col gap-2 sm:grid sm:grid-cols-12 sm:gap-2 p-2.5 rounded-xl bg-ud-surface-2"
                 >
-                  <div className="sm:col-span-6"><Input value={l.description} onChange={(e) => updateLine(l.id, { description: e.target.value })} placeholder="Description" /></div>
-                  <div className="sm:col-span-2"><Input type="number" value={l.quantity || ""}  onChange={(e) => updateLine(l.id, { quantity:  Number(e.target.value) || 0 })} placeholder="Qty" className="text-right" /></div>
-                  <div className="sm:col-span-2"><Input type="number" value={l.unitPrice || ""} onChange={(e) => updateLine(l.id, { unitPrice: Number(e.target.value) || 0 })} placeholder="Unit Price" className="text-right font-mono" /></div>
+                  <div className="sm:col-span-6"><Input value={l.description} onChange={(e) => updateLine(l.id, { description: e.target.value })} placeholder={t("Description")} /></div>
+                  <div className="sm:col-span-2"><Input type="number" value={l.quantity || ""}  onChange={(e) => updateLine(l.id, { quantity:  Number(e.target.value) || 0 })} placeholder={t("Qty")} className="text-right" /></div>
+                  <div className="sm:col-span-2"><Input type="number" value={l.unitPrice || ""} onChange={(e) => updateLine(l.id, { unitPrice: Number(e.target.value) || 0 })} placeholder={t("Unit Price")} className="text-right font-mono" /></div>
                   <div className="sm:col-span-2 flex items-center gap-1">
                     <span className="font-mono text-sm tabular-nums">{formatTZS(l.lineTotal, true).replace("TSh ", "")}</span>
                     {form.lines.length > 1 && (
-                      <button onClick={() => removeLine(l.id)} className="ml-auto p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label="Remove">
+                      <button onClick={() => removeLine(l.id)} className="ml-auto p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label={t("Remove")}>
                         <X className="w-3.5 h-3.5" />
                       </button>
                     )}
@@ -193,14 +195,14 @@ export default function PurchaseOrdersPage() {
               ))}
             </AnimatePresence>
             <button onClick={addLine} className="inline-flex items-center gap-1.5 text-sm text-ud-primary font-medium hover:underline">
-              <Plus className="w-3.5 h-3.5" />Add line
+              <Plus className="w-3.5 h-3.5" />{t("Add line")}
             </button>
           </div>
 
           <div className="ml-auto w-full sm:w-64 text-sm space-y-1">
-            <div className="flex justify-between"><span className="text-ud-text-muted">Subtotal</span><span className="font-mono">{subtotal.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-ud-text-muted">VAT (18%)</span><span className="font-mono">{vat.toLocaleString()}</span></div>
-            <div className="flex justify-between font-bold pt-2 border-t border-ud-border"><span>Total (TZS)</span><span className="font-mono">{total.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-ud-text-muted">{t("Subtotal")}</span><span className="font-mono">{subtotal.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-ud-text-muted">{t("VAT (18%)")}</span><span className="font-mono">{vat.toLocaleString()}</span></div>
+            <div className="flex justify-between font-bold pt-2 border-t border-ud-border"><span>{t("Total (TZS)")}</span><span className="font-mono">{total.toLocaleString()}</span></div>
           </div>
         </div>
       </Modal>
@@ -209,7 +211,7 @@ export default function PurchaseOrdersPage() {
       <Modal
         open={matchEdit !== null}
         onOpenChange={(o) => !o && setMatchEdit(null)}
-        title={matchEdit ? `${matchEdit.number} 3-way match` : ""}
+        title={matchEdit ? t("{number} 3-way match", { number: matchEdit.number }) : ""}
         description="Toggle each document as it is received and verified."
         size="md"
       >
@@ -221,7 +223,7 @@ export default function PurchaseOrdersPage() {
               { key: "invoiceReceived", label: "Supplier invoice received (EFD)" },
             ] as const).map((row) => (
               <label key={row.key} className="flex items-center justify-between p-3 rounded-xl border border-ud-border hover:border-ud-primary/40 cursor-pointer transition-colors">
-                <span className="text-sm font-medium">{row.label}</span>
+                <span className="text-sm font-medium">{t(row.label)}</span>
                 <input
                   type="checkbox"
                   checked={matchEdit.matchStatus[row.key]}
@@ -234,7 +236,7 @@ export default function PurchaseOrdersPage() {
               </label>
             ))}
             <div className="text-xs text-ud-text-muted mt-2">
-              Once all three are checked, the PO is fully 3-way matched and ready for payment authorisation.
+              {t("Once all three are checked, the PO is fully 3-way matched and ready for payment authorisation.")}
             </div>
           </div>
         )}

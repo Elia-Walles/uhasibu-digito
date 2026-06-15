@@ -10,11 +10,13 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { useBanking } from "@/lib/hooks/useBanking";
 import { formatDate } from "@/lib/utils/dates";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/hooks/useT";
 import toast from "react-hot-toast";
 
 type Phase = "idle" | "importing" | "matching" | "done";
 
 export default function ReconciliationPage() {
+  const t = useT();
   const { bankAccounts, reconcileAccount } = useBanking();
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
@@ -25,7 +27,7 @@ export default function ReconciliationPage() {
   async function postMatched() {
     if (!account) return;
     const res = await reconcileAccount(account.id);
-    if (res.ok) toast.success(`Posted · ${res.data.count} transactions matched`);
+    if (res.ok) toast.success(t("Posted · {count} transactions matched", { count: res.data.count }));
     else toast.error(res.error);
   }
 
@@ -39,7 +41,7 @@ export default function ReconciliationPage() {
     setPhase("matching");
     await new Promise((r) => setTimeout(r, 1800));
     setPhase("done");
-    toast.success("Reconciliation complete · 24 of 30 matched");
+    toast.success(t("Reconciliation complete · 24 of 30 matched"));
   }
 
   return (
@@ -57,12 +59,12 @@ export default function ReconciliationPage() {
               <div className="w-16 h-16 mx-auto rounded-2xl bg-ud-primary-50 flex items-center justify-center mb-4">
                 <Upload className="w-7 h-7 text-ud-primary" />
               </div>
-              <h3 className="font-display font-bold text-xl">Import bank statement</h3>
+              <h3 className="font-display font-bold text-xl">{t("Import bank statement")}</h3>
               <p className="text-sm text-ud-text-muted mt-2 max-w-md mx-auto">
-                Upload your CRDB bank statement (.OFX / .CSV) Uhasibu Digito will match transactions automatically.
+                {t("Upload your CRDB bank statement (.OFX / .CSV) Uhasibu Digito will match transactions automatically.")}
               </p>
               <Button variant="primary" size="lg" onClick={runReconciliation} className="mt-5" icon={<Upload className="w-4 h-4" />}>
-                Use sample statement
+                {t("Use sample statement")}
               </Button>
             </div>
           </motion.div>
@@ -74,8 +76,8 @@ export default function ReconciliationPage() {
               <div className="w-16 h-16 mx-auto rounded-2xl bg-ud-primary-50 flex items-center justify-center mb-4 animate-pulse-soft">
                 <Upload className="w-7 h-7 text-ud-primary" />
               </div>
-              <h3 className="font-display font-bold text-xl">Importing statement…</h3>
-              <p className="text-sm text-ud-text-muted mt-2">{progress}% complete</p>
+              <h3 className="font-display font-bold text-xl">{t("Importing statement…")}</h3>
+              <p className="text-sm text-ud-text-muted mt-2">{t("{progress}% complete", { progress })}</p>
               <div className="max-w-md mx-auto mt-4 h-2 bg-ud-primary-50 rounded-full overflow-hidden">
                 <motion.div className="h-full gradient-teal" animate={{ width: `${progress}%` }} />
               </div>
@@ -93,9 +95,9 @@ export default function ReconciliationPage() {
               >
                 <Sparkles className="w-7 h-7 text-white" />
               </motion.div>
-              <h3 className="font-display font-bold text-xl">Smart matching in progress…</h3>
+              <h3 className="font-display font-bold text-xl">{t("Smart matching in progress…")}</h3>
               <p className="text-sm text-ud-text-muted mt-2 max-w-md mx-auto">
-                Matching bank lines to journal entries by reference, amount and date.
+                {t("Matching bank lines to journal entries by reference, amount and date.")}
               </p>
             </div>
           </motion.div>
@@ -104,14 +106,14 @@ export default function ReconciliationPage() {
         {phase === "done" && (
           <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-              <SummaryCard label="Matched"    value="24"  color="success" icon={<CheckCircle2 className="w-5 h-5" />} />
-              <SummaryCard label="Unmatched"  value="6"   color="warning" icon={<AlertTriangle className="w-5 h-5" />} />
-              <SummaryCard label="Total"      value="30"  color="default" />
+              <SummaryCard label={t("Matched")}    value="24"  color="success" icon={<CheckCircle2 className="w-5 h-5" />} />
+              <SummaryCard label={t("Unmatched")}  value="6"   color="warning" icon={<AlertTriangle className="w-5 h-5" />} />
+              <SummaryCard label={t("Total")}      value="30"  color="default" />
             </div>
             <div className="bg-white border border-ud-border rounded-2xl shadow-card overflow-hidden">
               <div className="px-5 py-4 border-b border-ud-border flex items-center justify-between">
-                <h3 className="font-display font-bold text-base">Bank transactions</h3>
-                <Button variant="primary" size="sm" onClick={() => void postMatched()}>Post matched entries</Button>
+                <h3 className="font-display font-bold text-base">{t("Bank transactions")}</h3>
+                <Button variant="primary" size="sm" onClick={() => void postMatched()}>{t("Post matched entries")}</Button>
               </div>
               <div className="divide-y divide-ud-border max-h-[480px] overflow-y-auto">
                 {txs.map((tx) => {
@@ -126,7 +128,7 @@ export default function ReconciliationPage() {
                       <div className={cn("font-mono text-sm font-medium", tx.credit > 0 ? "text-ud-success" : "text-ud-danger")}>
                         <CurrencyDisplay amount={tx.credit > 0 ? tx.credit : -tx.debit} showSymbol={false} />
                       </div>
-                      <Badge variant={matched ? "success" : "warning"} size="sm">{matched ? "Matched" : "Unmatched"}</Badge>
+                      <Badge variant={matched ? "success" : "warning"} size="sm">{matched ? t("Matched") : t("Unmatched")}</Badge>
                     </div>
                   );
                 })}

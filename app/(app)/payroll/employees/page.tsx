@@ -16,6 +16,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useEmployees } from "@/lib/hooks/useEmployees";
 import { useDepartments } from "@/lib/hooks/useDepartments";
+import { useT } from "@/lib/hooks/useT";
 import type { Employee, AllowanceLine } from "@/types";
 
 interface FormState {
@@ -90,6 +91,7 @@ function employeeToForm(e: Employee): FormState {
 }
 
 export default function EmployeesPage() {
+  const t = useT();
   const [selected, setSelected] = useState<Employee | null>(null);
   const [editForm, setEditForm] = useState<FormState | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null); // null on add; id on edit
@@ -141,11 +143,11 @@ export default function EmployeesPage() {
   async function saveForm() {
     if (!editForm) return;
     if (!editForm.firstName.trim() || !editForm.lastName.trim()) {
-      toast.error("Name is required");
+      toast.error(t("Name is required"));
       return;
     }
     if (!editForm.department) {
-      toast.error("Department is required");
+      toast.error(t("Department is required"));
       return;
     }
     const allowancesSum = editForm.allowances.reduce((s, a) => s + a.amount, 0);
@@ -191,7 +193,7 @@ export default function EmployeesPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(isEdit ? `Updated ${employee.fullName}` : `Added ${employee.fullName}`);
+    toast.success(isEdit ? t("Updated {name}", { name: employee.fullName }) : t("Added {name}", { name: employee.fullName }));
     setEditForm(null);
     setEditingId(null);
   }
@@ -203,7 +205,7 @@ export default function EmployeesPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`Removed ${confirmRemove.fullName}`);
+    toast.success(t("Removed {name}", { name: confirmRemove.fullName }));
     setConfirmRemove(null);
   }
 
@@ -211,14 +213,14 @@ export default function EmployeesPage() {
     <PageWrapper>
       <PageHeader
         title="Employees"
-        subtitle={`${employees.length} active employees · ${departments.length} departments configured`}
+        subtitle={t("{employees} active employees · {departments} departments configured", { employees: employees.length, departments: departments.length })}
         breadcrumbs={[{ label: "Payroll", href: "/payroll" }, { label: "Employees" }]}
         actions={
           <>
             <Link href="/settings/organisation">
-              <Button variant="outline" icon={<Network className="w-4 h-4" />}>Manage departments</Button>
+              <Button variant="outline" icon={<Network className="w-4 h-4" />}>{t("Manage departments")}</Button>
             </Link>
-            <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openAdd}>Add employee</Button>
+            <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openAdd}>{t("Add employee")}</Button>
           </>
         }
       />
@@ -241,20 +243,20 @@ export default function EmployeesPage() {
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <div className="text-ud-text-muted">Gross monthly</div>
+                    <div className="text-ud-text-muted">{t("Gross monthly")}</div>
                     <div className="font-mono font-bold tabular-nums"><CurrencyDisplay amount={e.grossSalary} compact /></div>
                   </div>
                   <div>
-                    <div className="text-ud-text-muted">Leave balance</div>
-                    <div className="font-mono tabular-nums">{e.leaveBalance} days</div>
+                    <div className="text-ud-text-muted">{t("Leave balance")}</div>
+                    <div className="font-mono tabular-nums">{t("{days} days", { days: e.leaveBalance })}</div>
                   </div>
                 </div>
               </button>
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(e)} className="p-1.5 rounded-lg bg-white border border-ud-border hover:border-ud-primary text-ud-text-secondary hover:text-ud-primary" aria-label="Edit">
+                <button onClick={() => openEdit(e)} className="p-1.5 rounded-lg bg-white border border-ud-border hover:border-ud-primary text-ud-text-secondary hover:text-ud-primary" aria-label={t("Edit")}>
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setConfirmRemove(e)} className="p-1.5 rounded-lg bg-white border border-ud-border hover:border-ud-danger text-ud-text-secondary hover:text-ud-danger" aria-label="Remove">
+                <button onClick={() => setConfirmRemove(e)} className="p-1.5 rounded-lg bg-white border border-ud-border hover:border-ud-danger text-ud-text-secondary hover:text-ud-danger" aria-label={t("Remove")}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -272,35 +274,35 @@ export default function EmployeesPage() {
         size="md"
         footer={selected && (
           <>
-            <Button variant="ghost" onClick={() => setSelected(null)}>Close</Button>
-            <Button variant="primary" icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(selected)}>Edit</Button>
+            <Button variant="ghost" onClick={() => setSelected(null)}>{t("Close")}</Button>
+            <Button variant="primary" icon={<Pencil className="w-4 h-4" />} onClick={() => openEdit(selected)}>{t("Edit")}</Button>
           </>
         )}
       >
         {selected && (
           <div className="space-y-4 text-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Employee #">{selected.employeeNumber}</Field>
-              <Field label="Department">{selected.department}</Field>
-              <Field label="Start date">{selected.startDate}</Field>
-              <Field label="Type">{selected.employmentType}</Field>
+              <Field label={t("Employee #")}>{selected.employeeNumber}</Field>
+              <Field label={t("Department")}>{selected.department}</Field>
+              <Field label={t("Start date")}>{selected.startDate}</Field>
+              <Field label={t("Type")}>{selected.employmentType}</Field>
               <Field label="NSSF #">{selected.nssf}</Field>
               <Field label="TIN">{selected.tin}</Field>
             </div>
             <div className="divider-hairline" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Basic salary"><CurrencyDisplay amount={selected.basicSalary} /></Field>
-              <Field label="Gross"><CurrencyDisplay amount={selected.grossSalary} className="font-bold" /></Field>
+              <Field label={t("Basic salary")}><CurrencyDisplay amount={selected.basicSalary} /></Field>
+              <Field label={t("Gross")}><CurrencyDisplay amount={selected.grossSalary} className="font-bold" /></Field>
             </div>
             {(selected.allowances ?? []).length > 0 && (
               <>
                 <div className="divider-hairline" />
                 <div>
-                  <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted mb-2">Allowances</div>
+                  <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted mb-2">{t("Allowances")}</div>
                   <div className="space-y-1.5">
                     {(selected.allowances ?? []).map((a) => (
                       <div key={a.id} className="flex items-center justify-between text-sm">
-                        <span>{a.label} {a.taxable && <span className="text-[10px] text-ud-text-muted">(taxable)</span>}</span>
+                        <span>{a.label} {a.taxable && <span className="text-[10px] text-ud-text-muted">{t("(taxable)")}</span>}</span>
                         <span className="font-mono tabular-nums"><CurrencyDisplay amount={a.amount} /></span>
                       </div>
                     ))}
@@ -310,7 +312,7 @@ export default function EmployeesPage() {
             )}
             {(selected.overtimeHoursDefault ?? 0) > 0 && (
               <div className="text-xs text-ud-text-muted">
-                Overtime: {selected.overtimeHoursDefault} hrs/mo @ {selected.overtimeRate ?? 1.5}× hourly
+                {t("Overtime: {hrs} hrs/mo @ {rate}× hourly", { hrs: selected.overtimeHoursDefault ?? 0, rate: selected.overtimeRate ?? 1.5 })}
               </div>
             )}
             <div className="divider-hairline" />
@@ -331,27 +333,27 @@ export default function EmployeesPage() {
         size="lg"
         footer={editForm && (
           <>
-            <Button variant="ghost" onClick={() => setEditForm(null)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void saveForm()}>{editingId ? "Save changes" : "Add employee"}</Button>
+            <Button variant="ghost" onClick={() => setEditForm(null)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void saveForm()}>{editingId ? t("Save changes") : t("Add employee")}</Button>
           </>
         )}
       >
         {editForm && (
           <div className="space-y-5">
-            <Section title="Identity">
+            <Section title={t("Identity")}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="First name" value={editForm.firstName} onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })} />
-                <Input label="Last name"  value={editForm.lastName}  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })} />
-                <Input label="Position"   value={editForm.position}  onChange={(e) => setEditForm({ ...editForm, position: e.target.value })} />
+                <Input label={t("First name")} value={editForm.firstName} onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })} />
+                <Input label={t("Last name")}  value={editForm.lastName}  onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })} />
+                <Input label={t("Position")}   value={editForm.position}  onChange={(e) => setEditForm({ ...editForm, position: e.target.value })} />
                 <Select label="Department" value={editForm.department} onValueChange={(v) => setEditForm({ ...editForm, department: v })} options={deptOptions} />
                 <Input label="NSSF #" value={editForm.nssf} onChange={(e) => setEditForm({ ...editForm, nssf: e.target.value })} />
                 <Input label="TIN" value={editForm.tin} onChange={(e) => setEditForm({ ...editForm, tin: e.target.value })} />
               </div>
             </Section>
 
-            <Section title="Compensation">
+            <Section title={t("Compensation")}>
               <Input
-                label="Basic salary (TZS / month)"
+                label={t("Basic salary (TZS / month)")}
                 type="number"
                 value={String(editForm.basicSalary)}
                 onChange={(e) => setEditForm({ ...editForm, basicSalary: Number(e.target.value) || 0 })}
@@ -359,22 +361,22 @@ export default function EmployeesPage() {
 
               <div className="mt-3">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">Allowance lines</div>
+                  <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{t("Allowance lines")}</div>
                   <Button size="sm" variant="outline" icon={<PlusCircle className="w-3.5 h-3.5" />} onClick={addAllowance}>
-                    Add allowance
+                    {t("Add allowance")}
                   </Button>
                 </div>
                 <div className="space-y-2">
                   {editForm.allowances.map((a) => (
                     <div key={a.id} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_110px_40px] gap-2 items-end">
                       <Input
-                        label="Label"
+                        label={t("Label")}
                         value={a.label}
                         onChange={(e) => updateAllowance(a.id, { label: e.target.value })}
-                        placeholder="e.g. Fuel, Housing, Risk"
+                        placeholder={t("e.g. Fuel, Housing, Risk")}
                       />
                       <Input
-                        label="Amount (TZS)"
+                        label={t("Amount (TZS)")}
                         type="number"
                         value={String(a.amount)}
                         onChange={(e) => updateAllowance(a.id, { amount: Number(e.target.value) || 0 })}
@@ -386,35 +388,35 @@ export default function EmployeesPage() {
                           onChange={(e) => updateAllowance(a.id, { taxable: e.target.checked })}
                           className="w-3.5 h-3.5"
                         />
-                        Taxable
+                        {t("Taxable")}
                       </label>
                       <button
                         onClick={() => removeAllowance(a.id)}
                         className="p-2 rounded-lg hover:bg-ud-danger-bg text-ud-danger self-end mb-1 sm:mb-2"
-                        aria-label="Remove allowance"
+                        aria-label={t("Remove allowance")}
                       >
                         <XIcon className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))}
                   {editForm.allowances.length === 0 && (
-                    <div className="text-xs text-ud-text-muted italic">No allowances</div>
+                    <div className="text-xs text-ud-text-muted italic">{t("No allowances")}</div>
                   )}
                 </div>
               </div>
 
               <div className="mt-4 p-3 rounded-xl bg-ud-surface-2">
-                <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted mb-2">Overtime</div>
+                <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted mb-2">{t("Overtime")}</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Input
-                    label="Overtime rate multiplier (× hourly)"
+                    label={t("Overtime rate multiplier (× hourly)")}
                     type="number"
                     step="0.1"
                     value={String(editForm.overtimeRate)}
                     onChange={(e) => setEditForm({ ...editForm, overtimeRate: Number(e.target.value) || 0 })}
                   />
                   <Input
-                    label="Default overtime hrs / month"
+                    label={t("Default overtime hrs / month")}
                     type="number"
                     value={String(editForm.overtimeHoursDefault)}
                     onChange={(e) => setEditForm({ ...editForm, overtimeHoursDefault: Number(e.target.value) || 0 })}
@@ -423,12 +425,12 @@ export default function EmployeesPage() {
               </div>
             </Section>
 
-            <Section title="Contact + bank">
+            <Section title={t("Contact + bank")}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input label="Email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-                <Input label="Phone" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
-                <Input label="Bank" value={editForm.bankName} onChange={(e) => setEditForm({ ...editForm, bankName: e.target.value })} />
-                <Input label="Bank account #" value={editForm.bankAccount} onChange={(e) => setEditForm({ ...editForm, bankAccount: e.target.value })} />
+                <Input label={t("Email")} value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                <Input label={t("Phone")} value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                <Input label={t("Bank")} value={editForm.bankName} onChange={(e) => setEditForm({ ...editForm, bankName: e.target.value })} />
+                <Input label={t("Bank account #")} value={editForm.bankAccount} onChange={(e) => setEditForm({ ...editForm, bankAccount: e.target.value })} />
               </div>
               <label className="mt-3 flex items-center gap-2 text-sm">
                 <input
@@ -437,7 +439,7 @@ export default function EmployeesPage() {
                   onChange={(e) => setEditForm({ ...editForm, hasHeslb: e.target.checked })}
                   className="w-4 h-4"
                 />
-                HESLB applicable (2.5%)
+                {t("HESLB applicable (2.5%)")}
               </label>
             </Section>
           </div>
@@ -447,7 +449,7 @@ export default function EmployeesPage() {
       <ConfirmDialog
         open={confirmRemove !== null}
         onOpenChange={(o) => !o && setConfirmRemove(null)}
-        title={`Remove ${confirmRemove?.fullName ?? ""}?`}
+        title={t("Remove {name}?", { name: confirmRemove?.fullName ?? "" })}
         message="This will remove the employee from the register for this session. Payroll history is unaffected."
         confirmLabel="Remove"
         variant="danger"

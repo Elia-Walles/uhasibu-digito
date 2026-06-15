@@ -15,6 +15,7 @@ import { Select } from "@/components/ui/Select";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useInventory } from "@/lib/hooks/useInventory";
+import { useT } from "@/lib/hooks/useT";
 import type { InventoryItem, CostingMethod } from "@/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -41,6 +42,7 @@ function emptyForm(): FormState {
 }
 
 export default function InventoryItemsPage() {
+  const t = useT();
   const { inventory, addItem, loading: invLoading } = useInventory();
   const loading = invLoading;
   const [view, setView] = useState<"grid" | "list">("list");
@@ -59,7 +61,7 @@ export default function InventoryItemsPage() {
 
   async function save() {
     if (!form.name.trim()) {
-      toast.error("Item name is required");
+      toast.error(t("Item name is required"));
       return;
     }
     const code = form.code.trim() || `SKU-${String(Date.now()).slice(-6)}`;
@@ -85,7 +87,7 @@ export default function InventoryItemsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`Added ${res.data.name}`);
+    toast.success(t("Added {name}", { name: res.data.name }));
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -101,7 +103,7 @@ export default function InventoryItemsPage() {
     { key: "totalValue",   label: "Value",      sortable: true, align: "right", render: (r) => <CurrencyDisplay amount={r.totalValue}   showSymbol={false} className="font-medium" /> },
     { key: "status", label: "Status", render: (r) => (
       <Badge variant={r.status === "InStock" ? "success" : r.status === "LowStock" ? "warning" : "danger"} pulse={r.status === "OutOfStock"}>
-        {r.status === "InStock" ? "In stock" : r.status === "LowStock" ? "Low" : "Out"}
+        {r.status === "InStock" ? t("In stock") : r.status === "LowStock" ? t("Low") : t("Out")}
       </Badge>
     ) },
   ];
@@ -110,19 +112,19 @@ export default function InventoryItemsPage() {
     <PageWrapper>
       <PageHeader
         title="Items"
-        subtitle={`${filtered.length} items`}
+        subtitle={t("{n} items", { n: filtered.length })}
         breadcrumbs={[{ label: "Inventory", href: "/inventory" }, { label: "Items" }]}
         actions={
           <>
             <div className="flex gap-1 bg-ud-surface-2 p-1 rounded-xl">
-              <button onClick={() => setView("list")} className={cn("p-1.5 rounded-lg", view === "list" ? "bg-white shadow-sm" : "text-ud-text-muted")} aria-label="List view">
+              <button onClick={() => setView("list")} className={cn("p-1.5 rounded-lg", view === "list" ? "bg-white shadow-sm" : "text-ud-text-muted")} aria-label={t("List view")}>
                 <List className="w-4 h-4" />
               </button>
-              <button onClick={() => setView("grid")} className={cn("p-1.5 rounded-lg", view === "grid" ? "bg-white shadow-sm" : "text-ud-text-muted")} aria-label="Grid view">
+              <button onClick={() => setView("grid")} className={cn("p-1.5 rounded-lg", view === "grid" ? "bg-white shadow-sm" : "text-ud-text-muted")} aria-label={t("Grid view")}>
                 <Grid3x3 className="w-4 h-4" />
               </button>
             </div>
-            <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add item</Button>
+            <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>{t("Add item")}</Button>
           </>
         }
       />
@@ -159,8 +161,8 @@ export default function InventoryItemsPage() {
         size="lg"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Add item</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Add item")}</Button>
           </>
         }
       >
@@ -185,7 +187,7 @@ export default function InventoryItemsPage() {
             ]} />
           </div>
           <div className="text-xs text-ud-text-muted">
-            {categories.length > 0 && <>Existing categories: {categories.join(" · ")}</>}
+            {categories.length > 0 && <>{t("Existing categories:")} {categories.join(" · ")}</>}
           </div>
         </div>
       </Modal>

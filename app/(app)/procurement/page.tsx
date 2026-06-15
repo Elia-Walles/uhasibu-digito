@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { useProcurement } from "@/lib/hooks/useProcurement";
+import { useT } from "@/lib/hooks/useT";
 
 export default function ProcurementHome() {
+  const t = useT();
   const { purchaseOrders: PURCHASE_ORDERS, suppliers, loading } = useProcurement();
   const totalValue = PURCHASE_ORDERS.reduce((s, p) => s + p.total, 0);
   const received   = PURCHASE_ORDERS.filter((p) => p.status === "Received").length;
@@ -21,8 +23,8 @@ export default function ProcurementHome() {
         subtitle="Purchase orders, suppliers, 3-way match"
         actions={
           <>
-            <Link href="/procurement/suppliers"><Button variant="outline" icon={<Users className="w-4 h-4" />}>Suppliers</Button></Link>
-            <Link href="/procurement/purchase-orders"><Button variant="primary" icon={<FileText className="w-4 h-4" />}>Purchase orders</Button></Link>
+            <Link href="/procurement/suppliers"><Button variant="outline" icon={<Users className="w-4 h-4" />}>{t("Suppliers")}</Button></Link>
+            <Link href="/procurement/purchase-orders"><Button variant="primary" icon={<FileText className="w-4 h-4" />}>{t("Purchase orders")}</Button></Link>
           </>
         }
       />

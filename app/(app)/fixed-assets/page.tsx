@@ -16,6 +16,7 @@ import { Select } from "@/components/ui/Select";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useFixedAssets } from "@/lib/hooks/useFixedAssets";
+import { useT } from "@/lib/hooks/useT";
 import { STANDARD_RATES } from "@/lib/utils/depreciation-rates";
 import { formatTZS } from "@/lib/utils/currency";
 import type { FixedAsset, AssetCategory, DepreciationMethod } from "@/types";
@@ -48,6 +49,7 @@ function emptyAddForm(): AddForm {
 }
 
 export default function FixedAssetsPage() {
+  const t = useT();
   const { assets, addAsset, disposeAsset, loading: assetsLoading } = useFixedAssets();
   const loading = assetsLoading;
 
@@ -58,11 +60,11 @@ export default function FixedAssetsPage() {
 
   async function saveAsset() {
     if (!addForm.name.trim()) {
-      toast.error("Asset name is required");
+      toast.error(t("Asset name is required"));
       return;
     }
     if (addForm.cost <= 0) {
-      toast.error("Cost must be greater than zero");
+      toast.error(t("Cost must be greater than zero"));
       return;
     }
     const code = addForm.code.trim() || `${addForm.category.slice(0, 3).toUpperCase()}-${String(Date.now()).slice(-4)}`;
@@ -86,7 +88,7 @@ export default function FixedAssetsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`Added ${res.data.name}`);
+    toast.success(t("Added {name}", { name: res.data.name }));
     setAddOpen(false);
     setAddForm(emptyAddForm());
   }
@@ -118,14 +120,14 @@ export default function FixedAssetsPage() {
         <Badge variant={r.status === "Active" ? "success" : r.status === "Disposed" ? "default" : "warning"}>{r.status}</Badge>
         {r.status === "Disposed" && r.gainLoss !== undefined && (
           <span className={`text-[10px] font-mono ${r.gainLoss >= 0 ? "text-ud-success" : "text-ud-danger"}`}>
-            {r.gainLoss >= 0 ? "Gain" : "Loss"}: {formatTZS(Math.abs(r.gainLoss), true)}
+            {r.gainLoss >= 0 ? t("Gain") : t("Loss")}: {formatTZS(Math.abs(r.gainLoss), true)}
           </span>
         )}
       </div>
     ) },
     { key: "actions", label: "", align: "right", render: (r) => (
       r.status === "Active"
-        ? <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setDisposeTarget(r); setProceeds(""); }}>Dispose</Button>
+        ? <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setDisposeTarget(r); setProceeds(""); }}>{t("Dispose")}</Button>
         : <span className="text-xs text-ud-text-faint"></span>
     ) },
   ];
@@ -137,7 +139,7 @@ export default function FixedAssetsPage() {
   async function confirmDispose() {
     if (!disposeTarget) return;
     if (proceedsNum <= 0) {
-      toast.error("Enter disposal proceeds greater than zero");
+      toast.error(t("Enter disposal proceeds greater than zero"));
       return;
     }
     const res = await disposeAsset(disposeTarget.id, proceedsNum, new Date().toISOString().split("T")[0]!);
@@ -148,8 +150,8 @@ export default function FixedAssetsPage() {
     const gl = res.data.gainLoss;
     toast.success(
       gl >= 0
-        ? `Asset disposed at a gain of ${formatTZS(gl, true)} posted to GL`
-        : `Asset disposed at a loss of ${formatTZS(Math.abs(gl), true)} posted to GL`
+        ? t("Asset disposed at a gain of {amount} posted to GL", { amount: formatTZS(gl, true) })
+        : t("Asset disposed at a loss of {amount} posted to GL", { amount: formatTZS(Math.abs(gl), true) })
     );
     setDisposeTarget(null);
   }
@@ -158,11 +160,11 @@ export default function FixedAssetsPage() {
     <PageWrapper>
       <PageHeader
         title="Fixed Assets"
-        subtitle={`${assets.length} assets in the register`}
+        subtitle={t("{n} assets in the register", { n: assets.length })}
         actions={
           <>
-            <Button variant="outline" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add asset</Button>
-            <Link href="/fixed-assets/depreciation"><Button variant="primary" icon={<TrendingDown className="w-4 h-4" />}>Depreciation schedule</Button></Link>
+            <Button variant="outline" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>{t("Add asset")}</Button>
+            <Link href="/fixed-assets/depreciation"><Button variant="primary" icon={<TrendingDown className="w-4 h-4" />}>{t("Depreciation schedule")}</Button></Link>
           </>
         }
       />
@@ -183,13 +185,13 @@ export default function FixedAssetsPage() {
       <Modal
         open={disposeTarget !== null}
         onOpenChange={(o) => !o && setDisposeTarget(null)}
-        title={disposeTarget ? `Dispose: ${disposeTarget.name}` : ""}
+        title={disposeTarget ? t("Dispose: {name}", { name: disposeTarget.name }) : ""}
         description="Record asset disposal, compute gain/loss, and update the register."
         size="md"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setDisposeTarget(null)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void confirmDispose()}>Confirm disposal</Button>
+            <Button variant="ghost" onClick={() => setDisposeTarget(null)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void confirmDispose()}>{t("Confirm disposal")}</Button>
           </>
         }
       >
@@ -197,21 +199,21 @@ export default function FixedAssetsPage() {
           <div className="space-y-4 text-sm">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3 rounded-xl bg-ud-surface-2">
-                <div className="text-[10px] uppercase tracking-[0.08em] text-ud-text-muted">Cost</div>
+                <div className="text-[10px] uppercase tracking-[0.08em] text-ud-text-muted">{t("Cost")}</div>
                 <div className="font-mono font-bold mt-1"><CurrencyDisplay amount={disposeTarget.cost} showSymbol={false} /></div>
               </div>
               <div className="p-3 rounded-xl bg-ud-surface-2">
-                <div className="text-[10px] uppercase tracking-[0.08em] text-ud-text-muted">Accum. depreciation</div>
+                <div className="text-[10px] uppercase tracking-[0.08em] text-ud-text-muted">{t("Accum. depreciation")}</div>
                 <div className="font-mono font-bold mt-1 text-ud-danger"><CurrencyDisplay amount={disposeTarget.accumulatedDepreciation} showSymbol={false} /></div>
               </div>
               <div className="p-3 rounded-xl bg-ud-primary-50">
-                <div className="text-[10px] uppercase tracking-[0.08em] text-ud-primary">Net book value</div>
+                <div className="text-[10px] uppercase tracking-[0.08em] text-ud-primary">{t("Net book value")}</div>
                 <div className="font-mono font-bold mt-1 text-ud-primary"><CurrencyDisplay amount={nbv} showSymbol={false} /></div>
               </div>
             </div>
 
             <Input
-              label="Disposal proceeds (TZS)"
+              label={t("Disposal proceeds (TZS)")}
               type="text"
               inputMode="numeric"
               value={proceeds}
@@ -222,7 +224,7 @@ export default function FixedAssetsPage() {
             {proceedsNum > 0 && (
               <div className={`p-4 rounded-xl border ${gainLoss >= 0 ? "border-ud-success/30 bg-ud-success-bg" : "border-ud-danger/30 bg-ud-danger-bg"}`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase tracking-[0.08em] font-semibold">{gainLoss >= 0 ? "Gain on disposal" : "Loss on disposal"}</span>
+                  <span className="text-xs uppercase tracking-[0.08em] font-semibold">{gainLoss >= 0 ? t("Gain on disposal") : t("Loss on disposal")}</span>
                   <Badge variant={gainLoss >= 0 ? "success" : "danger"}>
                     {gainLoss >= 0 ? "+" : "−"} <CurrencyDisplay amount={Math.abs(gainLoss)} showSymbol={false} />
                   </Badge>
@@ -233,9 +235,9 @@ export default function FixedAssetsPage() {
             <div className="flex items-start gap-2 p-3 rounded-xl bg-ud-warning-bg/60 text-xs text-ud-text-secondary leading-relaxed">
               <AlertTriangle className="w-4 h-4 text-ud-warning flex-shrink-0 mt-0.5" />
               <span>
-                Capital gains realised on disposal of fixed assets are subject to{" "}
-                <span className="font-semibold text-ud-text-primary">Capital Gains Tax</span> under the Tanzania Income Tax Act. The
-                gain or loss above is for accounting purposes consult your tax advisor regarding the tax treatment.
+                {t("Capital gains realised on disposal of fixed assets are subject to")}{" "}
+                <span className="font-semibold text-ud-text-primary">{t("Capital Gains Tax")}</span>{" "}
+                {t("under the Tanzania Income Tax Act. The gain or loss above is for accounting purposes consult your tax advisor regarding the tax treatment.")}
               </span>
             </div>
           </div>
@@ -250,15 +252,15 @@ export default function FixedAssetsPage() {
         size="lg"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void saveAsset()}>Add asset</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void saveAsset()}>{t("Add asset")}</Button>
           </>
         }
       >
         <div className="space-y-4 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input  label="Asset code (auto if blank)" value={addForm.code} onChange={(e) => setAddForm({ ...addForm, code: e.target.value })} />
-            <Input  label="Asset name"                 value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} />
+            <Input  label={t("Asset code (auto if blank)")} value={addForm.code} onChange={(e) => setAddForm({ ...addForm, code: e.target.value })} />
+            <Input  label={t("Asset name")}                 value={addForm.name} onChange={(e) => setAddForm({ ...addForm, name: e.target.value })} />
             <Select label="Category" value={addForm.category} onValueChange={(v) => applyCategoryDefaults(v as AssetCategory)} options={[
               { value: "Building",  label: "Building"  },
               { value: "Vehicle",   label: "Vehicle"   },
@@ -270,14 +272,14 @@ export default function FixedAssetsPage() {
               { value: "StraightLine",     label: "Straight Line"     },
               { value: "ReducingBalance",  label: "Reducing Balance"  },
             ]} />
-            <Input  label="Location"           value={addForm.location} onChange={(e) => setAddForm({ ...addForm, location: e.target.value })} />
-            <Input  label="Acquisition date"   type="date" value={addForm.acquisitionDate} onChange={(e) => setAddForm({ ...addForm, acquisitionDate: e.target.value })} />
-            <Input  label="Cost (TZS)"           type="number" value={String(addForm.cost)}          onChange={(e) => setAddForm({ ...addForm, cost: Number(e.target.value) || 0 })} />
-            <Input  label="Residual value (TZS)" type="number" value={String(addForm.residualValue)} onChange={(e) => setAddForm({ ...addForm, residualValue: Number(e.target.value) || 0 })} />
-            <Input  label="Useful life (years)"  type="number" value={String(addForm.usefulLifeYears)} onChange={(e) => setAddForm({ ...addForm, usefulLifeYears: Number(e.target.value) || 1 })} />
+            <Input  label={t("Location")}           value={addForm.location} onChange={(e) => setAddForm({ ...addForm, location: e.target.value })} />
+            <Input  label={t("Acquisition date")}   type="date" value={addForm.acquisitionDate} onChange={(e) => setAddForm({ ...addForm, acquisitionDate: e.target.value })} />
+            <Input  label={t("Cost (TZS)")}           type="number" value={String(addForm.cost)}          onChange={(e) => setAddForm({ ...addForm, cost: Number(e.target.value) || 0 })} />
+            <Input  label={t("Residual value (TZS)")} type="number" value={String(addForm.residualValue)} onChange={(e) => setAddForm({ ...addForm, residualValue: Number(e.target.value) || 0 })} />
+            <Input  label={t("Useful life (years)")}  type="number" value={String(addForm.usefulLifeYears)} onChange={(e) => setAddForm({ ...addForm, usefulLifeYears: Number(e.target.value) || 1 })} />
           </div>
           <div className="text-xs text-ud-text-muted">
-            Standard rate for {addForm.category}: <span className="font-mono">{(STANDARD_RATES[addForm.category].slPct * 100).toFixed(1)}% SL</span> · <span className="font-mono">{(STANDARD_RATES[addForm.category].rbPct * 100).toFixed(1)}% RB</span> · useful life {STANDARD_RATES[addForm.category].usefulLife} yr ({STANDARD_RATES[addForm.category].basis}).
+            {t("Standard rate for {category}", { category: addForm.category })}: <span className="font-mono">{(STANDARD_RATES[addForm.category].slPct * 100).toFixed(1)}% SL</span> · <span className="font-mono">{(STANDARD_RATES[addForm.category].rbPct * 100).toFixed(1)}% RB</span> · {t("useful life {n} yr", { n: STANDARD_RATES[addForm.category].usefulLife })} ({STANDARD_RATES[addForm.category].basis}).
           </div>
         </div>
       </Modal>

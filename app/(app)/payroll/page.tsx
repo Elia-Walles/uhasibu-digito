@@ -11,6 +11,7 @@ import { DataTable, type Column } from "@/components/ui/DataTable";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
+import { useT } from "@/lib/hooks/useT";
 import { formatDate } from "@/lib/utils/dates";
 import type { PayrollRun } from "@/types";
 
@@ -29,6 +30,7 @@ const COLS: Column<PayrollRun>[] = [
 ];
 
 export default function PayrollOverviewPage() {
+  const t = useT();
   const { payrollRuns, loading: prLoading } = usePayrollRuns();
   const loading = prLoading;
   const current = payrollRuns[payrollRuns.length - 1];
@@ -39,8 +41,8 @@ export default function PayrollOverviewPage() {
         subtitle="Run, review and track employee payroll"
         actions={
           <>
-            <Link href="/payroll/employees"><Button variant="outline" icon={<Users className="w-4 h-4" />}>Employees</Button></Link>
-            <Link href="/payroll/run-payroll"><Button variant="primary" icon={<Play className="w-4 h-4" />}>Run payroll</Button></Link>
+            <Link href="/payroll/employees"><Button variant="outline" icon={<Users className="w-4 h-4" />}>{t("Employees")}</Button></Link>
+            <Link href="/payroll/run-payroll"><Button variant="primary" icon={<Play className="w-4 h-4" />}>{t("Run payroll")}</Button></Link>
           </>
         }
       />
@@ -56,11 +58,11 @@ export default function PayrollOverviewPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-4">Payroll history</h3>
+          <h3 className="font-display font-bold text-base mb-4">{t("Payroll history")}</h3>
           {loading ? <TableSkeleton rows={6} columns={7} /> : <DataTable data={payrollRuns.slice().reverse()} columns={COLS} pageSize={10} />}
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-4">Statutory due</h3>
+          <h3 className="font-display font-bold text-base mb-4">{t("Statutory due")}</h3>
           <div className="space-y-3 text-sm">
             {[
               { label: "PAYE",  amount: current?.totalPAYE ?? 0,  due: "2024-11-07" },
@@ -71,14 +73,14 @@ export default function PayrollOverviewPage() {
               <div key={s.label} className="flex items-center justify-between py-2 border-b border-ud-border last:border-b-0">
                 <div>
                   <div className="font-medium">{s.label}</div>
-                  <div className="text-xs text-ud-text-muted">Due {formatDate(s.due)}</div>
+                  <div className="text-xs text-ud-text-muted">{t("Due {date}", { date: formatDate(s.due) })}</div>
                 </div>
                 <CurrencyDisplay amount={s.amount} compact className="font-bold" />
               </div>
             ))}
             <Link href="/payroll/statutory">
               <Button variant="secondary" fullWidth icon={<FileSpreadsheet className="w-4 h-4" />} className="mt-3">
-                Prepare returns
+                {t("Prepare returns")}
               </Button>
             </Link>
           </div>

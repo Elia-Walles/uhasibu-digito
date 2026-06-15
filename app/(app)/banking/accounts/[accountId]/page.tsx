@@ -14,11 +14,13 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useBanking } from "@/lib/hooks/useBanking";
 import { formatDate } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 import type { BankTransaction } from "@/types";
 
 type Direction = "all" | "in" | "out";
 
 export default function BankAccountDetailPage() {
+  const t = useT();
   const params = useParams<{ accountId: string }>();
   const { bankAccounts, loading: bankLoading } = useBanking();
   const loading = bankLoading;
@@ -59,24 +61,24 @@ export default function BankAccountDetailPage() {
   const matched  = filtered.filter((t) => t.matched).length;
 
   const cols: Column<BankTransaction>[] = [
-    { key: "date", label: "Date", sortable: true, width: "110px", render: (t) => <span className="font-mono text-xs">{formatDate(t.date)}</span> },
+    { key: "date", label: "Date", sortable: true, width: "110px", render: (row) => <span className="font-mono text-xs">{formatDate(row.date)}</span> },
     { key: "reference", label: "Reference", className: "font-mono text-xs", width: "120px" },
     { key: "description", label: "Description" },
-    { key: "debit", label: "Debit", align: "right", sortable: true, render: (t) =>
-      t.debit > 0
-        ? <span className="font-mono tabular-nums text-ud-danger">({(t.debit).toLocaleString()})</span>
+    { key: "debit", label: "Debit", align: "right", sortable: true, render: (row) =>
+      row.debit > 0
+        ? <span className="font-mono tabular-nums text-ud-danger">({(row.debit).toLocaleString()})</span>
         : <span className="text-ud-text-faint"></span>
     },
-    { key: "credit", label: "Credit", align: "right", sortable: true, render: (t) =>
-      t.credit > 0
-        ? <span className="font-mono tabular-nums text-ud-success">{t.credit.toLocaleString()}</span>
+    { key: "credit", label: "Credit", align: "right", sortable: true, render: (row) =>
+      row.credit > 0
+        ? <span className="font-mono tabular-nums text-ud-success">{row.credit.toLocaleString()}</span>
         : <span className="text-ud-text-faint"></span>
     },
-    { key: "balance", label: "Balance", align: "right", render: (t) =>
-      <span className="font-mono tabular-nums font-medium">{t.balance.toLocaleString()}</span>
+    { key: "balance", label: "Balance", align: "right", render: (row) =>
+      <span className="font-mono tabular-nums font-medium">{row.balance.toLocaleString()}</span>
     },
-    { key: "matched", label: "Reconciled", align: "center", render: (t) =>
-      <Badge variant={t.matched ? "success" : "default"} size="sm">{t.matched ? "Matched" : "Open"}</Badge>
+    { key: "matched", label: "Reconciled", align: "center", render: (row) =>
+      <Badge variant={row.matched ? "success" : "default"} size="sm">{row.matched ? t("Matched") : t("Open")}</Badge>
     },
   ];
 
@@ -91,19 +93,19 @@ export default function BankAccountDetailPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">Current balance</div>
+          <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{t("Current balance")}</div>
           <div className="font-display font-extrabold text-2xl tabular-nums mt-2">
             {isUSD ? `$${account.balance.toLocaleString()}` : <CurrencyDisplay amount={account.balance} />}
           </div>
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">Inflows (filtered)</div>
+          <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{t("Inflows (filtered)")}</div>
           <div className="font-display font-extrabold text-2xl tabular-nums mt-2 text-ud-success">
             {isUSD ? `$${inflows.toLocaleString()}` : formatTZS(inflows, true)}
           </div>
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">Outflows (filtered)</div>
+          <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{t("Outflows (filtered)")}</div>
           <div className="font-display font-extrabold text-2xl tabular-nums mt-2 text-ud-danger">
             {isUSD ? `$${outflows.toLocaleString()}` : formatTZS(outflows, true)}
           </div>
@@ -115,7 +117,7 @@ export default function BankAccountDetailPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by description or reference…"
+            placeholder={t("Search by description or reference…")}
             prefixIcon={<Search className="w-4 h-4" />}
           />
         </div>
@@ -129,16 +131,16 @@ export default function BankAccountDetailPage() {
                 direction === d ? "bg-ud-primary text-white" : "text-ud-text-secondary hover:text-ud-text-primary"
               }`}
             >
-              {d === "all" ? "All" : d === "in" ? "Inflows" : "Outflows"}
+              {d === "all" ? t("All") : d === "in" ? t("Inflows") : t("Outflows")}
             </button>
           ))}
         </div>
       </div>
 
       <div className="mb-4 text-xs text-ud-text-muted">
-        Showing <span className="font-medium text-ud-text-primary">{filtered.length}</span> of{" "}
-        <span className="font-medium text-ud-text-primary">{account.transactions.length}</span> transactions ·{" "}
-        <span className="font-medium text-ud-text-primary">{matched}</span> reconciled
+        {t("Showing")} <span className="font-medium text-ud-text-primary">{filtered.length}</span> {t("of")}{" "}
+        <span className="font-medium text-ud-text-primary">{account.transactions.length}</span> {t("transactions ·")}{" "}
+        <span className="font-medium text-ud-text-primary">{matched}</span> {t("reconciled")}
       </div>
 
       {loading ? <TableSkeleton rows={10} columns={7} /> : (

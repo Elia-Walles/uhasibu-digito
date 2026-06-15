@@ -10,8 +10,10 @@ import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { useBanking } from "@/lib/hooks/useBanking";
 import { CashFlowChart } from "@/components/charts/CashFlowChart";
 import { formatDate } from "@/lib/utils/dates";
+import { useT } from "@/lib/hooks/useT";
 
 export default function BankingPage() {
+  const t = useT();
   const { bankAccounts: BANK_ACCOUNTS, loading: bankLoading } = useBanking();
   const loading = bankLoading;
   const totalTZS = BANK_ACCOUNTS.filter((a) => a.currency === "TZS").reduce((s, a) => s + a.balance, 0);
@@ -20,8 +22,8 @@ export default function BankingPage() {
     <PageWrapper>
       <PageHeader
         title="Banking"
-        subtitle={`${BANK_ACCOUNTS.length} bank accounts · ${BANK_ACCOUNTS.flatMap((a) => a.transactions).length} transactions`}
-        actions={<Link href="/banking/reconciliation"><Button variant="primary" icon={<RefreshCw className="w-4 h-4" />}>Reconcile</Button></Link>}
+        subtitle={t("{accounts} bank accounts · {transactions} transactions", { accounts: BANK_ACCOUNTS.length, transactions: BANK_ACCOUNTS.flatMap((a) => a.transactions).length })}
+        actions={<Link href="/banking/reconciliation"><Button variant="primary" icon={<RefreshCw className="w-4 h-4" />}>{t("Reconcile")}</Button></Link>}
       />
 
       {loading ? <StatRowSkeleton count={4} /> : (
@@ -44,9 +46,9 @@ export default function BankingPage() {
                 {a.currency === "USD" ? `$${a.balance.toLocaleString()}` : <CurrencyDisplay amount={a.balance} compact />}
               </div>
               <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-ud-text-muted">{a.transactions.length} transactions</span>
+                <span className="text-ud-text-muted">{t("{n} transactions", { n: a.transactions.length })}</span>
                 <span className="text-ud-primary font-medium inline-flex items-center gap-0.5 group-hover:gap-1.5 transition-all">
-                  View <ChevronRight className="w-3 h-3" />
+                  {t("View")} <ChevronRight className="w-3 h-3" />
                 </span>
               </div>
             </Link>
@@ -56,11 +58,11 @@ export default function BankingPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-3">Cash bridge October</h3>
+          <h3 className="font-display font-bold text-base mb-3">{t("Cash bridge October")}</h3>
           <CashFlowChart />
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-3">Recent transactions</h3>
+          <h3 className="font-display font-bold text-base mb-3">{t("Recent transactions")}</h3>
           <div className="space-y-2.5 max-h-72 overflow-y-auto">
             {BANK_ACCOUNTS[0]!.transactions.slice(0, 8).map((tx) => (
               <div key={tx.id} className="flex items-center justify-between gap-2 pb-2 border-b border-ud-border last:border-b-0">
@@ -80,7 +82,7 @@ export default function BankingPage() {
       <div className="bg-ud-primary-50 border border-ud-primary-100 rounded-2xl p-4 text-sm flex items-center gap-3">
         <Landmark className="w-5 h-5 text-ud-primary" />
         <div>
-          <span className="font-medium text-ud-primary">Total liquid TZS:</span>{" "}
+          <span className="font-medium text-ud-primary">{t("Total liquid TZS:")}</span>{" "}
           <CurrencyDisplay amount={totalTZS} className="font-bold text-ud-primary" />
           <span className="text-ud-text-muted ml-2">· USD: ${BANK_ACCOUNTS.find((a) => a.currency === "USD")?.balance.toLocaleString() ?? 0}</span>
         </div>

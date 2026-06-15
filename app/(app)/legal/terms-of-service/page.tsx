@@ -3,8 +3,10 @@ import { AlertTriangle, Scale, Shield, FileWarning } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/Badge";
+import { useT } from "@/lib/hooks/useT";
 
 export default function TermsOfServicePage() {
+  const t = useT();
   return (
     <PageWrapper>
       <PageHeader
@@ -16,11 +18,11 @@ export default function TermsOfServicePage() {
       <div className="mb-6 flex items-start gap-3 p-4 rounded-2xl border border-ud-warning/30 bg-ud-warning-bg">
         <AlertTriangle className="w-5 h-5 text-ud-warning flex-shrink-0 mt-0.5" />
         <div className="text-sm text-ud-text-secondary leading-relaxed">
-          <Badge variant="warning" size="sm" className="mb-1">Review required</Badge>
+          <Badge variant="warning" size="sm" className="mb-1">{t("Review required")}</Badge>
           <p>
-            This is template legal copy.
-            <span className="font-semibold text-ud-text-primary"> Final wording must be reviewed and approved by a Tanzanian-qualified lawyer</span>{" "}
-            before you rely on it as enforceable terms.
+            {t("This is template legal copy.")}
+            <span className="font-semibold text-ud-text-primary"> {t("Final wording must be reviewed and approved by a Tanzanian-qualified lawyer")}</span>{" "}
+            {t("before you rely on it as enforceable terms.")}
           </p>
         </div>
       </div>

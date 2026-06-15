@@ -15,6 +15,7 @@ import { ChartSkeleton } from "@/components/skeletons/ChartSkeleton";
 import { useBranches } from "@/lib/hooks/useBranches";
 import { usePOSAnalytics, type POSFilter } from "@/lib/hooks/usePOS";
 import { formatTZS } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 import type { PaymentMethod } from "@/types";
 
 const TOOLTIP_STYLE = {
@@ -28,6 +29,7 @@ const PAYMENT_COLOR: Record<PaymentMethod, string> = { mpesa: "#0F7B5E", cash: "
 const PAYMENT_LABEL: Record<PaymentMethod, string> = { mpesa: "M-Pesa", cash: "Cash", card: "Card" };
 
 export default function POSAnalyticsPage() {
+  const t = useT();
   const { branches } = useBranches();
   const [range, setRange] = useState("30");
   const [branchId, setBranchId] = useState("all");
@@ -47,7 +49,7 @@ export default function POSAnalyticsPage() {
   const { analytics, loading } = usePOSAnalytics(filter);
 
   const paymentData = (analytics?.byPaymentMethod ?? []).map((p) => ({
-    name: PAYMENT_LABEL[p.method],
+    name: t(PAYMENT_LABEL[p.method]),
     value: p.sales,
     color: PAYMENT_COLOR[p.method],
   }));
@@ -84,9 +86,9 @@ export default function POSAnalyticsPage() {
       {loading || !analytics ? <StatRowSkeleton /> : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard label="Total sales" value={analytics.totalSales} variant="teal" prefix="TSh" format="compact" />
-          <StatCard label="Gross profit" value={analytics.grossProfit} variant="emerald" prefix="TSh" format="compact" footer={`${analytics.marginPct.toFixed(1)}% margin`} />
+          <StatCard label="Gross profit" value={analytics.grossProfit} variant="emerald" prefix="TSh" format="compact" footer={t("{pct}% margin", { pct: analytics.marginPct.toFixed(1) })} />
           <StatCard label="Cost of sales" value={analytics.costOfSales} variant="amber" prefix="TSh" format="compact" />
-          <StatCard label="Transactions" value={analytics.transactionCount} variant="blue" format="raw" footer={`Avg ${formatTZS(analytics.averageBasket, true)}`} />
+          <StatCard label="Transactions" value={analytics.transactionCount} variant="blue" format="raw" footer={t("Avg {amount}", { amount: formatTZS(analytics.averageBasket, true) })} />
         </div>
       )}
 
@@ -104,7 +106,7 @@ export default function POSAnalyticsPage() {
         <div className="space-y-4">
           {/* Revenue vs cost over time */}
           <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-            <h3 className="font-display font-bold text-base mb-4">Sales, cost &amp; profit over time</h3>
+            <h3 className="font-display font-bold text-base mb-4">{t("Sales, cost & profit over time")}</h3>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={analytics.daily} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                 <defs>
@@ -122,9 +124,9 @@ export default function POSAnalyticsPage() {
                 <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} tickFormatter={axisTZS} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value) => formatTZS(Number(value))} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Area type="monotone" dataKey="sales" name="Sales" stroke="#0F7B5E" strokeWidth={2} fill="url(#gSales)" animationDuration={900} />
-                <Area type="monotone" dataKey="grossProfit" name="Gross profit" stroke="#1DD4A2" strokeWidth={2} fill="url(#gProfit)" animationDuration={1100} />
-                <Area type="monotone" dataKey="costOfSales" name="Cost of sales" stroke="#DC2626" strokeWidth={2} fillOpacity={0} animationDuration={1100} />
+                <Area type="monotone" dataKey="sales" name={t("Sales")} stroke="#0F7B5E" strokeWidth={2} fill="url(#gSales)" animationDuration={900} />
+                <Area type="monotone" dataKey="grossProfit" name={t("Gross profit")} stroke="#1DD4A2" strokeWidth={2} fill="url(#gProfit)" animationDuration={1100} />
+                <Area type="monotone" dataKey="costOfSales" name={t("Cost of sales")} stroke="#DC2626" strokeWidth={2} fillOpacity={0} animationDuration={1100} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -132,7 +134,7 @@ export default function POSAnalyticsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Gross profit by branch */}
             <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-              <h3 className="font-display font-bold text-base mb-4">Sales &amp; profit by branch</h3>
+              <h3 className="font-display font-bold text-base mb-4">{t("Sales & profit by branch")}</h3>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={analytics.byBranch} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E5F0EC" vertical={false} />
@@ -140,15 +142,15 @@ export default function POSAnalyticsPage() {
                   <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} axisLine={false} tickLine={false} tickFormatter={axisTZS} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value) => formatTZS(Number(value))} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="sales" name="Sales" fill="#0F7B5E" radius={[6, 6, 0, 0]} animationDuration={900} />
-                  <Bar dataKey="grossProfit" name="Gross profit" fill="#F5C842" radius={[6, 6, 0, 0]} animationDuration={1100} />
+                  <Bar dataKey="sales" name={t("Sales")} fill="#0F7B5E" radius={[6, 6, 0, 0]} animationDuration={900} />
+                  <Bar dataKey="grossProfit" name={t("Gross profit")} fill="#F5C842" radius={[6, 6, 0, 0]} animationDuration={1100} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             {/* Payment method mix */}
             <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-              <h3 className="font-display font-bold text-base mb-4">Payment method mix</h3>
+              <h3 className="font-display font-bold text-base mb-4">{t("Payment method mix")}</h3>
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie data={paymentData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} animationDuration={900}>
@@ -165,7 +167,7 @@ export default function POSAnalyticsPage() {
 
           {/* Top items */}
           <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-            <h3 className="font-display font-bold text-base mb-4">Top selling products</h3>
+            <h3 className="font-display font-bold text-base mb-4">{t("Top selling products")}</h3>
             <div className="space-y-2.5">
               {analytics.topItems.map((item) => {
                 const max = analytics.topItems[0]?.sales || 1;

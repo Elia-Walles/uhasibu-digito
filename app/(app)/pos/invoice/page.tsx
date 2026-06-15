@@ -19,6 +19,7 @@ import { createInvoice as createPOSInvoice } from "@/lib/hooks/usePOS";
 import { useCompany } from "@/lib/hooks/useCompany";
 import { formatTZS } from "@/lib/utils/currency";
 import { formatDate } from "@/lib/utils/dates";
+import { useT } from "@/lib/hooks/useT";
 import type { Invoice, InvoiceStatus } from "@/types";
 
 const STATUS_BADGE: Record<InvoiceStatus, "success" | "info" | "warning" | "danger" | "default"> = {
@@ -26,6 +27,7 @@ const STATUS_BADGE: Record<InvoiceStatus, "success" | "info" | "warning" | "dang
 };
 
 export default function POSInvoicePage() {
+  const t = useT();
   const { inventory, refresh: refreshInventory } = useInventory();
   const { invoices, loading, refresh: refreshInvoices } = useInvoices();
   const { company } = useCompany();
@@ -39,7 +41,7 @@ export default function POSInvoicePage() {
 
   async function create() {
     if (!canSubmit) {
-      toast.error("Add a customer and at least one in-stock item");
+      toast.error(t("Add a customer and at least one in-stock item"));
       return;
     }
     setSaving(true);
@@ -52,7 +54,7 @@ export default function POSInvoicePage() {
         toast.error(res.error);
         return;
       }
-      toast.success(`Invoice ${res.data.number} created`);
+      toast.success(t("Invoice {number} created", { number: res.data.number }));
       setCustomerName("");
       setLines([newLine()]);
       await Promise.all([refreshInvoices(), refreshInventory()]);
@@ -74,23 +76,23 @@ export default function POSInvoicePage() {
       <PageHeader title="Invoice" subtitle="Create a customer invoice from your inventory" breadcrumbs={[{ label: "Point of Sale", href: "/pos" }, { label: "Invoice" }]} />
 
       <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">
-        <h3 className="font-display font-bold text-base mb-4">New invoice</h3>
+        <h3 className="font-display font-bold text-base mb-4">{t("New invoice")}</h3>
         <div className="grid sm:grid-cols-2 gap-3 mb-4">
-          <Input label="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="e.g. Asha Mushi" />
+          <Input label={t("Customer name")} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="e.g. Asha Mushi" />
         </div>
         <SaleLineEditor inventory={inventory} lines={lines} onChange={setLines} />
         <div className="flex items-center justify-between pt-4 mt-4 border-t border-ud-border">
           <div>
-            <div className="text-xs text-ud-text-muted">Total</div>
+            <div className="text-xs text-ud-text-muted">{t("Total")}</div>
             <div className="font-display font-bold text-lg tabular-nums">{formatTZS(linesTotal(lines))}</div>
           </div>
           <Button variant="primary" loading={saving} disabled={!canSubmit} onClick={() => void create()} icon={<FileText className="w-4 h-4" />}>
-            Create invoice
+            {t("Create invoice")}
           </Button>
         </div>
       </div>
 
-      <h3 className="font-display font-bold text-base mb-3">Invoices</h3>
+      <h3 className="font-display font-bold text-base mb-3">{t("Invoices")}</h3>
       {loading ? (
         <TableSkeleton rows={8} columns={5} />
       ) : invoices.length === 0 ? (
@@ -107,8 +109,8 @@ export default function POSInvoicePage() {
         size="md"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setActive(null)}>Close</Button>
-            <Button variant="primary" icon={<Printer className="w-4 h-4" />} onClick={() => window.print()}>Print</Button>
+            <Button variant="ghost" onClick={() => setActive(null)}>{t("Close")}</Button>
+            <Button variant="primary" icon={<Printer className="w-4 h-4" />} onClick={() => window.print()}>{t("Print")}</Button>
           </>
         }
       >
@@ -125,16 +127,16 @@ export default function POSInvoicePage() {
               </div>
             </div>
             <div className="py-3 border-b border-ud-border">
-              <div className="text-xs text-ud-text-muted">Bill to</div>
+              <div className="text-xs text-ud-text-muted">{t("Bill to")}</div>
               <div className="font-medium">{active.customerName}</div>
             </div>
             <table className="w-full my-3 text-sm">
               <thead>
                 <tr className="text-xs text-ud-text-muted text-left">
-                  <th className="py-1 font-medium">Item</th>
-                  <th className="py-1 font-medium text-right">Qty</th>
-                  <th className="py-1 font-medium text-right">Price</th>
-                  <th className="py-1 font-medium text-right">Total</th>
+                  <th className="py-1 font-medium">{t("Item")}</th>
+                  <th className="py-1 font-medium text-right">{t("Qty")}</th>
+                  <th className="py-1 font-medium text-right">{t("Price")}</th>
+                  <th className="py-1 font-medium text-right">{t("Total")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,7 +151,7 @@ export default function POSInvoicePage() {
               </tbody>
             </table>
             <div className="flex justify-between font-bold pt-2 border-t border-ud-border">
-              <span>Total</span>
+              <span>{t("Total")}</span>
               <span className="font-mono tabular-nums">{formatTZS(active.total)}</span>
             </div>
           </div>

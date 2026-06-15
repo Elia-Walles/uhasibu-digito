@@ -9,8 +9,10 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { useCustomers } from "@/lib/hooks/useCustomers";
 import { usePipelineDeals } from "@/lib/hooks/usePipelineDeals";
+import { useT } from "@/lib/hooks/useT";
 
 export default function CRMHome() {
+  const t = useT();
   const { customers, loading: custLoading } = useCustomers();
   const { deals, loading: dealsLoading } = usePipelineDeals();
   const loading = custLoading || dealsLoading;
@@ -25,8 +27,8 @@ export default function CRMHome() {
         subtitle="Customers, leads, and sales pipeline"
         actions={
           <>
-            <Link href="/crm/customers"><Button variant="outline" icon={<Users className="w-4 h-4" />}>Customers</Button></Link>
-            <Link href="/crm/pipeline"><Button variant="primary" icon={<KanbanSquare className="w-4 h-4" />}>Pipeline</Button></Link>
+            <Link href="/crm/customers"><Button variant="outline" icon={<Users className="w-4 h-4" />}>{t("Customers")}</Button></Link>
+            <Link href="/crm/pipeline"><Button variant="primary" icon={<KanbanSquare className="w-4 h-4" />}>{t("Pipeline")}</Button></Link>
           </>
         }
       />
@@ -42,7 +44,7 @@ export default function CRMHome() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         <div className="lg:col-span-2 bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-4">Pipeline by stage</h3>
+          <h3 className="font-display font-bold text-base mb-4">{t("Pipeline by stage")}</h3>
           <div className="space-y-2">
             {(["Lead", "Qualified", "Proposal", "Negotiation", "Won"] as const).map((st) => {
               const inStage = deals.filter((x) => x.stage === st);
@@ -50,7 +52,7 @@ export default function CRMHome() {
               return (
                 <div key={st} className="flex items-center justify-between p-2.5 rounded-xl bg-ud-surface-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{st}</span>
+                    <span className="text-sm font-medium">{t(st)}</span>
                     <span className="text-xs text-ud-text-muted">{inStage.length}</span>
                   </div>
                   <CurrencyDisplay amount={total} compact className="font-medium" />
@@ -60,7 +62,7 @@ export default function CRMHome() {
           </div>
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-4">Top customers (YTD)</h3>
+          <h3 className="font-display font-bold text-base mb-4">{t("Top customers (YTD)")}</h3>
           <div className="space-y-3">
             {topCustomers.map((c, i) => (
               <div key={c.id} className="flex items-center gap-3">
@@ -81,8 +83,8 @@ export default function CRMHome() {
           <UserPlus className="w-4 h-4 text-ud-primary" />
         </div>
         <div>
-          <div className="font-medium">Leads</div>
-          <div className="text-xs text-ud-text-muted">Track and qualify potential customers</div>
+          <div className="font-medium">{t("Leads")}</div>
+          <div className="text-xs text-ud-text-muted">{t("Track and qualify potential customers")}</div>
         </div>
       </Link>
     </PageWrapper>

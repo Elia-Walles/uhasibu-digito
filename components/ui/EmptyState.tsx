@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "./Button";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 
 interface EmptyStateProps {
@@ -13,6 +14,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
+  const t = useT();
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -28,11 +30,11 @@ export function EmptyState({ icon: Icon, title, description, action, className }
       >
         <Icon className="w-8 h-8 text-ud-primary opacity-70" strokeWidth={1.5} />
       </motion.div>
-      <h3 className="font-display text-lg font-bold text-ud-text-primary">{title}</h3>
-      <p className="mt-1 text-sm text-ud-text-muted max-w-sm">{description}</p>
+      <h3 className="font-display text-lg font-bold text-ud-text-primary">{t(title)}</h3>
+      <p className="mt-1 text-sm text-ud-text-muted max-w-sm">{t(description)}</p>
       {action && (
         <Button className="mt-5" variant="primary" onClick={action.onClick} icon={action.icon}>
-          {action.label}
+          {t(action.label)}
         </Button>
       )}
     </motion.div>

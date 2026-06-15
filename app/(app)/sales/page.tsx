@@ -7,8 +7,10 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Button } from "@/components/ui/Button";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { useInvoices } from "@/lib/hooks/useInvoices";
+import { useT } from "@/lib/hooks/useT";
 
 export default function SalesPage() {
+  const t = useT();
   const { invoices, loading } = useInvoices();
   const totalSales    = invoices.filter((i) => i.status !== "Cancelled" && i.status !== "Draft").reduce((s, i) => s + i.total, 0);
   const totalPaid     = invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0);
@@ -22,8 +24,8 @@ export default function SalesPage() {
         subtitle="Invoices, quotations, and customer payments"
         actions={
           <>
-            <Link href="/sales/invoices"><Button variant="outline" icon={<FileText className="w-4 h-4" />}>Invoices</Button></Link>
-            <Link href="/sales/new-invoice"><Button variant="primary" icon={<FilePlus2 className="w-4 h-4" />}>New invoice</Button></Link>
+            <Link href="/sales/invoices"><Button variant="outline" icon={<FileText className="w-4 h-4" />}>{t("Invoices")}</Button></Link>
+            <Link href="/sales/new-invoice"><Button variant="primary" icon={<FilePlus2 className="w-4 h-4" />}>{t("New invoice")}</Button></Link>
           </>
         }
       />
@@ -32,14 +34,14 @@ export default function SalesPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <StatCard label="Total sales YTD" value={totalSales}   variant="teal"    prefix="TSh" trendValue={12.4} format="compact" />
           <StatCard label="Collected"       value={totalPaid}    variant="emerald" prefix="TSh" trendValue={8.1} format="compact" />
-          <StatCard label="Overdue"         value={totalOverdue} variant="amber"   prefix="TSh" trendValue={4.2} trendInvert format="compact" footer={`${overdueCount} invoices`} />
+          <StatCard label="Overdue"         value={totalOverdue} variant="amber"   prefix="TSh" trendValue={4.2} trendInvert format="compact" footer={t("{n} invoices", { n: overdueCount })} />
           <StatCard label="Active invoices" value={invoices.filter((i) => i.status === "Sent").length} variant="blue" format="raw" />
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 mb-6">
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-          <h3 className="font-display font-bold text-base mb-3">Invoice status</h3>
+          <h3 className="font-display font-bold text-base mb-3">{t("Invoice status")}</h3>
           <div className="space-y-3">
             {[
               { status: "Paid",      count: invoices.filter((i) => i.status === "Paid").length,      color: "bg-ud-success" },
@@ -51,14 +53,14 @@ export default function SalesPage() {
               <div key={s.status} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${s.color}`} />
-                  <span className="text-sm text-ud-text-secondary">{s.status}</span>
+                  <span className="text-sm text-ud-text-secondary">{t(s.status)}</span>
                 </div>
                 <span className="text-sm font-mono font-medium">{s.count}</span>
               </div>
             ))}
           </div>
           <Link href="/sales/invoices" className="block mt-4">
-            <Button variant="secondary" fullWidth>View all invoices</Button>
+            <Button variant="secondary" fullWidth>{t("View all invoices")}</Button>
           </Link>
         </div>
       </div>
@@ -75,7 +77,7 @@ export default function SalesPage() {
               <div className="w-10 h-10 rounded-xl bg-ud-primary-50 flex items-center justify-center">
                 <Icon className="w-4 h-4 text-ud-primary" />
               </div>
-              <div className="font-medium">{q.label}</div>
+              <div className="font-medium">{t(q.label)}</div>
             </Link>
           );
         })}

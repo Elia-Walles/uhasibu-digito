@@ -11,6 +11,7 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { useEmployees } from "@/lib/hooks/useEmployees";
 import { usePayrollRuns } from "@/lib/hooks/usePayrollRuns";
 import { calculateDeductions } from "@/lib/utils/paye";
+import { useT } from "@/lib/hooks/useT";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -23,6 +24,7 @@ const STEPS = [
 ];
 
 export default function RunPayrollPage() {
+  const t = useT();
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [period, setPeriod] = useState("2024-10");
@@ -68,7 +70,7 @@ export default function RunPayrollPage() {
       return;
     }
     setStep(4);
-    toast.success(`Payroll for ${label} approved and disbursed`);
+    toast.success(t("Payroll for {period} approved and disbursed", { period: label }));
   }
 
   return (
@@ -80,7 +82,7 @@ export default function RunPayrollPage() {
       />
 
       <div className="bg-white border border-ud-border rounded-2xl p-6 mb-6 shadow-card">
-        <Steps steps={STEPS} current={step} />
+        <Steps steps={STEPS.map((s) => ({ ...s, label: t(s.label), description: t(s.description) }))} current={step} />
       </div>
 
       <AnimatePresence mode="wait">
@@ -92,7 +94,7 @@ export default function RunPayrollPage() {
           transition={{ duration: 0.25 }}
         >
           {step === 0 && (
-            <Card title="Select payroll period" subtitle="Choose the month to process">
+            <Card title={t("Select payroll period")} subtitle={t("Choose the month to process")}>
               <div className="max-w-sm">
                 <Select
                   label="Payroll period"
@@ -105,11 +107,11 @@ export default function RunPayrollPage() {
                   ]}
                 />
                 <div className="mt-4 p-4 rounded-xl bg-ud-primary-50 border border-ud-primary-100">
-                  <div className="text-sm font-medium text-ud-primary mb-1">Period summary</div>
+                  <div className="text-sm font-medium text-ud-primary mb-1">{t("Period summary")}</div>
                   <ul className="text-xs text-ud-text-secondary space-y-1">
-                    <li>• 12 active employees</li>
-                    <li>• Pay date: 28 October 2024</li>
-                    <li>• Statutory due (PAYE/NSSF/SDL/WCF): 7 November 2024</li>
+                    <li>{t("• 12 active employees")}</li>
+                    <li>{t("• Pay date: 28 October 2024")}</li>
+                    <li>{t("• Statutory due (PAYE/NSSF/SDL/WCF): 7 November 2024")}</li>
                   </ul>
                 </div>
               </div>
@@ -117,16 +119,16 @@ export default function RunPayrollPage() {
           )}
 
           {step === 1 && (
-            <Card title="Review employees" subtitle="12 active employees · all included by default">
+            <Card title={t("Review employees")} subtitle={t("12 active employees · all included by default")}>
               <div className="overflow-x-auto rounded-xl border border-ud-border">
                 <table className="w-full text-sm">
                   <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
                     <tr>
-                      <th className="text-left px-4 py-3" scope="col">Employee</th>
-                      <th className="text-left px-4 py-3" scope="col">Department</th>
-                      <th className="text-right px-4 py-3" scope="col">Basic</th>
-                      <th className="text-right px-4 py-3" scope="col">Allowances</th>
-                      <th className="text-right px-4 py-3" scope="col">Gross</th>
+                      <th className="text-left px-4 py-3" scope="col">{t("Employee")}</th>
+                      <th className="text-left px-4 py-3" scope="col">{t("Department")}</th>
+                      <th className="text-right px-4 py-3" scope="col">{t("Basic")}</th>
+                      <th className="text-right px-4 py-3" scope="col">{t("Allowances")}</th>
+                      <th className="text-right px-4 py-3" scope="col">{t("Gross")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -149,17 +151,17 @@ export default function RunPayrollPage() {
           )}
 
           {step === 2 && (
-            <Card title="Statutory deductions" subtitle="TRA-compliant calculation (PAYE 2024 bands · NSSF 10/10 · SDL 4% · WCF 0.5%)">
+            <Card title={t("Statutory deductions")} subtitle={t("TRA-compliant calculation (PAYE 2024 bands · NSSF 10/10 · SDL 4% · WCF 0.5%)")}>
               <div className="overflow-x-auto rounded-xl border border-ud-border">
                 <table className="w-full text-sm">
                   <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
                     <tr>
-                      <th className="text-left px-3 py-3" scope="col">Employee</th>
-                      <th className="text-right px-3 py-3" scope="col">Gross</th>
+                      <th className="text-left px-3 py-3" scope="col">{t("Employee")}</th>
+                      <th className="text-right px-3 py-3" scope="col">{t("Gross")}</th>
                       <th className="text-right px-3 py-3" scope="col">PAYE</th>
                       <th className="text-right px-3 py-3" scope="col">NSSF</th>
                       <th className="text-right px-3 py-3" scope="col">HESLB</th>
-                      <th className="text-right px-3 py-3" scope="col">Net</th>
+                      <th className="text-right px-3 py-3" scope="col">{t("Net")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -178,7 +180,7 @@ export default function RunPayrollPage() {
                   </tbody>
                   <tfoot className="bg-ud-primary text-white">
                     <tr>
-                      <td className="px-3 py-3 font-bold">Totals</td>
+                      <td className="px-3 py-3 font-bold">{t("Totals")}</td>
                       <td className="px-3 py-3 text-right font-mono tabular-nums font-bold"><CurrencyDisplay amount={totals.gross} compact showSymbol={false} /></td>
                       <td className="px-3 py-3 text-right font-mono tabular-nums font-bold"><CurrencyDisplay amount={totals.paye} compact showSymbol={false} /></td>
                       <td className="px-3 py-3 text-right font-mono tabular-nums font-bold"><CurrencyDisplay amount={totals.nssfE} compact showSymbol={false} /></td>
@@ -192,33 +194,33 @@ export default function RunPayrollPage() {
           )}
 
           {step === 3 && (
-            <Card title="Final approval" subtitle="Review totals before disbursing">
+            <Card title={t("Final approval")} subtitle={t("Review totals before disbursing")}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-                <Summary label="Gross"        amount={totals.gross} color="teal" />
+                <Summary label={t("Gross")}        amount={totals.gross} color="teal" />
                 <Summary label="PAYE"         amount={totals.paye}  color="danger" />
-                <Summary label="NSSF (combined)" amount={totals.nssfE + totals.nssfR} color="warning" />
-                <Summary label="Net to pay"   amount={totals.net}   color="emerald" />
+                <Summary label={t("NSSF (combined)")} amount={totals.nssfE + totals.nssfR} color="warning" />
+                <Summary label={t("Net to pay")}   amount={totals.net}   color="emerald" />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                <Summary label="SDL (4%)"    amount={totals.sdl}   color="default" />
-                <Summary label="WCF (0.5%)"  amount={totals.wcf}   color="default" />
+                <Summary label={t("SDL (4%)")}    amount={totals.sdl}   color="default" />
+                <Summary label={t("WCF (0.5%)")}  amount={totals.wcf}   color="default" />
                 <Summary label="HESLB"        amount={totals.heslb} color="default" />
               </div>
 
               <div className="p-4 rounded-xl bg-ud-warning-bg border border-ud-warning/20">
-                <div className="text-sm font-bold text-ud-warning mb-1">Statutory deadlines</div>
+                <div className="text-sm font-bold text-ud-warning mb-1">{t("Statutory deadlines")}</div>
                 <ul className="text-xs text-ud-text-secondary space-y-0.5">
-                  <li>• PAYE, NSSF, SDL, WCF due to TRA by 7 November 2024</li>
-                  <li>• Net pay will be disbursed from CRDB Payroll account ({employees.length} transfers)</li>
-                  <li>• Once approved, this cannot be reversed without a full reversal journal entry</li>
+                  <li>{t("• PAYE, NSSF, SDL, WCF due to TRA by 7 November 2024")}</li>
+                  <li>{t("• Net pay will be disbursed from CRDB Payroll account ({count} transfers)", { count: employees.length })}</li>
+                  <li>{t("• Once approved, this cannot be reversed without a full reversal journal entry")}</li>
                 </ul>
               </div>
             </Card>
           )}
 
           {step === 4 && (
-            <Card title="Payroll complete" subtitle="All payments disbursed and statutory returns prepared">
+            <Card title={t("Payroll complete")} subtitle={t("All payments disbursed and statutory returns prepared")}>
               <div className="text-center py-8 relative overflow-hidden">
                 <Confetti />
                 <motion.div
@@ -229,11 +231,11 @@ export default function RunPayrollPage() {
                 >
                   <Check className="w-12 h-12 text-white" />
                 </motion.div>
-                <h3 className="font-display font-extrabold text-2xl text-ud-text-primary">October payroll processed!</h3>
-                <p className="mt-2 text-sm text-ud-text-muted">12 employees have been paid · TZS {Math.round(totals.net / 1_000_000)}M disbursed</p>
+                <h3 className="font-display font-extrabold text-2xl text-ud-text-primary">{t("October payroll processed!")}</h3>
+                <p className="mt-2 text-sm text-ud-text-muted">{t("12 employees have been paid · TZS {amount}M disbursed", { amount: Math.round(totals.net / 1_000_000) })}</p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                  <Button variant="primary" onClick={() => router.push("/payroll/statutory")}>View statutory returns</Button>
-                  <Button variant="outline" onClick={() => router.push("/payroll")}>Back to payroll</Button>
+                  <Button variant="primary" onClick={() => router.push("/payroll/statutory")}>{t("View statutory returns")}</Button>
+                  <Button variant="outline" onClick={() => router.push("/payroll")}>{t("Back to payroll")}</Button>
                 </div>
               </div>
             </Card>
@@ -248,14 +250,14 @@ export default function RunPayrollPage() {
             disabled={step === 0}
             onClick={() => setStep(Math.max(0, step - 1))}
           >
-            Back
+            {t("Back")}
           </Button>
           <Button
             variant={step === 3 ? "primary" : "primary"}
             loading={processing}
             onClick={processNext}
           >
-            {step === 3 ? (processing ? "Processing…" : "Approve & disburse") : "Continue"}
+            {step === 3 ? (processing ? t("Processing…") : t("Approve & disburse")) : t("Continue")}
             {!processing && <ChevronRight className="w-4 h-4" />}
           </Button>
         </div>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useBranches } from "@/lib/hooks/useBranches";
+import { useT } from "@/lib/hooks/useT";
 
 interface FormState {
   name: string;
@@ -23,6 +24,7 @@ function emptyForm(): FormState {
 }
 
 export default function BranchesSettingsPage() {
+  const t = useT();
   const { branches, loading, createBranch } = useBranches();
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -30,7 +32,7 @@ export default function BranchesSettingsPage() {
 
   async function save() {
     if (!form.name.trim()) {
-      toast.error("Branch name is required");
+      toast.error(t("Branch name is required"));
       return;
     }
     setSaving(true);
@@ -46,7 +48,7 @@ export default function BranchesSettingsPage() {
         toast.error(res.error);
         return;
       }
-      toast.success(`Added ${res.data.name}`);
+      toast.success(t("Added {name}", { name: res.data.name }));
       setAddOpen(false);
       setForm(emptyForm());
     } finally {
@@ -58,10 +60,10 @@ export default function BranchesSettingsPage() {
     <div>
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="font-display font-bold text-lg">Branches</h2>
-          <p className="text-sm text-ud-text-muted">Locations where you record point-of-sale transactions.</p>
+          <h2 className="font-display font-bold text-lg">{t("Branches")}</h2>
+          <p className="text-sm text-ud-text-muted">{t("Locations where you record point-of-sale transactions.")}</p>
         </div>
-        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add branch</Button>
+        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>{t("Add branch")}</Button>
       </div>
 
       {loading ? (
@@ -82,7 +84,7 @@ export default function BranchesSettingsPage() {
                   <Store className="w-4 h-4 text-ud-primary" />
                 </div>
                 {b.isPrimary && (
-                  <Badge variant="gold" size="sm"><Star className="w-3 h-3 mr-0.5 inline" />Primary</Badge>
+                  <Badge variant="gold" size="sm"><Star className="w-3 h-3 mr-0.5 inline" />{t("Primary")}</Badge>
                 )}
               </div>
               <div className="mt-3 font-medium">{b.name}</div>
@@ -102,18 +104,18 @@ export default function BranchesSettingsPage() {
         size="md"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" loading={saving} onClick={() => void save()}>Add branch</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" loading={saving} onClick={() => void save()}>{t("Add branch")}</Button>
           </>
         }
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <Input label="Branch name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Input label="Code (auto if blank)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-          <Input label="Region" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} />
-          <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+255 712 345 678" />
+          <Input label={t("Branch name")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input label={t("Code (auto if blank)")} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+          <Input label={t("Region")} value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} />
+          <Input label={t("Phone")} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+255 712 345 678" />
           <div className="sm:col-span-2">
-            <Input label="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            <Input label={t("Address")} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
         </div>
       </Modal>

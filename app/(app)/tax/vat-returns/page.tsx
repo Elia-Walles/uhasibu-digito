@@ -7,6 +7,7 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DigitalStamp } from "@/components/ui/DigitalStamp";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { useVATReturns } from "@/lib/hooks/useVATReturns";
+import { useT } from "@/lib/hooks/useT";
 import { formatDate } from "@/lib/utils/dates";
 import type { StampData, VATReturn } from "@/types";
 
@@ -20,6 +21,7 @@ const EMPTY_VAT: VATReturn = {
 };
 
 export default function VATReturnsPage() {
+  const tr = useT();
   const { vatReturns } = useVATReturns();
   const VAT_RETURN_OCT = vatReturns[0] ?? EMPTY_VAT;
   const [tab, setTab] = useState("summary");
@@ -28,16 +30,16 @@ export default function VATReturnsPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title={`VAT Return ${VAT_RETURN_OCT.period}`}
+        title={tr("VAT Return {period}", { period: VAT_RETURN_OCT.period })}
         subtitle="Due 20 November 2024 · 14-day filing window"
         breadcrumbs={[{ label: "Tax", href: "/tax" }, { label: "VAT Returns" }]}
         actions={<ExportMenu fileLabel="VAT Return" />}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <Card label="Output VAT (sales)"    amount={VAT_RETURN_OCT.outputVAT} color="teal" />
-        <Card label="− Input VAT (purchases)" amount={VAT_RETURN_OCT.inputVAT}  color="info" />
-        <Card label="Net payable to TRA"     amount={VAT_RETURN_OCT.vatPayable} color="warning" />
+        <Card label={tr("Output VAT (sales)")}    amount={VAT_RETURN_OCT.outputVAT} color="teal" />
+        <Card label={tr("− Input VAT (purchases)")} amount={VAT_RETURN_OCT.inputVAT}  color="info" />
+        <Card label={tr("Net payable to TRA")}     amount={VAT_RETURN_OCT.vatPayable} color="warning" />
       </div>
 
       <div className="bg-white border border-ud-border rounded-2xl shadow-card">
@@ -46,17 +48,17 @@ export default function VATReturnsPage() {
           onValueChange={setTab}
           tabs={[
             { value: "summary", label: "Summary" },
-            { value: "output",  label: `Output (${VAT_RETURN_OCT.outputTransactions.length})` },
-            { value: "input",   label: `Input (${VAT_RETURN_OCT.inputTransactions.length})` },
+            { value: "output",  label: tr("Output ({count})", { count: VAT_RETURN_OCT.outputTransactions.length }) },
+            { value: "input",   label: tr("Input ({count})", { count: VAT_RETURN_OCT.inputTransactions.length }) },
           ]}
         />
         <div className="p-6">
           {tab === "summary" && (
             <div className="space-y-3 text-sm">
-              <Row label="Output VAT (18% of sales)"     value={VAT_RETURN_OCT.outputVAT} />
-              <Row label="Input VAT (claimable)"         value={-VAT_RETURN_OCT.inputVAT} />
+              <Row label={tr("Output VAT (18% of sales)")}     value={VAT_RETURN_OCT.outputVAT} />
+              <Row label={tr("Input VAT (claimable)")}         value={-VAT_RETURN_OCT.inputVAT} />
               <div className="divider-hairline" />
-              <Row label="NET VAT PAYABLE TO TRA" value={VAT_RETURN_OCT.vatPayable} bold />
+              <Row label={tr("NET VAT PAYABLE TO TRA")} value={VAT_RETURN_OCT.vatPayable} bold />
             </div>
           )}
 
@@ -65,10 +67,10 @@ export default function VATReturnsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
                   <tr>
-                    <th className="text-left px-4 py-3" scope="col">Date</th>
-                    <th className="text-left px-4 py-3" scope="col">Reference</th>
-                    <th className="text-left px-4 py-3" scope="col">Description</th>
-                    <th className="text-right px-4 py-3" scope="col">Net</th>
+                    <th className="text-left px-4 py-3" scope="col">{tr("Date")}</th>
+                    <th className="text-left px-4 py-3" scope="col">{tr("Reference")}</th>
+                    <th className="text-left px-4 py-3" scope="col">{tr("Description")}</th>
+                    <th className="text-right px-4 py-3" scope="col">{tr("Net")}</th>
                     <th className="text-right px-4 py-3" scope="col">VAT (18%)</th>
                   </tr>
                 </thead>
@@ -88,7 +90,7 @@ export default function VATReturnsPage() {
           )}
 
           <div className="mt-6">
-            <DigitalStamp documentName={`VAT Return ${VAT_RETURN_OCT.period}`} onApply={setStamp} applied={stamp} />
+            <DigitalStamp documentName={tr("VAT Return {period}", { period: VAT_RETURN_OCT.period })} onApply={setStamp} applied={stamp} />
           </div>
         </div>
       </div>

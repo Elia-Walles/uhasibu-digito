@@ -7,6 +7,7 @@ import { ExportMenu } from "@/components/ui/ExportMenu";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { Badge } from "@/components/ui/Badge";
 import { useCOA } from "@/lib/hooks/useCOA";
+import { useT } from "@/lib/hooks/useT";
 import type { COAAccount } from "@/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -20,6 +21,7 @@ const TYPE_COLOR = {
 } as const;
 
 export default function COAPage() {
+  const t = useT();
   const { accounts, loading } = useCOA();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -60,15 +62,15 @@ export default function COAPage() {
         <div className="overflow-x-auto">
           <div className="min-w-[640px]">
             <div className="grid grid-cols-[1fr_120px_140px_140px_140px] px-4 py-3 bg-ud-surface-2 border-b border-ud-border text-xs uppercase tracking-[0.06em] font-semibold text-ud-text-secondary">
-              <div>Account</div>
-              <div>Type</div>
-              <div className="text-right">Opening</div>
-              <div className="text-right">Movement</div>
-              <div className="text-right">Closing</div>
+              <div>{t("Account")}</div>
+              <div>{t("Type")}</div>
+              <div className="text-right">{t("Opening")}</div>
+              <div className="text-right">{t("Movement")}</div>
+              <div className="text-right">{t("Closing")}</div>
             </div>
             <div>
               {loading && accounts.length === 0 && (
-                <div className="px-4 py-8 text-center text-sm text-ud-text-muted">Loading…</div>
+                <div className="px-4 py-8 text-center text-sm text-ud-text-muted">{t("Loading…")}</div>
               )}
               {accounts.filter(isVisible).map((account) => {
                 const hasChildren = accounts.some((a) => a.parentCode === account.code);
@@ -88,7 +90,7 @@ export default function COAPage() {
                       <span className="font-mono text-xs text-ud-text-muted w-12">{account.code}</span>
                       <span className="truncate">{account.name}</span>
                     </div>
-                    <div><Badge variant={TYPE_COLOR[account.type]} size="sm">{account.type}</Badge></div>
+                    <div><Badge variant={TYPE_COLOR[account.type]} size="sm">{t(account.type)}</Badge></div>
                     <CurrencyDisplay amount={account.openingBalance} showSymbol={false} className="text-right text-ud-text-muted" />
                     <CurrencyDisplay amount={account.movement}       showSymbol={false} className="text-right" />
                     <CurrencyDisplay amount={account.closingBalance} showSymbol={false} className="text-right font-medium" />

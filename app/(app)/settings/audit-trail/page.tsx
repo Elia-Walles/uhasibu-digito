@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { listAuditLogs } from "@/lib/server/actions/audit-log";
 import { formatDateTime } from "@/lib/utils/dates";
+import { useT } from "@/lib/hooks/useT";
 import type { AuditLog, AuditAction } from "@/types";
 
 const ACTION_COLOR: Record<string, "success" | "info" | "danger" | "warning" | "teal" | "gold" | "default"> = {
@@ -28,6 +29,7 @@ const COLS: Column<AuditLog>[] = [
 ];
 
 export default function AuditTrailPage() {
+  const t = useT();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,10 +47,10 @@ export default function AuditTrailPage() {
     <div>
       <div className="mb-4 p-3 rounded-xl bg-ud-info-bg border border-ud-info/20 flex items-center gap-2 text-sm text-ud-info">
         <Lock className="w-4 h-4" />
-        <span>Audit trail is immutable. Records cannot be edited or deleted.</span>
+        <span>{t("Audit trail is immutable. Records cannot be edited or deleted.")}</span>
       </div>
       {loading ? (
-        <p className="text-sm text-ud-text-muted">Loading…</p>
+        <p className="text-sm text-ud-text-muted">{t("Loading…")}</p>
       ) : logs.length === 0 ? (
         <div className="bg-white border border-ud-border rounded-2xl shadow-card">
           <EmptyState

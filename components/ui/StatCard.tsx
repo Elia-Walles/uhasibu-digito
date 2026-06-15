@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { formatTZS } from "@/lib/utils/currency";
 import { TrendBadge } from "./TrendBadge";
 import { SkeletonCard } from "./Skeleton";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 
 interface StatCardProps {
@@ -45,6 +46,7 @@ export function StatCard({
   className,
   footer,
 }: StatCardProps) {
+  const t = useT();
   if (loading) return <SkeletonCard {...(className ? { className } : {})} />;
   const v = VARIANTS[variant];
   return (
@@ -69,7 +71,7 @@ export function StatCard({
           {icon}
         </div>
       )}
-      <div className="text-xs font-medium opacity-80 tracking-[0.06em] uppercase">{label}</div>
+      <div className="text-xs font-medium opacity-80 tracking-[0.06em] uppercase">{t(label)}</div>
       <div className="mt-3 flex items-baseline gap-1.5">
         {prefix && <span className="font-mono text-base opacity-90">{prefix}</span>}
         <AnimatedNumber value={value} format={format} className="font-display font-bold text-3xl tabular-nums" />

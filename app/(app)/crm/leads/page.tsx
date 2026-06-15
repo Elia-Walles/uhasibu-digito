@@ -15,6 +15,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useSession } from "next-auth/react";
 import { useLeads } from "@/lib/hooks/useLeads";
 import { formatDate } from "@/lib/utils/dates";
+import { useT } from "@/lib/hooks/useT";
 import type { Lead, LeadSource, LeadTemperature } from "@/types";
 
 const TEMP_BADGE = { Hot: "danger", Warm: "warning", Cold: "info" } as const;
@@ -46,6 +47,7 @@ function emptyForm(): FormState {
 }
 
 export default function LeadsPage() {
+  const t = useT();
   const { leads, loading: dataLoading, addLead, updateLeadStatus } = useLeads();
   const { data: session } = useSession();
   const loading = dataLoading;
@@ -55,7 +57,7 @@ export default function LeadsPage() {
 
   async function save() {
     if (!form.name.trim() || !form.company.trim()) {
-      toast.error("Name and company are required");
+      toast.error(t("Name and company are required"));
       return;
     }
     const lead: Lead = {
@@ -77,7 +79,7 @@ export default function LeadsPage() {
       toast.error(r.error);
       return;
     }
-    toast.success(`Added ${lead.name}`);
+    toast.success(t("Added {name}", { name: lead.name }));
     setModalOpen(false);
     setForm(emptyForm());
   }
@@ -85,11 +87,11 @@ export default function LeadsPage() {
   const cols: Column<Lead>[] = [
     { key: "name", label: "Lead", render: (r) => <div><div className="font-medium">{r.name}</div><div className="text-xs text-ud-text-muted">{r.company}</div></div> },
     { key: "phone", label: "Contact", render: (r) => <div className="text-xs"><div>{r.phone}</div><div className="text-ud-text-muted">{r.email}</div></div> },
-    { key: "source", label: "Source", render: (r) => <Badge variant="default" size="sm">{r.source}</Badge> },
-    { key: "status", label: "Status", render: (r) => <Badge variant={r.status === "Qualified" ? "success" : r.status === "Lost" ? "danger" : "info"}>{r.status}</Badge> },
+    { key: "source", label: "Source", render: (r) => <Badge variant="default" size="sm">{t(r.source)}</Badge> },
+    { key: "status", label: "Status", render: (r) => <Badge variant={r.status === "Qualified" ? "success" : r.status === "Lost" ? "danger" : "info"}>{t(r.status)}</Badge> },
     { key: "temperature", label: "Temp", render: (r) => {
       const Icon = TEMP_ICON[r.temperature];
-      return <Badge variant={TEMP_BADGE[r.temperature]}><Icon className="w-2.5 h-2.5" />{r.temperature}</Badge>;
+      return <Badge variant={TEMP_BADGE[r.temperature]}><Icon className="w-2.5 h-2.5" />{t(r.temperature)}</Badge>;
     } },
     { key: "expectedValue", label: "Est. value", sortable: true, align: "right", render: (r) => <CurrencyDisplay amount={r.expectedValue} compact /> },
     { key: "followUpDate", label: "Follow up", render: (r) => formatDate(r.followUpDate) },
@@ -99,9 +101,9 @@ export default function LeadsPage() {
     <PageWrapper>
       <PageHeader
         title="Leads"
-        subtitle={`${leads.length} active leads · ${leads.filter((l) => l.temperature === "Hot").length} hot`}
+        subtitle={t("{active} active leads · {hot} hot", { active: leads.length, hot: leads.filter((l) => l.temperature === "Hot").length })}
         breadcrumbs={[{ label: "CRM", href: "/crm" }, { label: "Leads" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>Add lead</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setModalOpen(true)}>{t("Add lead")}</Button>}
       />
       {loading ? <TableSkeleton rows={10} columns={7} /> :
         <DataTable
@@ -123,8 +125,8 @@ export default function LeadsPage() {
         size="md"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Add lead</Button>
+            <Button variant="ghost" onClick={() => setModalOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Add lead")}</Button>
           </>
         }
       >
@@ -149,7 +151,7 @@ export default function LeadsPage() {
       <Modal
         open={statusEdit !== null}
         onOpenChange={(o) => !o && setStatusEdit(null)}
-        title={statusEdit ? `Update ${statusEdit.name}` : ""}
+        title={statusEdit ? t("Update {name}", { name: statusEdit.name }) : ""}
         description="Move the lead through the qualification funnel."
         size="sm"
       >
@@ -158,12 +160,12 @@ export default function LeadsPage() {
             {(["New", "Contacted", "Qualified", "Lost"] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => { void updateLeadStatus(statusEdit.id, s); toast.success(`Lead set to ${s}`); setStatusEdit(null); }}
+                onClick={() => { void updateLeadStatus(statusEdit.id, s); toast.success(t("Lead set to {status}", { status: t(s) })); setStatusEdit(null); }}
                 className={`p-3 rounded-xl border text-sm font-medium transition-all min-h-[56px] ${
                   statusEdit.status === s ? "border-ud-primary bg-ud-primary-50 text-ud-primary" : "border-ud-border hover:border-ud-primary/40"
                 }`}
               >
-                {s}
+                {t(s)}
               </button>
             ))}
           </div>

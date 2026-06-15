@@ -126,7 +126,7 @@ export function DataTable<T>({
                       }
                       className="inline-flex items-center gap-1 hover:text-ud-primary focus-visible:outline-none focus-visible:text-ud-primary"
                     >
-                      {col.label}
+                      {t(col.label)}
                       {sort?.key === col.key ? (
                         sort.dir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
                       ) : (
@@ -134,7 +134,7 @@ export function DataTable<T>({
                       )}
                     </button>
                   ) : (
-                    col.label
+                    t(col.label)
                   )}
                 </th>
               ))}

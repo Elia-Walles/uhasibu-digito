@@ -9,12 +9,14 @@ import { ExportMenu } from "@/components/ui/ExportMenu";
 import { DepreciationChart } from "@/components/charts/DepreciationChart";
 import { useFixedAssets } from "@/lib/hooks/useFixedAssets";
 import { useExports } from "@/lib/hooks/useExports";
+import { useT } from "@/lib/hooks/useT";
 import { STANDARD_RATES } from "@/lib/utils/depreciation-rates";
 import type { AssetCategory } from "@/types";
 
 const CLASSES: AssetCategory[] = ["Building", "Vehicle", "Equipment", "Computer", "Furniture"];
 
 export default function DepreciationPage() {
+  const t = useT();
   const { assets } = useFixedAssets();
   const { exportDepreciation } = useExports();
   const active = assets.filter((a) => a.status === "Active");
@@ -22,10 +24,10 @@ export default function DepreciationPage() {
   async function handleExport() {
     try {
       await exportDepreciation(assets);
-      toast.success("Depreciation schedule exported");
+      toast.success(t("Depreciation schedule exported"));
     } catch (err) {
       console.error(err);
-      toast.error("Excel export failed");
+      toast.error(t("Excel export failed"));
     }
   }
 
@@ -40,18 +42,18 @@ export default function DepreciationPage() {
 
       <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display font-bold text-base">Standard rates by asset class</h3>
-          <Badge variant="info" size="sm">TRA / NBAA-aligned defaults</Badge>
+          <h3 className="font-display font-bold text-base">{t("Standard rates by asset class")}</h3>
+          <Badge variant="info" size="sm">{t("TRA / NBAA-aligned defaults")}</Badge>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
               <tr>
-                <th className="text-left px-4 py-2.5" scope="col">Class</th>
-                <th className="text-right px-4 py-2.5" scope="col">Straight-line</th>
-                <th className="text-right px-4 py-2.5" scope="col">Reducing balance</th>
-                <th className="text-right px-4 py-2.5" scope="col">Useful life</th>
-                <th className="text-left px-4 py-2.5" scope="col">Basis</th>
+                <th className="text-left px-4 py-2.5" scope="col">{t("Class")}</th>
+                <th className="text-right px-4 py-2.5" scope="col">{t("Straight-line")}</th>
+                <th className="text-right px-4 py-2.5" scope="col">{t("Reducing balance")}</th>
+                <th className="text-right px-4 py-2.5" scope="col">{t("Useful life")}</th>
+                <th className="text-left px-4 py-2.5" scope="col">{t("Basis")}</th>
               </tr>
             </thead>
             <tbody>
@@ -72,12 +74,12 @@ export default function DepreciationPage() {
         </div>
         <div className="mt-3 flex items-start gap-2 text-xs text-ud-text-muted">
           <AlertTriangle className="w-3.5 h-3.5 text-ud-warning flex-shrink-0 mt-0.5" />
-          Rates are TRA / NBAA defaults shown for reference. Verify with your tax advisor for each engagement; specific classes (e.g. heavy machinery vs office equipment) may have different rates.
+          {t("Rates are TRA / NBAA defaults shown for reference. Verify with your tax advisor for each engagement; specific classes (e.g. heavy machinery vs office equipment) may have different rates.")}
         </div>
       </div>
 
       <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">
-        <h3 className="font-display font-bold text-base mb-3">Total NBV historical & forecast</h3>
+        <h3 className="font-display font-bold text-base mb-3">{t("Total NBV historical & forecast")}</h3>
         <DepreciationChart />
       </div>
 
@@ -86,12 +88,12 @@ export default function DepreciationPage() {
           <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
               <tr>
-                <th className="text-left px-4 py-3" scope="col">Asset</th>
-                <th className="text-right px-4 py-3" scope="col">Cost</th>
-                <th className="text-right px-4 py-3" scope="col">Useful life</th>
-                <th className="text-right px-4 py-3" scope="col">Annual dep.</th>
-                <th className="text-right px-4 py-3" scope="col">Accum.</th>
-                <th className="text-right px-4 py-3" scope="col">NBV</th>
+                <th className="text-left px-4 py-3" scope="col">{t("Asset")}</th>
+                <th className="text-right px-4 py-3" scope="col">{t("Cost")}</th>
+                <th className="text-right px-4 py-3" scope="col">{t("Useful life")}</th>
+                <th className="text-right px-4 py-3" scope="col">{t("Annual dep.")}</th>
+                <th className="text-right px-4 py-3" scope="col">{t("Accum.")}</th>
+                <th className="text-right px-4 py-3" scope="col">{t("NBV")}</th>
               </tr>
             </thead>
             <tbody>

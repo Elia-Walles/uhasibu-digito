@@ -15,6 +15,7 @@ import { Select } from "@/components/ui/Select";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useCustomers } from "@/lib/hooks/useCustomers";
+import { useT } from "@/lib/hooks/useT";
 import type { Customer } from "@/types";
 
 interface FormState {
@@ -43,6 +44,7 @@ function emptyForm(): FormState {
 }
 
 export default function CustomersPage() {
+  const t = useT();
   const { customers, createCustomer, loading: custLoading } = useCustomers();
   const loading = custLoading;
   const [search, setSearch] = useState("");
@@ -52,7 +54,7 @@ export default function CustomersPage() {
 
   async function save() {
     if (!form.name.trim()) {
-      toast.error("Customer name is required");
+      toast.error(t("Customer name is required"));
       return;
     }
     const customer: Customer = {
@@ -82,7 +84,7 @@ export default function CustomersPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`Added ${res.data.name}`);
+    toast.success(t("Added {name}", { name: res.data.name }));
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -97,9 +99,9 @@ export default function CustomersPage() {
     <PageWrapper>
       <PageHeader
         title="Customers"
-        subtitle={`${filtered.length} customers`}
+        subtitle={t("{n} customers", { n: filtered.length })}
         breadcrumbs={[{ label: "CRM", href: "/crm" }, { label: "Customers" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add customer</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>{t("Add customer")}</Button>}
       />
       <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search by name, TIN, city…" />
 
@@ -117,17 +119,17 @@ export default function CustomersPage() {
                   <div className="font-medium text-ud-text-primary truncate">{c.name}</div>
                   <div className="text-xs text-ud-text-muted truncate">{c.contactPerson} · {c.city}</div>
                   <Badge variant={c.status === "Active" ? "success" : c.status === "Blocked" ? "danger" : "default"} size="sm" className="mt-1.5">
-                    {c.status}
+                    {t(c.status)}
                   </Badge>
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <div className="text-ud-text-muted">Revenue YTD</div>
+                  <div className="text-ud-text-muted">{t("Revenue YTD")}</div>
                   <CurrencyDisplay amount={c.totalRevenue} compact className="font-bold" />
                 </div>
                 <div>
-                  <div className="text-ud-text-muted">Outstanding</div>
+                  <div className="text-ud-text-muted">{t("Outstanding")}</div>
                   <CurrencyDisplay amount={c.outstandingBalance} compact className="font-bold" colored />
                 </div>
               </div>
@@ -149,8 +151,8 @@ export default function CustomersPage() {
         size="lg"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Add customer</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Add customer")}</Button>
           </>
         }
       >
@@ -170,7 +172,7 @@ export default function CustomersPage() {
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={form.isInternational} onChange={(e) => setForm({ ...form, isInternational: e.target.checked })} className="w-4 h-4" />
-            International customer (adds SWIFT / BIC payment block to invoices)
+            {t("International customer (adds SWIFT / BIC payment block to invoices)")}
           </label>
           {form.isInternational && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-ud-surface-2">
@@ -198,17 +200,17 @@ export default function CustomersPage() {
                 <div className="font-mono font-medium">{selected.tin}</div>
               </div>
               <div>
-                <div className="text-xs text-ud-text-muted">Credit limit</div>
+                <div className="text-xs text-ud-text-muted">{t("Credit limit")}</div>
                 <CurrencyDisplay amount={selected.creditLimit} compact className="font-medium" />
               </div>
               <div>
-                <div className="text-xs text-ud-text-muted">Payment terms</div>
+                <div className="text-xs text-ud-text-muted">{t("Payment terms")}</div>
                 <div className="font-medium">{selected.paymentTerms}</div>
               </div>
             </div>
             <div className="divider-hairline" />
             <div>
-              <div className="text-xs text-ud-text-muted mb-2">Credit utilization</div>
+              <div className="text-xs text-ud-text-muted mb-2">{t("Credit utilization")}</div>
               <div className="flex items-center justify-between mb-1.5 text-sm">
                 <CurrencyDisplay amount={selected.outstandingBalance} compact />
                 <span className="text-ud-text-muted">/ {selected.creditLimit.toLocaleString()}</span>

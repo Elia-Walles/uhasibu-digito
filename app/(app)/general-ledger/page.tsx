@@ -12,10 +12,12 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useGL } from "@/lib/hooks/useGL";
+import { useT } from "@/lib/hooks/useT";
 import { formatDate } from "@/lib/utils/dates";
 import type { GLEntry } from "@/types";
 
 export default function GLPage() {
+  const t = useT();
   const router = useRouter();
   const { glEntries, loading: glLoading } = useGL();
   const loading = glLoading;
@@ -34,7 +36,7 @@ export default function GLPage() {
       <button
         onClick={(e) => { e.stopPropagation(); router.push(`/general-ledger/journal-entry?ref=${encodeURIComponent(r.reference)}`); }}
         className="p-1.5 rounded-lg hover:bg-ud-primary-50 text-ud-text-muted hover:text-ud-primary"
-        aria-label="Edit entry"
+        aria-label={t("Edit entry")}
       >
         <Pencil className="w-3.5 h-3.5" />
       </button>
@@ -59,9 +61,9 @@ export default function GLPage() {
         subtitle={`${glEntries.length} posted journal entries · October 2024`}
         actions={
           <>
-            <Link href="/general-ledger/chart-of-accounts"><Button variant="outline" icon={<FolderTree className="w-4 h-4" />}>Chart of Accounts</Button></Link>
-            <Link href="/general-ledger/trial-balance"><Button variant="outline" icon={<Scale className="w-4 h-4" />}>Trial Balance</Button></Link>
-            <Link href="/general-ledger/journal-entry"><Button variant="primary" icon={<Plus className="w-4 h-4" />}>New Entry</Button></Link>
+            <Link href="/general-ledger/chart-of-accounts"><Button variant="outline" icon={<FolderTree className="w-4 h-4" />}>{t("Chart of Accounts")}</Button></Link>
+            <Link href="/general-ledger/trial-balance"><Button variant="outline" icon={<Scale className="w-4 h-4" />}>{t("Trial Balance")}</Button></Link>
+            <Link href="/general-ledger/journal-entry"><Button variant="primary" icon={<Plus className="w-4 h-4" />}>{t("New Entry")}</Button></Link>
           </>
         }
       />

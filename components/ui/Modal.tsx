@@ -2,6 +2,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 
 type Size = "sm" | "md" | "lg" | "xl" | "full";
@@ -34,6 +35,7 @@ export function Modal({
   children,
   footer,
 }: ModalProps) {
+  const t = useT();
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
@@ -63,11 +65,11 @@ export function Modal({
                 <div className="flex items-start justify-between px-6 py-4 border-b border-ud-border flex-shrink-0">
                   <div>
                     <Dialog.Title className="font-display text-lg font-bold text-ud-text-primary">
-                      {title}
+                      {t(title)}
                     </Dialog.Title>
                     {description && (
                       <Dialog.Description className="mt-1 text-sm text-ud-text-muted">
-                        {description}
+                        {t(description)}
                       </Dialog.Description>
                     )}
                   </div>

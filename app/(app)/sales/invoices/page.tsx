@@ -16,6 +16,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Attachments } from "@/components/ui/Attachments";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useInvoices } from "@/lib/hooks/useInvoices";
+import { useT } from "@/lib/hooks/useT";
 import { useAppStore } from "@/lib/store/appStore";
 import { formatDate, isOverdue } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
@@ -43,6 +44,7 @@ type TabKey = "All" | "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
 const ALL_STATUSES: InvoiceStatus[] = ["Draft", "Sent", "Paid", "Overdue", "Cancelled"];
 
 export default function InvoicesPage() {
+  const t = useT();
   const { invoices, updateInvoiceStatus, loading: invLoading } = useInvoices();
   const loading = invLoading;
   const emailPrefs = useAppStore((s) => s.emailNotifications);
@@ -86,9 +88,9 @@ export default function InvoicesPage() {
         read: false,
         link: "/sales/invoices",
       });
-      toast.success("Status updated · customer notified");
+      toast.success(t("Status updated · customer notified"));
     } else {
-      toast.success("Status updated");
+      toast.success(t("Status updated"));
     }
     setEditTarget(null);
   }
@@ -101,9 +103,9 @@ export default function InvoicesPage() {
         breadcrumbs={[{ label: "Sales", href: "/sales" }, { label: "Invoices" }]}
         actions={
           <>
-            <Link href="/sales/sent-log"><Button variant="outline" icon={<Mail className="w-4 h-4" />}>Sent log</Button></Link>
+            <Link href="/sales/sent-log"><Button variant="outline" icon={<Mail className="w-4 h-4" />}>{t("Sent log")}</Button></Link>
             <ExportMenu fileLabel="Invoices" />
-            <Link href="/sales/new-invoice"><Button variant="primary" icon={<Plus className="w-4 h-4" />}>New invoice</Button></Link>
+            <Link href="/sales/new-invoice"><Button variant="primary" icon={<Plus className="w-4 h-4" />}>{t("New invoice")}</Button></Link>
           </>
         }
       />
@@ -129,13 +131,13 @@ export default function InvoicesPage() {
       <Modal
         open={editTarget !== null}
         onOpenChange={(o) => !o && setEditTarget(null)}
-        title={editTarget ? `Update ${editTarget.number}` : ""}
+        title={editTarget ? t("Update {n}", { n: editTarget.number }) : ""}
         description={editTarget ? `${editTarget.customerName} · ${formatTZS(editTarget.total, true)}` : ""}
         size="md"
       >
         {editTarget && (
           <div className="space-y-3">
-            <div className="text-xs text-ud-text-muted mb-2">Pick a new status. Email notifications fire for statuses you enabled in Settings → Preferences.</div>
+            <div className="text-xs text-ud-text-muted mb-2">{t("Pick a new status. Email notifications fire for statuses you enabled in Settings → Preferences.")}</div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {ALL_STATUSES.map((s) => (
                 <button
@@ -148,15 +150,15 @@ export default function InvoicesPage() {
                       : "border-ud-border hover:border-ud-primary/40"
                   }`}
                 >
-                  {s}
+                  {t(s)}
                   {emailPrefs[s] && (
-                    <div className="text-[10px] text-ud-text-muted mt-1 inline-flex items-center gap-0.5"><Mail className="w-2.5 h-2.5" />Notify</div>
+                    <div className="text-[10px] text-ud-text-muted mt-1 inline-flex items-center gap-0.5"><Mail className="w-2.5 h-2.5" />{t("Notify")}</div>
                   )}
                 </button>
               ))}
             </div>
             <div className="pt-3 border-t border-ud-border">
-              <Attachments ownerType="Invoice" ownerId={editTarget.id} label="Invoice documents" />
+              <Attachments ownerType="Invoice" ownerId={editTarget.id} label={t("Invoice documents")} />
             </div>
           </div>
         )}

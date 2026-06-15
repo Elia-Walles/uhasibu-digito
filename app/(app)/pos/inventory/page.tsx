@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatRowSkeleton } from "@/components/skeletons/StatRowSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useInventory } from "@/lib/hooks/useInventory";
+import { useT } from "@/lib/hooks/useT";
 import type { InventoryItem, CostingMethod } from "@/types";
 
 interface FormState {
@@ -35,6 +36,7 @@ function emptyForm(): FormState {
 }
 
 export default function POSInventoryPage() {
+  const t = useT();
   const { inventory, addItem, loading } = useInventory();
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -51,7 +53,7 @@ export default function POSInventoryPage() {
 
   async function save() {
     if (!form.name.trim()) {
-      toast.error("Item name is required");
+      toast.error(t("Item name is required"));
       return;
     }
     const code = form.code.trim() || `SKU-${String(Date.now()).slice(-6)}`;
@@ -77,7 +79,7 @@ export default function POSInventoryPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`Added ${res.data.name}`);
+    toast.success(t("Added {name}", { name: res.data.name }));
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -91,7 +93,7 @@ export default function POSInventoryPage() {
     { key: "totalValue", label: "Value", sortable: true, align: "right", render: (r) => <CurrencyDisplay amount={r.totalValue} showSymbol={false} className="font-medium" /> },
     { key: "status", label: "Status", render: (r) => (
       <Badge variant={r.status === "InStock" ? "success" : r.status === "LowStock" ? "warning" : "danger"} pulse={r.status === "OutOfStock"}>
-        {r.status === "InStock" ? "In stock" : r.status === "LowStock" ? "Low" : "Out"}
+        {r.status === "InStock" ? t("In stock") : r.status === "LowStock" ? t("Low") : t("Out")}
       </Badge>
     ) },
   ];
@@ -102,7 +104,7 @@ export default function POSInventoryPage() {
         title="Inventory"
         subtitle="Products available at the point of sale"
         breadcrumbs={[{ label: "Point of Sale", href: "/pos" }, { label: "Inventory" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add product</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>{t("Add product")}</Button>}
       />
 
       {loading ? <StatRowSkeleton /> : (
@@ -136,22 +138,22 @@ export default function POSInventoryPage() {
         size="lg"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Add product</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Add product")}</Button>
           </>
         }
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <Input label="SKU (auto if blank)" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
-          <Input label="Product name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Input label="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+          <Input label={t("SKU (auto if blank)")} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+          <Input label={t("Product name")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input label={t("Category")} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
           <Select label="Unit" value={form.unit} onValueChange={(v) => setForm({ ...form, unit: v })} options={[
             { value: "pcs", label: "pcs" }, { value: "kg", label: "kg" }, { value: "L", label: "L" }, { value: "bag", label: "bag" }, { value: "box", label: "box" },
           ]} />
-          <Input label="Opening on-hand" type="number" value={String(form.onHand)} onChange={(e) => setForm({ ...form, onHand: Number(e.target.value) || 0 })} />
-          <Input label="Reorder level" type="number" value={String(form.reorderLevel)} onChange={(e) => setForm({ ...form, reorderLevel: Number(e.target.value) || 0 })} />
-          <Input label="Unit cost (TZS)" type="number" value={String(form.unitCost)} onChange={(e) => setForm({ ...form, unitCost: Number(e.target.value) || 0 })} />
-          <Input label="Selling price (TZS)" type="number" value={String(form.sellingPrice)} onChange={(e) => setForm({ ...form, sellingPrice: Number(e.target.value) || 0 })} />
+          <Input label={t("Opening on-hand")} type="number" value={String(form.onHand)} onChange={(e) => setForm({ ...form, onHand: Number(e.target.value) || 0 })} />
+          <Input label={t("Reorder level")} type="number" value={String(form.reorderLevel)} onChange={(e) => setForm({ ...form, reorderLevel: Number(e.target.value) || 0 })} />
+          <Input label={t("Unit cost (TZS)")} type="number" value={String(form.unitCost)} onChange={(e) => setForm({ ...form, unitCost: Number(e.target.value) || 0 })} />
+          <Input label={t("Selling price (TZS)")} type="number" value={String(form.sellingPrice)} onChange={(e) => setForm({ ...form, sellingPrice: Number(e.target.value) || 0 })} />
         </div>
       </Modal>
     </PageWrapper>

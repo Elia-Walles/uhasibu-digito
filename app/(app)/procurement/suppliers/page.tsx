@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useProcurement } from "@/lib/hooks/useProcurement";
+import { useT } from "@/lib/hooks/useT";
 import type { Supplier } from "@/types";
 
 interface FormState {
@@ -38,6 +39,7 @@ function emptyForm(): FormState {
 }
 
 export default function SuppliersPage() {
+  const t = useT();
   const { suppliers, createSupplier, loading: procLoading } = useProcurement();
   const loading = procLoading;
   const [addOpen, setAddOpen] = useState(false);
@@ -45,7 +47,7 @@ export default function SuppliersPage() {
 
   async function save() {
     if (!form.name.trim()) {
-      toast.error("Supplier name is required");
+      toast.error(t("Supplier name is required"));
       return;
     }
     const supplier: Supplier = {
@@ -69,7 +71,7 @@ export default function SuppliersPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`Added ${res.data.name}`);
+    toast.success(t("Added {name}", { name: res.data.name }));
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -95,7 +97,7 @@ export default function SuppliersPage() {
         title="Suppliers"
         subtitle={`${suppliers.length} suppliers · performance-rated`}
         breadcrumbs={[{ label: "Procurement", href: "/procurement" }, { label: "Suppliers" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add supplier</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>{t("Add supplier")}</Button>}
       />
       {loading ? <TableSkeleton rows={10} columns={6} /> :
         <DataTable data={suppliers} columns={COLS} pageSize={15} initialSortKey="name" rowKey={(r) => r.id} />
@@ -109,27 +111,27 @@ export default function SuppliersPage() {
         size="lg"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Add supplier</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Add supplier")}</Button>
           </>
         }
       >
         <div className="space-y-4 text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input label="Supplier name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <Input label="Contact person" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
+            <Input label={t("Supplier name")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input label={t("Contact person")} value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
             <Input label="TIN" value={form.tin} onChange={(e) => setForm({ ...form, tin: e.target.value })} placeholder="###-###-###" />
-            <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            <Input label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <Input label="City"  value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-            <Input label="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-            <Select label="Payment terms" value={form.paymentTerms} onValueChange={(v) => setForm({ ...form, paymentTerms: v })} options={[
+            <Input label={t("Phone")} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <Input label={t("Email")} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Input label={t("City")}  value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+            <Input label={t("Address")} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            <Select label={t("Payment terms")} value={form.paymentTerms} onValueChange={(v) => setForm({ ...form, paymentTerms: v })} options={[
               { value: "Cash", label: "Cash" }, { value: "Net 15", label: "Net 15" }, { value: "Net 30", label: "Net 30" }, { value: "Net 60", label: "Net 60" },
             ]} />
-            <Input label="Credit limit (TZS)" type="number" value={String(form.creditLimit)} onChange={(e) => setForm({ ...form, creditLimit: Number(e.target.value) || 0 })} />
-            <Input label="Performance rating (1-5)" type="number" value={String(form.performanceRating)} onChange={(e) => setForm({ ...form, performanceRating: Math.min(5, Math.max(1, Number(e.target.value) || 1)) })} />
-            <Input label="Bank" value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} />
-            <Input label="Bank account #" value={form.bankAccount} onChange={(e) => setForm({ ...form, bankAccount: e.target.value })} />
+            <Input label={t("Credit limit (TZS)")} type="number" value={String(form.creditLimit)} onChange={(e) => setForm({ ...form, creditLimit: Number(e.target.value) || 0 })} />
+            <Input label={t("Performance rating (1-5)")} type="number" value={String(form.performanceRating)} onChange={(e) => setForm({ ...form, performanceRating: Math.min(5, Math.max(1, Number(e.target.value) || 1)) })} />
+            <Input label={t("Bank")} value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} />
+            <Input label={t("Bank account #")} value={form.bankAccount} onChange={(e) => setForm({ ...form, bankAccount: e.target.value })} />
           </div>
         </div>
       </Modal>

@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useDepartments } from "@/lib/hooks/useDepartments";
+import { useT } from "@/lib/hooks/useT";
 
 export default function OrganisationSettingsPage() {
+  const t = useT();
   const {
     departments,
     addDepartment,
@@ -31,7 +33,7 @@ export default function OrganisationSettingsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`Added ${trimmed}`);
+    toast.success(t("Added {name}", { name: trimmed }));
     setNewName("");
   }
 
@@ -44,7 +46,7 @@ export default function OrganisationSettingsPage() {
     if (!editingId) return;
     const trimmed = editingName.trim();
     if (!trimmed) {
-      toast.error("Department name cannot be empty");
+      toast.error(t("Department name cannot be empty"));
       return;
     }
     const res = await renameDepartment(editingId, trimmed);
@@ -52,7 +54,7 @@ export default function OrganisationSettingsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success("Department renamed");
+    toast.success(t("Department renamed"));
     setEditingId(null);
     setEditingName("");
   }
@@ -68,7 +70,7 @@ export default function OrganisationSettingsPage() {
       toast.error(res.error);
       return;
     }
-    toast.success(`Removed ${confirmDelete.name}`);
+    toast.success(t("Removed {name}", { name: confirmDelete.name }));
     setConfirmDelete(null);
   }
 
@@ -80,9 +82,9 @@ export default function OrganisationSettingsPage() {
             <Network className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="font-display font-bold text-lg">Departments</h2>
+            <h2 className="font-display font-bold text-lg">{t("Departments")}</h2>
             <p className="text-sm text-ud-text-muted mt-0.5">
-              Define the departments used across Payroll, HR, and reporting. Uhasibu Digito does not dictate your org structure these are yours.
+              {t("Define the departments used across Payroll, HR, and reporting. Uhasibu Digito does not dictate your org structure these are yours.")}
             </p>
           </div>
         </div>
@@ -93,11 +95,11 @@ export default function OrganisationSettingsPage() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-              placeholder="e.g. Finance, Operations, R&D…"
+              placeholder={t("e.g. Finance, Operations, R&D…")}
             />
           </div>
           <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={handleAdd}>
-            Add department
+            {t("Add department")}
           </Button>
         </div>
 
@@ -132,8 +134,8 @@ export default function OrganisationSettingsPage() {
                           onChange={(e) => setEditingName(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditingId(null); }}
                         />
-                        <Button size="sm" variant="primary" icon={<Check className="w-3.5 h-3.5" />} onClick={saveEdit} aria-label="Save" />
-                        <Button size="sm" variant="ghost"   icon={<X     className="w-3.5 h-3.5" />} onClick={() => setEditingId(null)} aria-label="Cancel" />
+                        <Button size="sm" variant="primary" icon={<Check className="w-3.5 h-3.5" />} onClick={saveEdit} aria-label={t("Save")} />
+                        <Button size="sm" variant="ghost"   icon={<X     className="w-3.5 h-3.5" />} onClick={() => setEditingId(null)} aria-label={t("Cancel")} />
                       </div>
                     ) : (
                       <>
@@ -141,12 +143,12 @@ export default function OrganisationSettingsPage() {
                           <div className="font-medium truncate">{d.name}</div>
                           <div className="flex items-center gap-1 text-xs text-ud-text-muted">
                             <Users className="w-3 h-3" />
-                            {count} employee{count === 1 ? "" : "s"}
+                            {count === 1 ? t("{count} employee", { count }) : t("{count} employees", { count })}
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="ghost" icon={<Pencil className="w-3.5 h-3.5" />} onClick={() => startEdit(d.id, d.name)} aria-label="Rename" />
-                          <Button size="sm" variant="ghost" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => requestDelete(d.id, d.name)} aria-label="Remove" />
+                          <Button size="sm" variant="ghost" icon={<Pencil className="w-3.5 h-3.5" />} onClick={() => startEdit(d.id, d.name)} aria-label={t("Rename")} />
+                          <Button size="sm" variant="ghost" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => requestDelete(d.id, d.name)} aria-label={t("Remove")} />
                         </div>
                       </>
                     )}

@@ -16,6 +16,7 @@ import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useInvoices } from "@/lib/hooks/useInvoices";
 import { getDashboard, type DashboardData } from "@/lib/server/actions/analytics";
 import { formatDate, daysUntil } from "@/lib/utils/dates";
+import { useT } from "@/lib/hooks/useT";
 
 const QUICK_ACTIONS = [
   { label: "New Invoice",   href: "/sales/new-invoice",         icon: FilePlus2,    color: "gradient-teal" },
@@ -25,6 +26,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default function DashboardPage() {
+  const tr = useT();
   const { invoices, loading: invLoading } = useInvoices();
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -42,10 +44,10 @@ export default function DashboardPage() {
 
   if (invLoading || dashLoading || !data) return <PageWrapper><DashboardSkeleton /></PageWrapper>;
 
-  const firstName = (session?.user?.name ?? "").split(" ")[0] || "there";
+  const firstName = (session?.user?.name ?? "").split(" ")[0] || tr("there");
   const recentInvoices = invoices.slice(0, 6);
   const now = new Date();
-  const greeting = now.getHours() < 12 ? "Good morning" : now.getHours() < 17 ? "Good afternoon" : "Good evening";
+  const greeting = now.getHours() < 12 ? tr("Good morning") : now.getHours() < 17 ? tr("Good afternoon") : tr("Good evening");
   const todayLabel = formatDate(now.toISOString());
 
   const kpis = [
@@ -69,9 +71,9 @@ export default function DashboardPage() {
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.08em] text-ud-primary">{greeting}</div>
             <h1 className="mt-1 font-display text-2xl md:text-3xl font-extrabold text-ud-text-primary text-balance">
-              Welcome back, {firstName}
+              {tr("Welcome back, {name}", { name: firstName })}
             </h1>
-            <p className="mt-1 text-sm text-ud-text-muted">Here&apos;s how your business is doing today.</p>
+            <p className="mt-1 text-sm text-ud-text-muted">{tr("Here's how your business is doing today.")}</p>
           </div>
           <div className="inline-flex items-center gap-2 self-start rounded-xl bg-ud-surface-2 border border-ud-border px-3 py-2 text-sm text-ud-text-secondary">
             <CalendarDays className="w-4 h-4 text-ud-primary" /> {todayLabel}
@@ -93,8 +95,8 @@ export default function DashboardPage() {
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Section className="lg:col-span-2" title="Recent transactions" subtitle="Latest invoices" headerRight={
-          <Link href="/sales/invoices" className="text-xs font-medium text-ud-primary hover:underline">View all</Link>
+        <Section className="lg:col-span-2" title={tr("Recent transactions")} subtitle={tr("Latest invoices")} headerRight={
+          <Link href="/sales/invoices" className="text-xs font-medium text-ud-primary hover:underline">{tr("View all")}</Link>
         }>
           {recentInvoices.length === 0 ? (
             <EmptyState icon={Receipt} title="No invoices yet" description="Create your first invoice and it'll show up here." />
@@ -124,7 +126,7 @@ export default function DashboardPage() {
           )}
         </Section>
 
-        <Section title="Quick actions" subtitle="Most-used flows">
+        <Section title={tr("Quick actions")} subtitle={tr("Most-used flows")}>
           <div className="grid grid-cols-2 gap-2.5">
             {QUICK_ACTIONS.map((a) => {
               const Icon = a.icon;
@@ -133,7 +135,7 @@ export default function DashboardPage() {
                   <div className={`w-9 h-9 rounded-xl ${a.color} flex items-center justify-center mb-2 transition-transform group-hover:scale-110`}>
                     <Icon className="w-4 h-4 text-white" />
                   </div>
-                  <div className="text-sm font-medium text-ud-text-primary group-hover:text-ud-primary transition-colors">{a.label}</div>
+                  <div className="text-sm font-medium text-ud-text-primary group-hover:text-ud-primary transition-colors">{tr(a.label)}</div>
                 </Link>
               );
             })}
@@ -142,9 +144,9 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Section className="lg:col-span-3" title="Tax deadlines" subtitle="Upcoming TRA filings">
+        <Section className="lg:col-span-3" title={tr("Tax deadlines")} subtitle={tr("Upcoming TRA filings")}>
           {data.upcomingTax.length === 0 ? (
-            <p className="text-sm text-ud-text-muted">No upcoming filings. You're all caught up.</p>
+            <p className="text-sm text-ud-text-muted">{tr("No upcoming filings. You're all caught up.")}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {data.upcomingTax.map((t) => (
@@ -152,10 +154,10 @@ export default function DashboardPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold text-ud-text-primary">{t.type} {t.period}</div>
-                      <div className="text-xs text-ud-text-muted mt-0.5">Due {formatDate(t.dueDate)}</div>
+                      <div className="text-xs text-ud-text-muted mt-0.5">{tr("Due {date}", { date: formatDate(t.dueDate) })}</div>
                     </div>
                     <Badge variant={t.status === "Overdue" ? "danger" : t.status === "Pending" ? "warning" : "info"} pulse={t.status === "Overdue"}>
-                      {daysUntil(t.dueDate) >= 0 ? `${daysUntil(t.dueDate)}d left` : `${Math.abs(daysUntil(t.dueDate))}d overdue`}
+                      {daysUntil(t.dueDate) >= 0 ? tr("{n}d left", { n: daysUntil(t.dueDate) }) : tr("{n}d overdue", { n: Math.abs(daysUntil(t.dueDate)) })}
                     </Badge>
                   </div>
                   <div className="mt-2 font-mono tabular-nums text-sm font-bold text-ud-text-primary">
@@ -171,7 +173,7 @@ export default function DashboardPage() {
       <Link
         href="/ai-assistant"
         className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-30 w-14 h-14 rounded-full gradient-teal flex items-center justify-center shadow-elevated hover:scale-105 transition-transform"
-        aria-label="Open AI Assistant"
+        aria-label={tr("Open AI Assistant")}
       >
         <div className="absolute inset-0 rounded-full bg-ud-primary-glow opacity-0 animate-pulse-soft" />
         <Sparkles className="w-6 h-6 text-white relative z-10" />

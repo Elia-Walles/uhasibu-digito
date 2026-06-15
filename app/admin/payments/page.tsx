@@ -9,48 +9,50 @@ import { AdminTable } from "@/components/admin/AdminTable";
 import { RecordPaymentModal } from "@/components/admin/RecordPaymentModal";
 import { Button } from "@/components/ui/Button";
 import { formatTZS } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 import type { AdminPaymentRow } from "@/lib/server/actions/admin/types";
 
 export default function AdminPaymentsPage() {
+  const t = useT();
   const { payments, loading, reverse, refresh } = useAdminPayments();
   const { tenants } = useAdminTenants();
   const [open, setOpen] = useState(false);
 
   const onReverse = async (id: string) => {
     const res = await reverse(id);
-    res.ok ? toast.success("Payment reversed") : toast.error(res.error);
+    res.ok ? toast.success(t("Payment reversed")) : toast.error(res.error);
   };
 
   return (
     <div>
       <AdminPageTitle
-        title="Payments"
-        subtitle="Manually recorded subscription payments."
+        title={t("Payments")}
+        subtitle={t("Manually recorded subscription payments.")}
         actions={
           <Button icon={<Plus className="w-4 h-4" />} onClick={() => setOpen(true)}>
-            Record payment
+            {t("Record payment")}
           </Button>
         }
       />
       <AdminPanel>
         {loading ? (
-          <div className="py-14 text-center text-sm text-ud-text-muted">Loading…</div>
+          <div className="py-14 text-center text-sm text-ud-text-muted">{t("Loading…")}</div>
         ) : (
           <AdminTable<AdminPaymentRow>
             data={payments}
             rowKey={(p) => p.id}
-            caption="Payments"
-            emptyLabel="No payments recorded yet."
+            caption={t("Payments")}
+            emptyLabel={t("No payments recorded yet.")}
             columns={[
-              { key: "tenantName", label: "Tenant", render: (p) => p.tenantName ?? p.tenantId },
-              { key: "paidAt", label: "Paid on", render: (p) => p.paidAt.slice(0, 10) },
-              { key: "method", label: "Method", render: (p) => <span className="capitalize">{p.method}</span> },
-              { key: "reference", label: "Reference", render: (p) => p.reference || "" },
-              { key: "status", label: "Status", render: (p) => <StatusPill value={p.status} /> },
-              { key: "amountTzs", label: "Amount", align: "right", render: (p) => formatTZS(p.amountTzs, true) },
+              { key: "tenantName", label: t("Tenant"), render: (p) => p.tenantName ?? p.tenantId },
+              { key: "paidAt", label: t("Paid on"), render: (p) => p.paidAt.slice(0, 10) },
+              { key: "method", label: t("Method"), render: (p) => <span className="capitalize">{p.method}</span> },
+              { key: "reference", label: t("Reference"), render: (p) => p.reference || "" },
+              { key: "status", label: t("Status"), render: (p) => <StatusPill value={p.status} /> },
+              { key: "amountTzs", label: t("Amount"), align: "right", render: (p) => formatTZS(p.amountTzs, true) },
               { key: "actions", label: "", align: "right", render: (p) =>
                 p.status === "recorded" ? (
-                  <button onClick={() => onReverse(p.id)} className="text-xs text-ud-danger hover:text-red-700">Reverse</button>
+                  <button onClick={() => onReverse(p.id)} className="text-xs text-ud-danger hover:text-red-700">{t("Reverse")}</button>
                 ) : null },
             ]}
           />
@@ -60,7 +62,7 @@ export default function AdminPaymentsPage() {
       <RecordPaymentModal
         open={open}
         onOpenChange={setOpen}
-        tenantOptions={tenants.map((t) => ({ value: t.id, label: t.name }))}
+        tenantOptions={tenants.map((tenant) => ({ value: tenant.id, label: tenant.name }))}
         onDone={refresh}
       />
     </div>

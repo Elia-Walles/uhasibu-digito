@@ -5,6 +5,7 @@ import { Sparkles, Send, Plus, Globe, Loader2, ClipboardCheck } from "lucide-rea
 import { HealthGauge } from "@/components/charts/HealthGauge";
 import type { AIMessage } from "@/types";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/hooks/useT";
 
 const AI_SUGGESTIONS_EN = [
   "How is my business performing this year?",
@@ -25,11 +26,12 @@ const AI_AUDIT_SUGGESTIONS = [
 ];
 
 export default function AIAssistantPage() {
+  const t = useT();
   const [messages, setMessages] = useState<AIMessage[]>([
     {
       id: "m_init",
       role: "assistant",
-      content: "Habari! 👋 I'm your Uhasibu Digito AI assistant. I can answer questions about your financials, taxes, and payroll. What would you like to know?",
+      content: t("Habari! 👋 I'm your Uhasibu Digito AI assistant. I can answer questions about your financials, taxes, and payroll. What would you like to know?"),
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -72,7 +74,7 @@ export default function AIAssistantPage() {
         body: JSON.stringify({ messages: history, language }),
       });
       const data = (await res.json()) as { reply?: string; error?: string };
-      const reply = res.ok ? data.reply ?? "" : data.error ?? "Sorry, I couldn't respond right now.";
+      const reply = res.ok ? data.reply ?? "" : data.error ?? t("Sorry, I couldn't respond right now.");
       setMessages((prev) => [
         ...prev,
         { id: nextId(), role: "assistant", content: reply, timestamp: new Date().toISOString() },
@@ -80,7 +82,7 @@ export default function AIAssistantPage() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { id: nextId(), role: "assistant", content: "Network error please try again.", timestamp: new Date().toISOString() },
+        { id: nextId(), role: "assistant", content: t("Network error please try again."), timestamp: new Date().toISOString() },
       ]);
     } finally {
       setTyping(false);
@@ -95,11 +97,11 @@ export default function AIAssistantPage() {
       <aside className="hidden lg:flex flex-col border-r border-white/5 p-4">
         <button className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl gradient-teal text-white text-sm font-medium hover:opacity-90 transition-opacity shadow-gold-glow">
           <Plus className="w-4 h-4" />
-          New conversation
+          {t("New conversation")}
         </button>
-        <div className="mt-5 text-[10px] tracking-[0.16em] text-white/40 font-semibold mb-2 px-1">RECENT</div>
+        <div className="mt-5 text-[10px] tracking-[0.16em] text-white/40 font-semibold mb-2 px-1">{t("RECENT")}</div>
         <div className="flex-1 flex items-center justify-center text-center px-4">
-          <p className="text-xs text-white/35">Your conversations stay on this screen for the session.</p>
+          <p className="text-xs text-white/35">{t("Your conversations stay on this screen for the session.")}</p>
         </div>
       </aside>
 
@@ -112,7 +114,7 @@ export default function AIAssistantPage() {
             </div>
             <div>
               <div className="font-display font-bold text-sm">Uhasibu AI</div>
-              <div className="text-xs text-white/45">Powered by financial intelligence</div>
+              <div className="text-xs text-white/45">{t("Powered by financial intelligence")}</div>
             </div>
           </div>
           <div className="flex items-center gap-1 bg-white/5 rounded-full p-1">
@@ -184,7 +186,7 @@ export default function AIAssistantPage() {
 
             {messages.length === 1 && !typing && (
               <div className="pt-4">
-                <div className="text-xs text-white/45 mb-3">Try one of these:</div>
+                <div className="text-xs text-white/45 mb-3">{t("Try one of these:")}</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {suggestions.map((s) => (
                     <button
@@ -198,7 +200,7 @@ export default function AIAssistantPage() {
                 </div>
                 <div className="mt-5 text-xs text-white/45 mb-2 inline-flex items-center gap-1.5">
                   <ClipboardCheck className="w-3 h-3 text-ud-gold" />
-                  Audit assist checkpoint prompts
+                  {t("Audit assist checkpoint prompts")}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {AI_AUDIT_SUGGESTIONS.map((s) => (
@@ -238,7 +240,7 @@ export default function AIAssistantPage() {
                 type="submit"
                 disabled={!input.trim() || typing}
                 className="w-12 h-12 rounded-2xl gradient-teal flex items-center justify-center hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shadow-gold-glow"
-                aria-label="Send"
+                aria-label={t("Send")}
               >
                 {typing ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : <Send className="w-5 h-5 text-white" />}
               </button>
@@ -249,11 +251,11 @@ export default function AIAssistantPage() {
 
       {/* Financial health rail */}
       <aside className="hidden xl:flex flex-col border-l border-white/5 p-5">
-        <div className="text-[10px] tracking-[0.16em] text-white/40 font-semibold mb-3">FINANCIAL HEALTH</div>
+        <div className="text-[10px] tracking-[0.16em] text-white/40 font-semibold mb-3">{t("FINANCIAL HEALTH")}</div>
         <div className="flex justify-center mb-5">
           <HealthGauge score={74} size={170} variant="dark" />
         </div>
-        <div className="text-center text-sm text-white/70 mb-5">Strong financial position</div>
+        <div className="text-center text-sm text-white/70 mb-5">{t("Strong financial position")}</div>
 
         <div className="space-y-3 text-xs">
           {[
@@ -265,7 +267,7 @@ export default function AIAssistantPage() {
             { label: "Inventory Turnover",   value: "3.3x",  trend: "up"   },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between p-2.5 rounded-xl glass-light">
-              <span className="text-white/65">{m.label}</span>
+              <span className="text-white/65">{t(m.label)}</span>
               <span className="font-mono tabular-nums font-medium text-white">{m.value}</span>
             </div>
           ))}

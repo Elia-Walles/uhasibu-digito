@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useCOA } from "@/lib/hooks/useCOA";
 import { useGL } from "@/lib/hooks/useGL";
+import { useT } from "@/lib/hooks/useT";
 import { formatTZS } from "@/lib/utils/currency";
 import toast from "react-hot-toast";
 import type { JournalEntryLine } from "@/types";
 
 export default function JournalEntryPage() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const editRef = searchParams.get("ref");
@@ -83,12 +85,12 @@ export default function JournalEntryPage() {
     if (!balanced) {
       setShake(true);
       setTimeout(() => setShake(false), 600);
-      toast.error("Debits must equal credits");
+      toast.error(t("Debits must equal credits"));
       return;
     }
     const validLines = lines.filter((l) => l.accountCode && (l.debit > 0 || l.credit > 0));
     if (validLines.length < 2) {
-      toast.error("Need at least 2 valid lines");
+      toast.error(t("Need at least 2 valid lines"));
       return;
     }
     const payload = { reference, narration: narration || "Manual journal entry", date, lines: validLines };
@@ -99,8 +101,8 @@ export default function JournalEntryPage() {
     }
     toast.success(
       isEdit
-        ? "Journal entry updated · bank balances auto-adjusted"
-        : "Journal entry posted · bank balances auto-adjusted",
+        ? t("Journal entry updated · bank balances auto-adjusted")
+        : t("Journal entry posted · bank balances auto-adjusted"),
     );
     router.push("/general-ledger");
   }
@@ -115,9 +117,9 @@ export default function JournalEntryPage() {
 
       <div className="bg-white border border-ud-border rounded-2xl p-6 shadow-card">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-          <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <Input label="Reference" value={reference} onChange={(e) => setReference(e.target.value)} />
-          <Input label="Narration" value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="Description of entry" />
+          <Input label={t("Date")} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <Input label={t("Reference")} value={reference} onChange={(e) => setReference(e.target.value)} />
+          <Input label={t("Narration")} value={narration} onChange={(e) => setNarration(e.target.value)} placeholder={t("Description of entry")} />
         </div>
 
         <motion.div animate={shake ? { x: [-10, 10, -10, 10, 0] } : { x: 0 }} transition={{ duration: 0.4 }}>
@@ -125,10 +127,10 @@ export default function JournalEntryPage() {
             <table className="w-full text-sm">
               <thead className="bg-ud-surface-2 text-xs uppercase tracking-[0.06em] text-ud-text-secondary">
                 <tr>
-                  <th className="text-left px-3 py-2.5 w-1/3" scope="col">Account</th>
-                  <th className="text-left px-3 py-2.5" scope="col">Description</th>
-                  <th className="text-right px-3 py-2.5 w-32" scope="col">Debit</th>
-                  <th className="text-right px-3 py-2.5 w-32" scope="col">Credit</th>
+                  <th className="text-left px-3 py-2.5 w-1/3" scope="col">{t("Account")}</th>
+                  <th className="text-left px-3 py-2.5" scope="col">{t("Description")}</th>
+                  <th className="text-right px-3 py-2.5 w-32" scope="col">{t("Debit")}</th>
+                  <th className="text-right px-3 py-2.5 w-32" scope="col">{t("Credit")}</th>
                   <th className="w-10" />
                 </tr>
               </thead>
@@ -152,7 +154,7 @@ export default function JournalEntryPage() {
                         />
                       </td>
                       <td className="px-3 py-2">
-                        <Input value={line.description} onChange={(e) => updateLine(line.id, { description: e.target.value })} placeholder="Optional" />
+                        <Input value={line.description} onChange={(e) => updateLine(line.id, { description: e.target.value })} placeholder={t("Optional")} />
                       </td>
                       <td className="px-3 py-2">
                         <Input
@@ -174,7 +176,7 @@ export default function JournalEntryPage() {
                       </td>
                       <td className="px-2 py-2 text-center">
                         {lines.length > 2 && (
-                          <button onClick={() => removeLine(line.id)} className="p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label="Remove line">
+                          <button onClick={() => removeLine(line.id)} className="p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label={t("Remove line")}>
                             <X className="w-3.5 h-3.5" />
                           </button>
                         )}
@@ -186,7 +188,7 @@ export default function JournalEntryPage() {
               <tfoot>
                 <tr className={balanced ? "bg-ud-success-bg" : "bg-ud-warning-bg"}>
                   <td colSpan={2} className="px-3 py-3 font-bold">
-                    {balanced ? "✓ Balanced" : "⚠ Difference: " + formatTZS(Math.abs(totalDebit - totalCredit))}
+                    {balanced ? t("✓ Balanced") : t("⚠ Difference:") + " " + formatTZS(Math.abs(totalDebit - totalCredit))}
                   </td>
                   <td className="px-3 py-3 text-right font-mono font-bold">{totalDebit.toLocaleString()}</td>
                   <td className="px-3 py-3 text-right font-mono font-bold">{totalCredit.toLocaleString()}</td>
@@ -198,10 +200,10 @@ export default function JournalEntryPage() {
         </motion.div>
 
         <div className="mt-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={addLine} icon={<Plus className="w-4 h-4" />}>Add line</Button>
+          <Button variant="ghost" onClick={addLine} icon={<Plus className="w-4 h-4" />}>{t("Add line")}</Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()} icon={isEdit ? <Pencil className="w-4 h-4" /> : <Save className="w-4 h-4" />}>{isEdit ? "Update entry" : "Post entry"}</Button>
+            <Button variant="outline" onClick={() => router.back()}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()} icon={isEdit ? <Pencil className="w-4 h-4" /> : <Save className="w-4 h-4" />}>{isEdit ? t("Update entry") : t("Post entry")}</Button>
           </div>
         </div>
       </div>

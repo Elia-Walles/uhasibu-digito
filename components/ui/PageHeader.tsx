@@ -3,6 +3,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ChevronRight, Home } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 
 export interface BreadcrumbItem {
@@ -20,6 +21,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, subtitle, breadcrumbs, actions, className, icon: Icon }: PageHeaderProps) {
+  const t = useT();
   return (
     <div className={cn("mb-6", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
@@ -32,10 +34,10 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions, className, i
               <ChevronRight className="w-3 h-3" />
               {b.href ? (
                 <Link href={b.href} className="hover:text-ud-primary">
-                  {b.label}
+                  {t(b.label)}
                 </Link>
               ) : (
-                <span className="text-ud-text-secondary">{b.label}</span>
+                <span className="text-ud-text-secondary">{t(b.label)}</span>
               )}
             </span>
           ))}
@@ -55,9 +57,9 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions, className, i
           )}
           <div>
             <h1 className="font-display text-2xl md:text-3xl font-extrabold text-ud-text-primary text-balance">
-              {title}
+              {t(title)}
             </h1>
-            {subtitle && <p className="mt-1 text-sm text-ud-text-muted text-balance">{subtitle}</p>}
+            {subtitle && <p className="mt-1 text-sm text-ud-text-muted text-balance">{t(subtitle)}</p>}
           </div>
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/Badge";
 import { useTier } from "@/lib/hooks/useTier";
 import { usePublicPlans } from "@/lib/hooks/usePublicPlans";
 import { formatAmount } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 
 export default function SubscriptionSettingsPage() {
+  const t = useT();
   const { tier } = useTier();
   const { plans } = usePublicPlans();
   const current = plans.find((p) => p.id === tier);
@@ -16,11 +18,11 @@ export default function SubscriptionSettingsPage() {
     <div>
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="font-display font-bold text-lg">Subscription</h2>
-          <p className="text-sm text-ud-text-muted">Your current plan and what it unlocks.</p>
+          <h2 className="font-display font-bold text-lg">{t("Subscription")}</h2>
+          <p className="text-sm text-ud-text-muted">{t("Your current plan and what it unlocks.")}</p>
         </div>
         <Link href="/select-plan">
-          <Button variant="primary" icon={<Sparkles className="w-4 h-4" />}>Change plan</Button>
+          <Button variant="primary" icon={<Sparkles className="w-4 h-4" />}>{t("Change plan")}</Button>
         </Link>
       </div>
 
@@ -30,10 +32,10 @@ export default function SubscriptionSettingsPage() {
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.08em] text-ud-primary">{current.name}</div>
               <div className="mt-1 font-display font-extrabold text-3xl tabular-nums">
-                TZS {formatAmount(current.priceTzs)}<span className="text-sm font-normal text-ud-text-muted"> /year</span>
+                TZS {formatAmount(current.priceTzs)}<span className="text-sm font-normal text-ud-text-muted"> {t("/year")}</span>
               </div>
             </div>
-            <Badge variant="success">Active</Badge>
+            <Badge variant="success">{t("Active")}</Badge>
           </div>
           <p className="mt-2 text-sm text-ud-text-secondary">{current.tagline}</p>
           <div className="my-4 h-px bg-ud-border" />
@@ -50,9 +52,9 @@ export default function SubscriptionSettingsPage() {
         </div>
       ) : (
         <div className="bg-white border border-ud-border rounded-2xl p-6 shadow-card max-w-xl">
-          <p className="text-sm text-ud-text-secondary">You haven&apos;t chosen a plan yet.</p>
+          <p className="text-sm text-ud-text-secondary">{t("You haven't chosen a plan yet.")}</p>
           <Link href="/select-plan" className="inline-block mt-3">
-            <Button variant="primary">Choose a plan</Button>
+            <Button variant="primary">{t("Choose a plan")}</Button>
           </Link>
         </div>
       )}

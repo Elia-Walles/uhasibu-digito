@@ -4,6 +4,7 @@ import { FileBarChart, Scale, TrendingUp, Wallet } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ExportMenu } from "@/components/ui/ExportMenu";
+import { useT } from "@/lib/hooks/useT";
 
 const STATEMENTS = [
   { name: "Income Statement",            href: "/financial-statements/income-statement", description: "Profit & loss for the period", icon: TrendingUp,    color: "gradient-teal" },
@@ -13,6 +14,7 @@ const STATEMENTS = [
 ];
 
 export default function FinancialStatementsHome() {
+  const t = useT();
   return (
     <PageWrapper>
       <PageHeader
@@ -32,8 +34,8 @@ export default function FinancialStatementsHome() {
               <div className={`w-12 h-12 rounded-2xl ${s.color} flex items-center justify-center mb-4`}>
                 <Icon className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-display font-bold text-lg text-ud-text-primary group-hover:text-ud-primary transition-colors">{s.name}</h3>
-              <p className="mt-1 text-sm text-ud-text-muted">{s.description}</p>
+              <h3 className="font-display font-bold text-lg text-ud-text-primary group-hover:text-ud-primary transition-colors">{t(s.name)}</h3>
+              <p className="mt-1 text-sm text-ud-text-muted">{t(s.description)}</p>
             </Link>
           );
         })}

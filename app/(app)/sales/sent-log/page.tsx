@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useInvoices } from "@/lib/hooks/useInvoices";
+import { useT } from "@/lib/hooks/useT";
 import { formatDateTime } from "@/lib/utils/dates";
 import type { SendLogEntry } from "@/types";
 
@@ -16,6 +17,7 @@ const CHANNEL_ICON: Record<SendLogEntry["channel"], React.ElementType> = {
 };
 
 export default function SentLogPage() {
+  const t = useT();
   const { sendLog } = useInvoices();
 
   const cols: Column<SendLogEntry>[] = [
@@ -25,12 +27,12 @@ export default function SentLogPage() {
     { key: "channel", label: "Channel", render: (e) => {
       const Icon = CHANNEL_ICON[e.channel];
       return <Badge variant={e.channel === "Email" ? "info" : e.channel === "WhatsApp" ? "success" : "teal"} size="sm">
-        <Icon className="w-3 h-3 mr-1 inline-block" />{e.channel}
+        <Icon className="w-3 h-3 mr-1 inline-block" />{t(e.channel)}
       </Badge>;
     } },
     { key: "recipient", label: "Recipient", className: "font-mono text-xs" },
     { key: "status", label: "Status", render: (e) => (
-      <Badge variant={e.status === "Delivered" ? "success" : e.status === "Failed" ? "danger" : "warning"}>{e.status}</Badge>
+      <Badge variant={e.status === "Delivered" ? "success" : e.status === "Failed" ? "danger" : "warning"}>{t(e.status)}</Badge>
     ) },
   ];
 
@@ -43,8 +45,7 @@ export default function SentLogPage() {
       />
 
       <div className="mb-4 px-4 py-3 rounded-xl bg-ud-info-bg/60 border border-ud-info/15 text-xs text-ud-text-secondary leading-relaxed">
-        Email is delivered through your configured SMTP server. WhatsApp delivery is not yet connected those
-        entries are recorded as queued.
+        {t("Email is delivered through your configured SMTP server. WhatsApp delivery is not yet connected those entries are recorded as queued.")}
       </div>
 
       {sendLog.length === 0 ? (

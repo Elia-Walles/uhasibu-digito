@@ -9,9 +9,11 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { formatTZS } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 import type { AdminPlanRow } from "@/lib/server/actions/admin/types";
 
 export default function AdminPlansPage() {
+  const t = useT();
   const { plans, loading, editPlan, toggleActive } = useAdminPlans();
   const [editing, setEditing] = useState<AdminPlanRow | null>(null);
   const [name, setName] = useState("");
@@ -43,47 +45,47 @@ export default function AdminPlansPage() {
     });
     setSaving(false);
     if (res.ok) {
-      toast.success("Plan updated");
+      toast.success(t("Plan updated"));
       setEditing(null);
     } else toast.error(res.error);
   };
 
   const onToggle = async (p: AdminPlanRow) => {
     const res = await toggleActive(p.id, !p.isActive);
-    res.ok ? toast.success(p.isActive ? "Plan deactivated" : "Plan activated") : toast.error(res.error);
+    res.ok ? toast.success(p.isActive ? t("Plan deactivated") : t("Plan activated")) : toast.error(res.error);
   };
 
   return (
     <div>
-      <AdminPageTitle title="Plans" subtitle="Subscription packaging shown to customers." />
+      <AdminPageTitle title={t("Plans")} subtitle={t("Subscription packaging shown to customers.")} />
       <AdminPanel>
         {loading ? (
-          <div className="py-14 text-center text-sm text-ud-text-muted">Loading…</div>
+          <div className="py-14 text-center text-sm text-ud-text-muted">{t("Loading…")}</div>
         ) : (
           <AdminTable<AdminPlanRow>
             data={plans}
             rowKey={(p) => p.id}
-            caption="Plans"
-            emptyLabel="No plans defined. Run the seed to populate default plans."
+            caption={t("Plans")}
+            emptyLabel={t("No plans defined. Run the seed to populate default plans.")}
             columns={[
-              { key: "name", label: "Plan", render: (p) => (
+              { key: "name", label: t("Plan"), render: (p) => (
                 <div>
                   <div className="text-ud-text-primary font-medium">{p.name}</div>
                   <div className="text-ud-text-muted text-xs">{p.tagline}</div>
                 </div>
               ) },
-              { key: "key", label: "Key", render: (p) => <StatusPill value={p.key} /> },
-              { key: "priceTzs", label: "Price", align: "right", render: (p) => `${formatTZS(p.priceTzs, true)}/${p.interval}` },
-              { key: "highlighted", label: "Popular", render: (p) => (p.highlighted ? <StatusPill value="business" /> : <span className="text-ud-text-faint"></span>) },
-              { key: "subscriberCount", label: "Active subs", align: "right" },
-              { key: "isActive", label: "Status", render: (p) => (
+              { key: "key", label: t("Key"), render: (p) => <StatusPill value={p.key} /> },
+              { key: "priceTzs", label: t("Price"), align: "right", render: (p) => `${formatTZS(p.priceTzs, true)}/${p.interval}` },
+              { key: "highlighted", label: t("Popular"), render: (p) => (p.highlighted ? <StatusPill value="business" /> : <span className="text-ud-text-faint"></span>) },
+              { key: "subscriberCount", label: t("Active subs"), align: "right" },
+              { key: "isActive", label: t("Status"), render: (p) => (
                 <button onClick={() => onToggle(p)}>
                   <StatusPill value={p.isActive ? "active" : "canceled"} />
                 </button>
               ) },
               { key: "actions", label: "", align: "right", render: (p) => (
                 <button onClick={() => openEdit(p)} className="inline-flex items-center gap-1.5 text-xs text-ud-text-muted hover:text-ud-text-primary">
-                  <Pencil className="w-3.5 h-3.5" /> Edit
+                  <Pencil className="w-3.5 h-3.5" /> {t("Edit")}
                 </button>
               ) },
             ]}
@@ -91,14 +93,14 @@ export default function AdminPlansPage() {
         )}
       </AdminPanel>
 
-      <Modal open={!!editing} onOpenChange={(v) => !v && setEditing(null)} title={`Edit ${editing?.name ?? "plan"}`} size="lg">
+      <Modal open={!!editing} onOpenChange={(v) => !v && setEditing(null)} title={t("Edit {name}", { name: editing?.name ?? t("plan") })} size="lg">
         <div className="space-y-4">
-          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Tagline" value={tagline} onChange={(e) => setTagline(e.target.value)} />
-          <Input label="Price (TZS)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+          <Input label={t("Name")} value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label={t("Tagline")} value={tagline} onChange={(e) => setTagline(e.target.value)} />
+          <Input label={t("Price (TZS)")} type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
           <div>
             <label className="block text-xs font-medium tracking-[0.04em] text-ud-text-secondary mb-1.5">
-              Features (one per line)
+              {t("Features (one per line)")}
             </label>
             <textarea
               value={features}
@@ -114,11 +116,11 @@ export default function AdminPlansPage() {
               onChange={(e) => setHighlighted(e.target.checked)}
               className="w-4 h-4 rounded border-ud-border text-ud-primary focus:ring-ud-primary"
             />
-            Mark as &ldquo;Most popular&rdquo; on pricing pages
+            {t("Mark as “Most popular” on pricing pages")}
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button onClick={save} loading={saving}>Save</Button>
+            <Button variant="ghost" onClick={() => setEditing(null)}>{t("Cancel")}</Button>
+            <Button onClick={save} loading={saving}>{t("Save")}</Button>
           </div>
         </div>
       </Modal>

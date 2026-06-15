@@ -14,6 +14,7 @@ import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useSession } from "next-auth/react";
 import { usePipelineDeals } from "@/lib/hooks/usePipelineDeals";
+import { useT } from "@/lib/hooks/useT";
 import type { PipelineDeal, DealStage } from "@/types";
 import { cn } from "@/lib/utils/cn";
 
@@ -51,6 +52,7 @@ function emptyForm(): FormState {
 }
 
 export default function PipelinePage() {
+  const t = useT();
   const { deals, loading: dataLoading, addDeal, moveDeal: moveDealAction } = usePipelineDeals();
   const { data: session } = useSession();
   const loading = dataLoading;
@@ -59,12 +61,12 @@ export default function PipelinePage() {
 
   function moveDeal(dealId: string, newStage: DealStage) {
     void moveDealAction(dealId, newStage);
-    toast.success(`Moved to ${newStage}`);
+    toast.success(t("Moved to {stage}", { stage: t(newStage) }));
   }
 
   async function save() {
     if (!form.dealName.trim() || !form.companyName.trim()) {
-      toast.error("Deal name and company are required");
+      toast.error(t("Deal name and company are required"));
       return;
     }
     const initials = form.contactName.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "EM";
@@ -87,7 +89,7 @@ export default function PipelinePage() {
       toast.error(r.error);
       return;
     }
-    toast.success(`Added ${deal.dealName}`);
+    toast.success(t("Added {name}", { name: deal.dealName }));
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -102,7 +104,7 @@ export default function PipelinePage() {
         title="Sales Pipeline"
         subtitle="Move deals between stages total value across active stages"
         breadcrumbs={[{ label: "CRM", href: "/crm" }, { label: "Pipeline" }]}
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add deal</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>{t("Add deal")}</Button>}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 sm:min-h-[500px]">
@@ -114,7 +116,7 @@ export default function PipelinePage() {
               <div className="mb-3 px-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={cn("w-2 h-2 rounded-full", stage.color)} />
-                  <span className="font-display font-bold text-sm">{stage.label}</span>
+                  <span className="font-display font-bold text-sm">{t(stage.label)}</span>
                   <span className="ml-auto text-xs text-ud-text-muted">{stageDeals.length}</span>
                 </div>
                 <CurrencyDisplay amount={total} compact className="font-mono text-xs text-ud-text-muted" />
@@ -146,9 +148,9 @@ export default function PipelinePage() {
                           key={s.key}
                           onClick={() => moveDeal(d.id, s.key)}
                           className="flex-1 text-[10px] py-1 rounded-md bg-ud-surface-2 hover:bg-ud-primary-50 hover:text-ud-primary transition-colors truncate"
-                          title={`Move to ${s.label}`}
+                          title={t("Move to {stage}", { stage: t(s.label) })}
                         >
-                          → {s.label.slice(0, 4)}
+                          → {t(s.label).slice(0, 4)}
                         </button>
                       ))}
                     </div>
@@ -168,8 +170,8 @@ export default function PipelinePage() {
         size="md"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Add deal</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Add deal")}</Button>
           </>
         }
       >
@@ -183,7 +185,7 @@ export default function PipelinePage() {
             <Select label="Stage" value={form.stage} onValueChange={(v) => setForm({ ...form, stage: v as DealStage })} options={STAGES.map((s) => ({ value: s.key, label: s.label }))} />
             <Input label="Expected close" type="date" value={form.expectedCloseDate} onChange={(e) => setForm({ ...form, expectedCloseDate: e.target.value })} />
           </div>
-          <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional" />
+          <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder={t("Optional")} />
         </div>
       </Modal>
     </PageWrapper>

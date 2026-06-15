@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useBudgetLines } from "@/lib/hooks/useBudgetLines";
+import { useT } from "@/lib/hooks/useT";
 import type { BudgetLine } from "@/types";
 
 interface FormState {
@@ -27,6 +28,7 @@ function emptyForm(): FormState {
 }
 
 export default function BudgetingPage() {
+  const t = useT();
   const { budgetLines, loading: dataLoading, addBudgetLine } = useBudgetLines();
   const loading = dataLoading;
   const [addOpen, setAddOpen] = useState(false);
@@ -36,11 +38,11 @@ export default function BudgetingPage() {
 
   async function save() {
     if (!form.lineItem.trim()) {
-      toast.error("Line item is required");
+      toast.error(t("Line item is required"));
       return;
     }
     if (form.annualBudget <= 0) {
-      toast.error("Annual budget must be greater than zero");
+      toast.error(t("Annual budget must be greater than zero"));
       return;
     }
     const monthly = form.annualBudget / 12;
@@ -62,7 +64,7 @@ export default function BudgetingPage() {
       toast.error(r.error);
       return;
     }
-    toast.success(`Added ${line.lineItem}`);
+    toast.success(t("Added {name}", { name: line.lineItem }));
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -74,8 +76,8 @@ export default function BudgetingPage() {
         subtitle="Annual budget · YTD utilization by line item"
         actions={
           <>
-            <Button variant="outline" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>Add budget line</Button>
-            <Link href="/budgeting/budget-vs-actual"><Button variant="primary" icon={<BarChart3 className="w-4 h-4" />}>Variance analysis</Button></Link>
+            <Button variant="outline" icon={<Plus className="w-4 h-4" />} onClick={() => setAddOpen(true)}>{t("Add budget line")}</Button>
+            <Link href="/budgeting/budget-vs-actual"><Button variant="primary" icon={<BarChart3 className="w-4 h-4" />}>{t("Variance analysis")}</Button></Link>
           </>
         }
       />
@@ -100,11 +102,11 @@ export default function BudgetingPage() {
                 <ProgressBar value={Math.min(util, 100)} variant={variant} />
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <div className="text-ud-text-muted">YTD actual</div>
+                    <div className="text-ud-text-muted">{t("YTD actual")}</div>
                     <CurrencyDisplay amount={b.ytdActual} compact className="font-medium" />
                   </div>
                   <div>
-                    <div className="text-ud-text-muted">YTD budget</div>
+                    <div className="text-ud-text-muted">{t("YTD budget")}</div>
                     <CurrencyDisplay amount={b.ytdBudget} compact className="font-medium" />
                   </div>
                 </div>
@@ -122,13 +124,13 @@ export default function BudgetingPage() {
         size="md"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => void save()}>Add line</Button>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>{t("Cancel")}</Button>
+            <Button variant="primary" onClick={() => void save()}>{t("Add line")}</Button>
           </>
         }
       >
         <div className="space-y-4 text-sm">
-          <Input label="Line item" value={form.lineItem} onChange={(e) => setForm({ ...form, lineItem: e.target.value })} placeholder="e.g. Office supplies" />
+          <Input label={t("Line item")} value={form.lineItem} onChange={(e) => setForm({ ...form, lineItem: e.target.value })} placeholder={t("e.g. Office supplies")} />
           <Select
             label="Category"
             value={form.category}
@@ -144,8 +146,8 @@ export default function BudgetingPage() {
             ].concat(existingCategories.filter((c) => !["Personnel","Facilities","Operations","Sales","Finance","Compliance","Capex"].includes(c)).map((c) => ({ value: c, label: c })))}
           />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input label="Annual budget (TZS)" type="number" value={String(form.annualBudget)} onChange={(e) => setForm({ ...form, annualBudget: Number(e.target.value) || 0 })} />
-            <Input label="YTD actual (TZS)"    type="number" value={String(form.ytdActual)}    onChange={(e) => setForm({ ...form, ytdActual: Number(e.target.value) || 0 })} />
+            <Input label={t("Annual budget (TZS)")} type="number" value={String(form.annualBudget)} onChange={(e) => setForm({ ...form, annualBudget: Number(e.target.value) || 0 })} />
+            <Input label={t("YTD actual (TZS)")}    type="number" value={String(form.ytdActual)}    onChange={(e) => setForm({ ...form, ytdActual: Number(e.target.value) || 0 })} />
           </div>
         </div>
       </Modal>

@@ -8,10 +8,12 @@ import { StatementTable } from "@/components/ui/StatementTable";
 import { PeriodSelector } from "@/components/ui/PeriodSelector";
 import { ComplianceStatement } from "@/components/ui/ComplianceStatement";
 import { useStatements } from "@/lib/hooks/useStatements";
+import { useT } from "@/lib/hooks/useT";
 import type { StatementPeriod } from "@/lib/server/actions/statements";
 import type { StampData } from "@/types";
 
 export default function BalanceSheetPage() {
+  const t = useT();
   const [period, setPeriod] = useState<StatementPeriod>("FY");
   const [stamp, setStamp] = useState<StampData | null>(null);
   const [showStamp, setShowStamp] = useState(false);
@@ -29,11 +31,11 @@ export default function BalanceSheetPage() {
       <div className="bg-white border border-ud-border rounded-2xl p-6 shadow-card">
         <div className="text-center mb-5">
           <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{view?.companyName ?? ""}</div>
-          <h2 className="font-display font-extrabold text-2xl mt-1">Balance Sheet</h2>
-          <div className="text-sm text-ud-text-muted mt-1">As at {view?.currentLabel ?? ""} (TZS)</div>
+          <h2 className="font-display font-extrabold text-2xl mt-1">{t("Balance Sheet")}</h2>
+          <div className="text-sm text-ud-text-muted mt-1">{t("As at {label} (TZS)", { label: view?.currentLabel ?? "" })}</div>
         </div>
         {loading || !view ? (
-          <p className="text-sm text-ud-text-muted text-center py-8">Loading…</p>
+          <p className="text-sm text-ud-text-muted text-center py-8">{t("Loading…")}</p>
         ) : (
           <>
             <StatementTable lines={view.balanceSheet} currentLabel={view.currentLabel} priorLabel={view.priorLabel} />

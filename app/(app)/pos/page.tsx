@@ -22,11 +22,13 @@ import { useInventory } from "@/lib/hooks/useInventory";
 import { usePOSSales, recordSale, type POSFilter } from "@/lib/hooks/usePOS";
 import { formatTZS } from "@/lib/utils/currency";
 import { formatDateTime } from "@/lib/utils/dates";
+import { useT } from "@/lib/hooks/useT";
 import type { POSSale, PaymentMethod } from "@/types";
 
 const PAYMENT_BADGE: Record<PaymentMethod, "teal" | "info" | "gold"> = { mpesa: "teal", cash: "info", card: "gold" };
 
 export default function POSSalesPage() {
+  const t = useT();
   const { branches } = useBranches();
   const { inventory, refresh: refreshInventory } = useInventory();
 
@@ -73,7 +75,7 @@ export default function POSSalesPage() {
 
   async function submit() {
     if (!canSubmit) {
-      toast.error("Fix the highlighted items before recording the sale");
+      toast.error(t("Fix the highlighted items before recording the sale"));
       return;
     }
     setSaving(true);
@@ -88,7 +90,7 @@ export default function POSSalesPage() {
         toast.error(res.error);
         return;
       }
-      toast.success(`Sale ${res.data.receiptNumber} recorded`);
+      toast.success(t("Sale {ref} recorded", { ref: res.data.receiptNumber }));
       setOpen(false);
       await Promise.all([refresh(), refreshInventory()]);
     } finally {
@@ -111,16 +113,16 @@ export default function POSSalesPage() {
       <PageHeader
         title="Sales"
         subtitle="Record sales and track performance across branches and dates"
-        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openModal}>Record sale</Button>}
+        actions={<Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={openModal}>{t("Record sale")}</Button>}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-5 p-4 bg-white border border-ud-border rounded-2xl shadow-card">
         <div>
-          <label className="block text-xs font-medium text-ud-text-secondary mb-1.5">From</label>
+          <label className="block text-xs font-medium text-ud-text-secondary mb-1.5">{t("From")}</label>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-ud-border text-sm focus:outline-none focus:ring-2 focus:ring-ud-primary" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-ud-text-secondary mb-1.5">To</label>
+          <label className="block text-xs font-medium text-ud-text-secondary mb-1.5">{t("To")}</label>
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-ud-border text-sm focus:outline-none focus:ring-2 focus:ring-ud-primary" />
         </div>
         <Select label="Branch" value={branchFilter} onValueChange={setBranchFilter}
@@ -161,9 +163,9 @@ export default function POSSalesPage() {
         size="lg"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>{t("Cancel")}</Button>
             <Button variant="primary" loading={saving} disabled={!canSubmit} onClick={() => void submit()}>
-              Record {formatTZS(linesTotal(lines))}
+              {t("Record {total}", { total: formatTZS(linesTotal(lines)) })}
             </Button>
           </>
         }
@@ -178,11 +180,11 @@ export default function POSSalesPage() {
               <Select label="Branch" value={branchId} onValueChange={setBranchId}
                 options={branches.map((b) => ({ value: b.id, label: b.name }))} />
             )}
-            <Input label="Customer (optional)" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Leave blank if not provided" />
+            <Input label={t("Customer (optional)")} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder={t("Leave blank if not provided")} />
           </div>
 
           <div className="flex justify-between items-center pt-2 border-t border-ud-border">
-            <span className="text-sm text-ud-text-secondary">Total</span>
+            <span className="text-sm text-ud-text-secondary">{t("Total")}</span>
             <span className="font-display font-bold text-lg tabular-nums">{formatTZS(linesTotal(lines))}</span>
           </div>
         </div>
