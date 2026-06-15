@@ -90,8 +90,8 @@ export function DataTable<T>({
     return (
       <div className={cn("relative bg-white rounded-2xl border border-ud-border overflow-hidden shadow-card", className)}>
         <GhostTable columns={columns} />
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-b from-white/25 via-white/55 to-white/80 px-4">
-          <div className="flex items-center gap-3 rounded-2xl border border-ud-border bg-white/90 backdrop-blur px-4 py-3 shadow-card max-w-[90%]">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
+          <div className="flex items-center gap-3 rounded-2xl border border-ud-border bg-white/95 backdrop-blur px-4 py-3 shadow-elevated max-w-[90%]">
             <div className="w-9 h-9 rounded-xl bg-ud-primary-50 flex items-center justify-center flex-shrink-0">
               <Inbox className="w-5 h-5 text-ud-primary opacity-80" strokeWidth={1.5} />
             </div>
@@ -269,7 +269,7 @@ function GhostTable({
                   <span
                     className={cn(
                       "inline-block h-3 rounded-full align-middle",
-                      shimmer ? "skeleton" : "bg-ud-border/70",
+                      shimmer ? "skeleton" : "bg-ud-text-faint/25",
                       col.align === "right" ? "w-14" : GHOST_WIDTHS[(r + c) % GHOST_WIDTHS.length]
                     )}
                   />

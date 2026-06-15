@@ -102,20 +102,20 @@ export default function DashboardPage() {
               <div className="divide-y divide-ud-border" aria-hidden="true">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-3 px-5 py-3">
-                    <div className="w-9 h-9 rounded-xl bg-ud-border/50 flex-shrink-0" />
+                    <div className="w-9 h-9 rounded-xl bg-ud-text-faint/20 flex-shrink-0" />
                     <div className="flex-1 min-w-0 space-y-1.5">
-                      <div className="h-3 rounded-full bg-ud-border/60 w-32 max-w-[60%]" />
-                      <div className="h-2.5 rounded-full bg-ud-border/40 w-24 max-w-[40%]" />
+                      <div className="h-3 rounded-full bg-ud-text-faint/25 w-32 max-w-[60%]" />
+                      <div className="h-2.5 rounded-full bg-ud-text-faint/15 w-24 max-w-[40%]" />
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
-                      <div className="h-3 rounded-full bg-ud-border/60 w-16" />
-                      <div className="h-3.5 rounded-full bg-ud-border/40 w-12" />
+                      <div className="h-3 rounded-full bg-ud-text-faint/25 w-16" />
+                      <div className="h-3.5 rounded-full bg-ud-text-faint/15 w-12" />
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-b from-white/25 via-white/55 to-white/80 px-4">
-                <div className="flex items-center gap-3 rounded-2xl border border-ud-border bg-white/90 backdrop-blur px-4 py-3 shadow-card max-w-[90%]">
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
+                <div className="flex items-center gap-3 rounded-2xl border border-ud-border bg-white/95 backdrop-blur px-4 py-3 shadow-elevated max-w-[90%]">
                   <div className="w-9 h-9 rounded-xl bg-ud-primary-50 flex items-center justify-center flex-shrink-0">
                     <Receipt className="w-5 h-5 text-ud-primary opacity-80" strokeWidth={1.5} />
                   </div>
