@@ -2,7 +2,6 @@
 import { useState, useMemo } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "./Button";
-import { EmptyState } from "./EmptyState";
 import { Inbox } from "lucide-react";
 import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
@@ -79,20 +78,29 @@ export function DataTable<T>({
 
   if (loading) {
     return (
-      <div className={cn("bg-white rounded-2xl border border-ud-border overflow-hidden", className)}>
-        <div className="p-4 space-y-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="skeleton h-10 w-full" />
-          ))}
-        </div>
+      <div className={cn("bg-white rounded-2xl border border-ud-border overflow-hidden shadow-card", className)}>
+        <GhostTable columns={columns} shimmer />
       </div>
     );
   }
 
+  // Empty: render a ghost of the loaded layout (header + column-aligned placeholder rows)
+  // so the user can see how data will line up, with a floating hint that it is empty.
   if (total === 0) {
     return (
-      <div className={cn("bg-white rounded-2xl border border-ud-border", className)}>
-        <EmptyState icon={Inbox} title={t(emptyTitle)} description={t(emptyDescription)} />
+      <div className={cn("relative bg-white rounded-2xl border border-ud-border overflow-hidden shadow-card", className)}>
+        <GhostTable columns={columns} />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-b from-white/25 via-white/55 to-white/80 px-4">
+          <div className="flex items-center gap-3 rounded-2xl border border-ud-border bg-white/90 backdrop-blur px-4 py-3 shadow-card max-w-[90%]">
+            <div className="w-9 h-9 rounded-xl bg-ud-primary-50 flex items-center justify-center flex-shrink-0">
+              <Inbox className="w-5 h-5 text-ud-primary opacity-80" strokeWidth={1.5} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-ud-text-primary truncate">{t(emptyTitle)}</div>
+              <div className="text-xs text-ud-text-muted">{t(emptyDescription)}</div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -204,6 +212,73 @@ export function DataTable<T>({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Varied placeholder-bar widths so ghost rows read as real data, not a single block.
+const GHOST_WIDTHS = ["w-24", "w-16", "w-32", "w-20", "w-28", "w-14"];
+
+/**
+ * Renders the table header plus column-aligned placeholder rows. Used for the loading
+ * state (shimmer) and the empty state (static ghost behind a "no data" hint) so both
+ * mirror the real loaded layout and show how data will align.
+ */
+function GhostTable({
+  columns,
+  rows = 5,
+  shimmer = false,
+}: {
+  columns: { key: string; label: string; align?: "left" | "right" | "center"; width?: string; className?: string }[];
+  rows?: number;
+  shimmer?: boolean;
+}) {
+  const t = useT();
+  return (
+    <div className="overflow-x-auto" aria-hidden="true">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-ud-surface-2 border-b border-ud-border">
+            {columns.map((col) => (
+              <th
+                key={col.key}
+                scope="col"
+                style={col.width ? { width: col.width } : undefined}
+                className={cn(
+                  "px-4 py-3 text-xs font-medium tracking-[0.06em] uppercase text-ud-text-secondary whitespace-nowrap",
+                  col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left",
+                  col.className
+                )}
+              >
+                {t(col.label)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: rows }).map((_, r) => (
+            <tr key={r} className={cn("border-b border-ud-border last:border-b-0", r % 2 === 1 && "bg-ud-surface-2/40")}>
+              {columns.map((col, c) => (
+                <td
+                  key={col.key}
+                  className={cn(
+                    "px-4 py-3.5",
+                    col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-3 rounded-full align-middle",
+                      shimmer ? "skeleton" : "bg-ud-border/70",
+                      col.align === "right" ? "w-14" : GHOST_WIDTHS[(r + c) % GHOST_WIDTHS.length]
+                    )}
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
