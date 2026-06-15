@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
 import { formatTZS } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 
 // Adapted from the 21st.dev "pricing-cards" component to the Uhasibu Digito design system:
@@ -54,6 +55,7 @@ export function PricingCards({
   description = "Choose the plan that matches your business and scale with ease.",
   plans = [],
 }: PricingCardsProps) {
+  const t = useT();
   const [isYearly, setIsYearly] = useState(true);
 
   return (
@@ -95,15 +97,15 @@ export function PricingCards({
       <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-5 text-center">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-ud-primary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ud-primary">
-            <Sparkles className="w-3 h-3" /> Plans &amp; pricing
+            <Sparkles className="w-3 h-3" /> {t("Plans & pricing")}
           </div>
-          <h2 className="font-display text-pretty text-4xl font-extrabold lg:text-6xl">{heading}</h2>
-          <p className="text-ud-text-muted lg:text-xl max-w-2xl text-balance">{description}</p>
+          <h2 className="font-display text-pretty text-4xl font-extrabold lg:text-6xl">{t(heading)}</h2>
+          <p className="text-ud-text-muted lg:text-xl max-w-2xl text-balance">{t(description)}</p>
 
           <div className="flex items-center gap-3 text-sm font-medium">
-            <span className={cn(!isYearly ? "text-ud-text-primary" : "text-ud-text-muted")}>Monthly</span>
+            <span className={cn(!isYearly ? "text-ud-text-primary" : "text-ud-text-muted")}>{t("Monthly")}</span>
             <ToggleSwitch checked={isYearly} onCheckedChange={() => setIsYearly(!isYearly)} aria-label="Toggle yearly pricing" />
-            <span className={cn(isYearly ? "text-ud-text-primary" : "text-ud-text-muted")}>Yearly</span>
+            <span className={cn(isYearly ? "text-ud-text-primary" : "text-ud-text-muted")}>{t("Yearly")}</span>
           </div>
 
           <div className="mt-4 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 items-start">
@@ -123,7 +125,7 @@ export function PricingCards({
                 >
                   {plan.highlighted && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-ud-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-white">
-                      <Sparkles className="w-3 h-3" /> Most popular
+                      <Sparkles className="w-3 h-3" /> {t("Most popular")}
                     </div>
                   )}
 
@@ -135,11 +137,11 @@ export function PricingCards({
                       <span className="font-display text-2xl font-extrabold tabular-nums break-all">
                         {formatTZS(isYearly ? plan.priceTzs : monthly)}
                       </span>
-                      <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>{isYearly ? "/year" : "/mo"}</span>
+                      <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>{isYearly ? t("/year") : t("/mo")}</span>
                     </div>
                     <p className={cn("mt-1.5 text-[13px] leading-snug", dark ? "text-white/65" : "text-ud-text-secondary")}>{plan.description}</p>
                     <p className={cn("mt-1 text-[11px]", dark ? "text-white/45" : "text-ud-text-faint")}>
-                      {isYearly ? "Billed annually" : `Billed ${formatTZS(plan.priceTzs)} annually`}
+                      {isYearly ? t("Billed annually") : t("Billed {price} annually", { price: formatTZS(plan.priceTzs) })}
                     </p>
 
                     <div className={cn("my-4 h-px", dark ? "bg-white/10" : "bg-ud-border")} />
@@ -166,7 +168,7 @@ export function PricingCards({
                           : "bg-ud-primary text-white hover:bg-ud-primary-hover shadow-sm",
                       )}
                     >
-                      {plan.button.text}
+                      {t(plan.button.text)}
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>

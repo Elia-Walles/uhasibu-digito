@@ -3,6 +3,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useT } from "@/lib/hooks/useT";
 
 export interface AuthFeature {
   icon: LucideIcon;
@@ -24,6 +25,7 @@ const DEFAULT_TRUST = ["TRA-compliant", "TZS-native", "Bank-grade security"];
  * ambient blobs, grid texture, logo, animated headline, optional feature pills, trust strip.
  */
 export function AuthBrandPanel({ headline, subcopy, features, trust = DEFAULT_TRUST }: AuthBrandPanelProps) {
+  const t = useT();
   return (
     <div className="relative hidden lg:flex flex-col justify-between p-12 gradient-obsidian text-white overflow-hidden">
       {/* ambient accents */}
@@ -55,7 +57,7 @@ export function AuthBrandPanel({ headline, subcopy, features, trust = DEFAULT_TR
         />
         <div>
           <div className="font-display font-bold text-base leading-tight">Uhasibu Digito</div>
-          <div className="text-[11px] text-white/55 tracking-[0.18em] uppercase">Akaunti yako, nguvu yako</div>
+          <div className="text-[11px] text-white/55 tracking-[0.18em] uppercase">{t("Akaunti yako, nguvu yako")}</div>
         </div>
       </motion.div>
 
@@ -104,9 +106,9 @@ export function AuthBrandPanel({ headline, subcopy, features, trust = DEFAULT_TR
             transition={{ delay: 0.6 }}
             className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/70"
           >
-            {trust.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-ud-primary-glow" /> {t}
+            {trust.map((item) => (
+              <span key={item} className="inline-flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-ud-primary-glow" /> {t(item)}
               </span>
             ))}
           </motion.div>
@@ -114,7 +116,7 @@ export function AuthBrandPanel({ headline, subcopy, features, trust = DEFAULT_TR
       </div>
 
       <div className="relative z-10 text-xs text-white/40">
-        © {new Date().getFullYear()} Uhasibu Digito&trade;. All rights reserved · Made in Tanzania
+        © {new Date().getFullYear()} Uhasibu Digito&trade;. {t("All rights reserved")} · {t("Made in Tanzania")}
       </div>
     </div>
   );

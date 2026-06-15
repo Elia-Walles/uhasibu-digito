@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { formatAmount } from "@/lib/utils/currency";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 import type { Plan } from "@/lib/auth/tiers";
 
@@ -14,6 +15,7 @@ interface PricingCardProps {
 }
 
 export function PricingCard({ plan, isCurrent, loading, onSelect }: PricingCardProps) {
+  const t = useT();
   const dark = plan.highlighted;
   return (
     <motion.div
@@ -28,7 +30,7 @@ export function PricingCard({ plan, isCurrent, loading, onSelect }: PricingCardP
     >
       {plan.highlighted && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ud-primary text-white text-[11px] font-semibold uppercase tracking-[0.08em]">
-          <Sparkles className="w-3 h-3" /> Most popular
+          <Sparkles className="w-3 h-3" /> {t("Most popular")}
         </div>
       )}
       <div className={cn("text-xs font-semibold uppercase tracking-[0.08em]", dark ? "text-ud-primary-glow" : "text-ud-primary")}>
@@ -36,7 +38,7 @@ export function PricingCard({ plan, isCurrent, loading, onSelect }: PricingCardP
       </div>
       <div className="mt-3 flex items-baseline gap-1 flex-wrap">
         <span className="font-display font-extrabold text-2xl tabular-nums break-all">TZS {formatAmount(plan.priceTzs)}</span>
-        <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>/year</span>
+        <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>{t("/year")}</span>
       </div>
       <p className={cn("mt-1.5 text-[13px] leading-snug", dark ? "text-white/65" : "text-ud-text-secondary")}>{plan.tagline}</p>
 
@@ -62,7 +64,7 @@ export function PricingCard({ plan, isCurrent, loading, onSelect }: PricingCardP
           disabled={isCurrent}
           onClick={onSelect}
         >
-          {isCurrent ? "Current plan" : "Get started"}
+          {isCurrent ? t("Current plan") : t("Get started")}
         </Button>
       </div>
     </motion.div>

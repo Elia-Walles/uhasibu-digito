@@ -4,6 +4,7 @@ import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } fro
 import { Button } from "./Button";
 import { EmptyState } from "./EmptyState";
 import { Inbox } from "lucide-react";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 
 export interface Column<T> {
@@ -46,6 +47,7 @@ export function DataTable<T>({
   initialSortDir = "desc",
   rowKey,
 }: DataTableProps<T>) {
+  const t = useT();
   const [sort, setSort] = useState<{ key: string; dir: "asc" | "desc" } | null>(
     initialSortKey ? { key: initialSortKey, dir: initialSortDir } : null
   );
@@ -90,7 +92,7 @@ export function DataTable<T>({
   if (total === 0) {
     return (
       <div className={cn("bg-white rounded-2xl border border-ud-border", className)}>
-        <EmptyState icon={Inbox} title={emptyTitle} description={emptyDescription} />
+        <EmptyState icon={Inbox} title={t(emptyTitle)} description={t(emptyDescription)} />
       </div>
     );
   }
@@ -99,7 +101,7 @@ export function DataTable<T>({
     <div className={cn("bg-white rounded-2xl border border-ud-border overflow-hidden shadow-card", className)}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <caption className="sr-only">{caption}</caption>
+          <caption className="sr-only">{t(caption)}</caption>
           <thead>
             <tr className="bg-ud-surface-2 border-b border-ud-border">
               {columns.map((col) => (
@@ -170,8 +172,8 @@ export function DataTable<T>({
       </div>
       <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-3 border-t border-ud-border text-xs text-ud-text-muted bg-ud-surface-2/40">
         <div className="truncate">
-          Showing <span className="font-medium text-ud-text-primary">{start + 1}</span>–
-          <span className="font-medium text-ud-text-primary">{Math.min(start + pageSize, total)}</span> of{" "}
+          {t("Showing")} <span className="font-medium text-ud-text-primary">{start + 1}</span>–
+          <span className="font-medium text-ud-text-primary">{Math.min(start + pageSize, total)}</span> {t("of")}{" "}
           <span className="font-medium text-ud-text-primary">{total}</span>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -184,7 +186,7 @@ export function DataTable<T>({
             className="min-h-[44px] sm:min-h-0"
             aria-label="Previous page"
           >
-            <span className="hidden sm:inline">Previous</span>
+            <span className="hidden sm:inline">{t("Previous")}</span>
           </Button>
           <span className="font-medium text-ud-text-primary whitespace-nowrap">
             {page + 1} / {pageCount}
@@ -197,7 +199,7 @@ export function DataTable<T>({
             className="min-h-[44px] sm:min-h-0"
             aria-label="Next page"
           >
-            <span className="hidden sm:inline">Next</span>
+            <span className="hidden sm:inline">{t("Next")}</span>
             <ChevronRight className="w-3 h-3" />
           </Button>
         </div>

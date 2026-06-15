@@ -2,6 +2,7 @@
 import { AlertTriangle } from "lucide-react";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
+import { useT } from "@/lib/hooks/useT";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ export function ConfirmDialog({
   variant = "danger",
   onConfirm,
 }: ConfirmDialogProps) {
+  const t = useT();
   return (
     <Modal
       open={open}
@@ -33,7 +35,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {cancelLabel}
+            {t(cancelLabel)}
           </Button>
           <Button
             variant={variant === "danger" ? "danger" : "primary"}
@@ -42,7 +44,7 @@ export function ConfirmDialog({
               onOpenChange(false);
             }}
           >
-            {confirmLabel}
+            {t(confirmLabel)}
           </Button>
         </>
       }

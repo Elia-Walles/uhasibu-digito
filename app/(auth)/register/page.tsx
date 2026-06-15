@@ -10,7 +10,9 @@ import {
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
+import { useT } from "@/lib/hooks/useT";
 import { signIn } from "next-auth/react";
 import { registerTenant } from "@/lib/server/actions/auth";
 import { BUSINESS_TYPES } from "@/lib/server/schemas/auth";
@@ -30,6 +32,7 @@ const FEATURES = [
 
 export default function RegisterPage() {
   const router = useRouter();
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -59,7 +62,7 @@ export default function RegisterPage() {
       }
       const signInRes = await signIn("credentials", { email, password, redirect: false });
       if (signInRes?.error) {
-        toast.success("Account created please sign in");
+        toast.success(t("Account created please sign in"));
         router.push("/login");
         return;
       }
@@ -67,10 +70,10 @@ export default function RegisterPage() {
       // where it is auto-activated. Only forward a known plan key.
       const picked = new URLSearchParams(window.location.search).get("plan");
       const validPlan = ["starter", "business", "standard", "premium"].includes(picked ?? "") ? picked : null;
-      toast.success("Account created. Choose your plan to get started.");
+      toast.success(t("Account created. Choose your plan to get started."));
       router.push(validPlan ? `/select-plan?plan=${validPlan}` : "/select-plan");
     } catch {
-      toast.error("Could not create your account");
+      toast.error(t("Could not create your account"));
     } finally {
       setLoading(false);
     }
@@ -79,20 +82,23 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
       <AuthBrandPanel
-        headline="Run your shop and your books from one place."
-        subcopy="Start with Point of Sale, then grow into full Tanzanian-ready accounting, tax and payroll, all on Uhasibu Digito."
-        features={FEATURES}
+        headline={t("Run your shop and your books from one place.")}
+        subcopy={t("Start with Point of Sale, then grow into full Tanzanian-ready accounting, tax and payroll, all on Uhasibu Digito.")}
+        features={FEATURES.map((f) => ({ ...f, label: t(f.label) }))}
       />
 
       <div className="relative flex flex-col justify-center p-6 sm:p-10 lg:p-16 bg-ud-surface">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-ud-primary-50/60 to-transparent" />
 
-        <Link
-          href="/"
-          className="absolute top-5 right-5 inline-flex items-center gap-1.5 text-xs font-medium text-ud-text-muted hover:text-ud-primary transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to home
-        </Link>
+        <div className="absolute top-5 right-5 flex items-center gap-2">
+          <LanguageSwitcher />
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-ud-text-muted hover:text-ud-primary transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> {t("Back to home")}
+          </Link>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 14 }}
@@ -101,40 +107,40 @@ export default function RegisterPage() {
           className="relative w-full max-w-md mx-auto"
         >
           <div className="inline-flex items-center gap-1.5 rounded-full bg-ud-primary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ud-primary">
-            <Sparkles className="w-3 h-3" /> Get started free
+            <Sparkles className="w-3 h-3" /> {t("Get started free")}
           </div>
-          <h1 className="mt-4 font-display text-3xl font-extrabold text-ud-text-primary">Create your account</h1>
-          <p className="mt-1.5 text-sm text-ud-text-muted">Set up your company in a couple of minutes.</p>
+          <h1 className="mt-4 font-display text-3xl font-extrabold text-ud-text-primary">{t("Create your account")}</h1>
+          <p className="mt-1.5 text-sm text-ud-text-muted">{t("Set up your company in a couple of minutes.")}</p>
 
           <form onSubmit={onSubmit} className="mt-7 space-y-3">
             <div className="grid sm:grid-cols-2 gap-3">
-              <Input label="Full name"    value={name}        onChange={(e) => setName(e.target.value)}        prefixIcon={<UserIcon className="w-4 h-4" />} autoComplete="name" required />
-              <Input label="Company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} prefixIcon={<Building2 className="w-4 h-4" />} autoComplete="organization" required />
+              <Input label={t("Full name")}    value={name}        onChange={(e) => setName(e.target.value)}        prefixIcon={<UserIcon className="w-4 h-4" />} autoComplete="name" required />
+              <Input label={t("Company name")} value={companyName} onChange={(e) => setCompanyName(e.target.value)} prefixIcon={<Building2 className="w-4 h-4" />} autoComplete="organization" required />
             </div>
-            <Input label="Email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@company.co.tz" prefixIcon={<Mail className="w-4 h-4" />} autoComplete="email" required />
+            <Input label={t("Email")} value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@company.co.tz" prefixIcon={<Mail className="w-4 h-4" />} autoComplete="email" required />
             <div className="grid sm:grid-cols-2 gap-3">
               <Select
-                label="Business type"
+                label={t("Business type")}
                 value={businessType}
                 onValueChange={setBusinessType}
-                placeholder="Select type"
-                options={BUSINESS_TYPES.map((t) => ({ value: t, label: t }))}
+                placeholder={t("Select type")}
+                options={BUSINESS_TYPES.map((bt) => ({ value: bt, label: bt }))}
               />
               <Select
-                label="Region"
+                label={t("Region")}
                 value={region}
                 onValueChange={setRegion}
-                placeholder="Select region"
+                placeholder={t("Select region")}
                 options={TZ_REGIONS.map((r) => ({ value: r, label: r }))}
               />
             </div>
-            <Input label="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+255 712 345 678" prefixIcon={<Phone className="w-4 h-4" />} autoComplete="tel" />
+            <Input label={t("Phone (optional)")} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+255 712 345 678" prefixIcon={<Phone className="w-4 h-4" />} autoComplete="tel" />
             <Input
-              label="Password"
+              label={t("Password")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
-              placeholder="At least 8 characters"
+              placeholder={t("At least 8 characters")}
               prefixIcon={<Lock className="w-4 h-4" />}
               autoComplete="new-password"
               suffixIcon={
@@ -142,7 +148,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="text-ud-text-muted hover:text-ud-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ud-primary rounded"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("Hide password") : t("Show password")}
                   aria-pressed={showPassword}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -158,15 +164,15 @@ export default function RegisterPage() {
               fullWidth
               icon={!loading ? <ArrowRight className="w-4 h-4" /> : undefined}
             >
-              {loading ? "Creating account…" : "Create account"}
+              {loading ? t("Creating account…") : t("Create account")}
             </Button>
           </form>
 
           <div className="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-ud-text-faint">
-            <MapPin className="w-3 h-3" /> Tanzania-ready · TZS · TRA compliant
+            <MapPin className="w-3 h-3" /> {t("Tanzania-ready · TZS · TRA compliant")}
           </div>
           <div className="mt-4 text-sm text-ud-text-muted text-center">
-            Already have an account? <Link href="/login" className="text-ud-primary font-medium hover:underline">Sign in</Link>
+            {t("Already have an account?")} <Link href="/login" className="text-ud-primary font-medium hover:underline">{t("Sign in")}</Link>
           </div>
         </motion.div>
       </div>

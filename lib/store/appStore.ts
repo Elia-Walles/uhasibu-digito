@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AppNotification, InvoiceStatus } from "@/types";
+import type { Locale } from "@/lib/i18n/config";
 
 export type EmailNotificationPrefs = Record<InvoiceStatus, boolean>;
 
@@ -17,6 +18,8 @@ interface AppState {
   sidebarCollapsed: boolean;
   notifications: AppNotification[];
   emailNotifications: EmailNotificationPrefs;
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
   setSidebarOpen: (v: boolean) => void;
   toggleSidebar: () => void;
   toggleCollapse: () => void;
@@ -61,6 +64,8 @@ export const useAppStore = create<AppState>()(
         },
       ],
       emailNotifications: DEFAULT_EMAIL_PREFS,
+      locale: "en",
+      setLocale: (locale) => set({ locale }),
       setSidebarOpen: (v) => set({ sidebarOpen: v }),
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       toggleCollapse: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -81,6 +86,7 @@ export const useAppStore = create<AppState>()(
       partialize: (s) => ({
         sidebarCollapsed: s.sidebarCollapsed,
         emailNotifications: s.emailNotifications,
+        locale: s.locale,
       }),
     }
   )

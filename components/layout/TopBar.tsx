@@ -9,6 +9,8 @@ import { useAppStore } from "@/lib/store/appStore";
 import { useRouter } from "next/navigation";
 import { formatTZS } from "@/lib/utils/currency";
 import { useCompany } from "@/lib/hooks/useCompany";
+import { useT } from "@/lib/hooks/useT";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { cn } from "@/lib/utils/cn";
 
 export function TopBar() {
@@ -16,6 +18,7 @@ export function TopBar() {
   const user = useCurrentUser();
   const signOut = useSignOut();
   const { company } = useCompany();
+  const t = useT();
   const { toggleSidebar, notifications, sidebarCollapsed } = useAppStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const unread = notifications.filter((n) => !n.read).length;
@@ -40,7 +43,7 @@ export function TopBar() {
         {/* Search (hidden on mobile) */}
         <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-ud-surface-2 text-sm text-ud-text-muted min-w-[280px] cursor-pointer hover:bg-ud-primary-50 transition-colors">
           <Search className="w-4 h-4" />
-          <span>Search anything…</span>
+          <span>{t("Search anything…")}</span>
           <kbd className="ml-auto px-1.5 py-0.5 rounded bg-white border border-ud-border text-[10px] font-mono">⌘K</kbd>
         </div>
 
@@ -48,8 +51,11 @@ export function TopBar() {
           {/* Cash position pill */}
           <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-ud-primary-50 text-ud-primary text-xs font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-ud-primary-glow animate-pulse-soft" />
-            <span>Cash: <span className="font-mono tabular-nums">{formatTZS(312_800_000, true)}</span></span>
+            <span>{t("Cash:")} <span className="font-mono tabular-nums">{formatTZS(312_800_000, true)}</span></span>
           </div>
+
+          {/* Language */}
+          <LanguageSwitcher />
 
           {/* Notifications */}
           <DropdownMenu.Root open={showNotifications} onOpenChange={setShowNotifications}>
@@ -71,14 +77,14 @@ export function TopBar() {
                 className="z-50 w-[min(20rem,calc(100vw-2rem))] bg-white rounded-2xl shadow-elevated border border-ud-border overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-ud-border flex items-center justify-between">
-                  <span className="font-display font-bold text-sm">Notifications</span>
+                  <span className="font-display font-bold text-sm">{t("Notifications")}</span>
                   {unread > 0 && (
-                    <span className="text-xs bg-ud-danger/10 text-ud-danger px-2 py-0.5 rounded-full font-medium">{unread} new</span>
+                    <span className="text-xs bg-ud-danger/10 text-ud-danger px-2 py-0.5 rounded-full font-medium">{t("{n} new", { n: unread })}</span>
                   )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-sm text-ud-text-muted">No notifications</div>
+                    <div className="px-4 py-8 text-center text-sm text-ud-text-muted">{t("No notifications")}</div>
                   ) : (
                     notifications.map((n) => (
                       <Link
@@ -127,14 +133,14 @@ export function TopBar() {
                 <DropdownMenu.Content align="end" sideOffset={8} className="z-50 min-w-48 bg-white rounded-xl shadow-elevated border border-ud-border p-1">
                   <DropdownMenu.Item className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-ud-surface-2 cursor-pointer outline-none">
                     <UserIcon className="w-3.5 h-3.5" />
-                    Profile
+                    {t("Profile")}
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
                     className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-ud-surface-2 cursor-pointer outline-none"
                     onSelect={() => router.push("/settings/company")}
                   >
                     <SettingsIcon className="w-3.5 h-3.5" />
-                    Settings
+                    {t("Settings")}
                   </DropdownMenu.Item>
                   <DropdownMenu.Separator className="my-1 h-px bg-ud-border" />
                   <DropdownMenu.Item
@@ -144,7 +150,7 @@ export function TopBar() {
                     }}
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    Sign out
+                    {t("Sign out")}
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>

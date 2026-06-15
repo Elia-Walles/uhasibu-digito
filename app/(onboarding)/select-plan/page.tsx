@@ -10,7 +10,9 @@ import { normalizeTier, minTierForPath, type Tier } from "@/lib/auth/tiers";
 import { selectPlan } from "@/lib/server/actions/billing";
 import { usePublicPlans } from "@/lib/hooks/usePublicPlans";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useSignOut } from "@/lib/auth/client";
+import { useT } from "@/lib/hooks/useT";
 import toast from "react-hot-toast";
 
 function moduleLabel(path: string): string {
@@ -23,6 +25,7 @@ function SelectPlanInner() {
   const params = useSearchParams();
   const { data: session, update } = useSession();
   const signOut = useSignOut();
+  const t = useT();
   const { plans, loading } = usePublicPlans();
   const [pending, setPending] = useState<Tier | null>(null);
 
@@ -41,7 +44,7 @@ function SelectPlanInner() {
         return;
       }
       await update(); // re-reads the tier into the JWT (jwt callback `update` branch)
-      toast.success(`You're on the ${tier} plan. Welcome aboard!`);
+      toast.success(t("You're on the {tier} plan. Welcome aboard!", { tier }));
       router.push(from && requiredTier ? from : "/dashboard");
     } finally {
       setPending(null);
@@ -68,9 +71,12 @@ function SelectPlanInner() {
           <Image src="/images/uhasibu-digito-circle.png" alt="Uhasibu Digito" width={32} height={32} className="w-8 h-8 rounded-lg" priority />
           <span className="font-display font-bold">Uhasibu Digito</span>
         </div>
-        <button onClick={() => void signOut()} className="inline-flex items-center gap-1.5 text-sm text-ud-text-muted hover:text-ud-text-primary transition-colors">
-          <LogOut className="w-4 h-4" /> Sign out
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <button onClick={() => void signOut()} className="inline-flex items-center gap-1.5 text-sm text-ud-text-muted hover:text-ud-text-primary transition-colors">
+            <LogOut className="w-4 h-4" /> {t("Sign out")}
+          </button>
+        </div>
       </header>
 
       <main className="relative max-w-6xl mx-auto px-4 sm:px-8 py-10 sm:py-14">
@@ -81,11 +87,11 @@ function SelectPlanInner() {
           className="flex flex-col items-center text-center max-w-2xl mx-auto"
         >
           <div className="inline-flex items-center gap-1.5 rounded-full bg-ud-primary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ud-primary">
-            <Sparkles className="w-3 h-3" /> Choose your plan
+            <Sparkles className="w-3 h-3" /> {t("Choose your plan")}
           </div>
-          <h1 className="mt-4 font-display font-extrabold text-3xl sm:text-4xl text-balance">Choose the plan that fits your business</h1>
+          <h1 className="mt-4 font-display font-extrabold text-3xl sm:text-4xl text-balance">{t("Choose the plan that fits your business")}</h1>
           <p className="mt-3 text-ud-text-secondary text-balance">
-            Start with Point of Sale and upgrade any time as you grow into full accounting, tax and payroll.
+            {t("Start with Point of Sale and upgrade any time as you grow into full accounting, tax and payroll.")}
           </p>
         </motion.div>
 
@@ -93,8 +99,8 @@ function SelectPlanInner() {
           <div className="mt-6 mx-auto max-w-2xl flex items-center gap-2.5 rounded-2xl border border-ud-warning/30 bg-ud-warning-bg px-4 py-3 text-sm text-ud-text-secondary">
             <Lock className="w-4 h-4 text-ud-warning flex-shrink-0" />
             <span>
-              <strong className="font-semibold">{moduleLabel(from)}</strong> needs the{" "}
-              <strong className="font-semibold capitalize">{requiredTier}</strong> plan or higher. Pick a plan below to unlock it.
+              <strong className="font-semibold">{t(moduleLabel(from))}</strong> {t("needs the")}{" "}
+              <strong className="font-semibold capitalize">{requiredTier}</strong> {t("plan or higher. Pick a plan below to unlock it.")}
             </span>
           </div>
         )}
@@ -114,7 +120,7 @@ function SelectPlanInner() {
         </div>
 
         <p className="mt-8 text-center text-xs text-ud-text-muted">
-          Prices in Tanzanian Shillings (TZS), billed yearly. You can change your plan at any time from Settings.
+          {t("Prices in Tanzanian Shillings (TZS), billed yearly. You can change your plan at any time from Settings.")}
         </p>
       </main>
     </div>

@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Building2, Users, CreditCard, Receipt, Layers, ScrollText, Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
 
 interface AdminNavItem {
@@ -28,6 +29,7 @@ const ADMIN_NAV: AdminNavItem[] = [
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const t = useT();
   const activeHref = ADMIN_NAV.map((i) => i.href)
     .filter((href) => (href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(href + "/")))
     .sort((a, b) => b.length - a.length)[0];
@@ -45,7 +47,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         />
         <div className="min-w-0">
           <div className="font-display font-bold text-sm leading-tight">Uhasibu Digito</div>
-          <div className="text-[10px] text-ud-gold tracking-[0.14em] uppercase truncate">Platform Admin</div>
+          <div className="text-[10px] text-ud-gold tracking-[0.14em] uppercase truncate">{t("Platform Admin")}</div>
         </div>
       </div>
 
@@ -73,7 +75,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
                   />
                 )}
                 <Icon className={cn("w-4 h-4 flex-shrink-0 relative z-10", isActive && "text-white")} />
-                <span className="relative z-10 truncate flex-1">{item.label}</span>
+                <span className="relative z-10 truncate flex-1">{t(item.label)}</span>
               </Link>
             );
           })}
@@ -82,7 +84,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="px-4 py-3 border-t border-white/5 flex-shrink-0">
         <Link href="/dashboard" className="text-xs text-white/45 hover:text-white transition-colors">
-          ← Back to app
+          ← {t("Back to app")}
         </Link>
       </div>
     </nav>

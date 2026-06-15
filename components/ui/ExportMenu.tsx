@@ -3,6 +3,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Download, FileText, FileSpreadsheet, FileJson, Printer, ShieldCheck } from "lucide-react";
 import { Button } from "./Button";
 import { useTier } from "@/lib/hooks/useTier";
+import { useT } from "@/lib/hooks/useT";
 import toast from "react-hot-toast";
 
 interface ExportMenuProps {
@@ -15,12 +16,13 @@ interface ExportMenuProps {
 export function ExportMenu({ onApplyStamp, fileLabel = "report", onExportExcel }: ExportMenuProps) {
   // Digital Stamp is a Premium-tier feature.
   const { atLeast } = useTier();
+  const t = useT();
   const canStamp = atLeast("premium");
 
   function fakeExport(kind: string) {
-    const t = toast.loading(`Generating ${kind} export…`);
+    const id = toast.loading(t("Generating {kind} export…", { kind }));
     setTimeout(() => {
-      toast.success(`${fileLabel} exported as ${kind.toUpperCase()}`, { id: t });
+      toast.success(t("{file} exported as {kind}", { file: fileLabel, kind: kind.toUpperCase() }), { id });
     }, 1100);
   }
 
@@ -29,13 +31,13 @@ export function ExportMenu({ onApplyStamp, fileLabel = "report", onExportExcel }
       fakeExport("Excel");
       return;
     }
-    const t = toast.loading("Generating Excel workbook…");
+    const id = toast.loading(t("Generating Excel workbook…"));
     try {
       await onExportExcel();
-      toast.success(`${fileLabel} exported as XLSX`, { id: t });
+      toast.success(t("{file} exported as {kind}", { file: fileLabel, kind: "XLSX" }), { id });
     } catch (err) {
       console.error(err);
-      toast.error("Excel export failed", { id: t });
+      toast.error(t("Excel export failed"), { id });
     }
   }
 
@@ -43,7 +45,7 @@ export function ExportMenu({ onApplyStamp, fileLabel = "report", onExportExcel }
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <Button variant="outline" size="md" icon={<Download className="w-4 h-4" />}>
-          Export
+          {t("Export")}
         </Button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -53,23 +55,23 @@ export function ExportMenu({ onApplyStamp, fileLabel = "report", onExportExcel }
           className="z-50 min-w-48 bg-white rounded-xl shadow-elevated border border-ud-border p-1"
         >
           <Item icon={<FileText className="w-3.5 h-3.5" />} onClick={() => fakeExport("PDF")}>
-            Export as PDF
+            {t("Export as PDF")}
           </Item>
           <Item icon={<FileSpreadsheet className="w-3.5 h-3.5" />} onClick={() => { void runExcelExport(); }}>
-            Export as Excel
+            {t("Export as Excel")}
           </Item>
           <Item icon={<FileJson className="w-3.5 h-3.5" />} onClick={() => fakeExport("CSV")}>
-            Export as CSV
+            {t("Export as CSV")}
           </Item>
           <DropdownMenu.Separator className="my-1 h-px bg-ud-border" />
           <Item icon={<Printer className="w-3.5 h-3.5" />} onClick={() => window.print()}>
-            Print
+            {t("Print")}
           </Item>
           {onApplyStamp && canStamp && (
             <>
               <DropdownMenu.Separator className="my-1 h-px bg-ud-border" />
               <Item icon={<ShieldCheck className="w-3.5 h-3.5 text-ud-gold-dark" />} onClick={onApplyStamp}>
-                Apply Digital Stamp
+                {t("Apply Digital Stamp")}
               </Item>
             </>
           )}

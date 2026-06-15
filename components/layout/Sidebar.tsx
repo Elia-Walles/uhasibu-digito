@@ -16,6 +16,7 @@ import { useIsMobile } from "@/lib/hooks/useMediaQuery";
 import { useCompany } from "@/lib/hooks/useCompany";
 import { useCurrentUser } from "@/lib/auth/client";
 import { useTier } from "@/lib/hooks/useTier";
+import { useT } from "@/lib/hooks/useT";
 import { TIER_RANK, type Tier } from "@/lib/auth/tiers";
 import { cn } from "@/lib/utils/cn";
 
@@ -103,6 +104,7 @@ export function Sidebar() {
   const { company } = useCompany();
   const { tier } = useTier();
   const user = useCurrentUser();
+  const t = useT();
 
   const width = isMobile ? "w-[260px]" : sidebarCollapsed ? "w-[68px]" : "w-[260px]";
 
@@ -163,7 +165,7 @@ export function Sidebar() {
         {sections.map((section) => (
           <div key={section.label} className="mb-4 last:mb-0">
             {!sidebarCollapsed && (
-              <div className="px-5 mb-1.5 text-[10px] tracking-[0.14em] text-white/35 font-semibold">{section.label}</div>
+              <div className="px-5 mb-1.5 text-[10px] tracking-[0.14em] text-white/35 font-semibold">{t(section.label)}</div>
             )}
             <div className="space-y-0.5 px-2">
               {section.items.map((item) => {
@@ -192,7 +194,7 @@ export function Sidebar() {
                     <Icon className={cn("w-4 h-4 flex-shrink-0 relative z-10", isActive && "text-white")} />
                     {!sidebarCollapsed && (
                       <>
-                        <span className="relative z-10 truncate flex-1">{item.label}</span>
+                        <span className="relative z-10 truncate flex-1">{t(item.label)}</span>
                         {item.badge && (
                           <span
                             className={cn(
@@ -221,7 +223,7 @@ export function Sidebar() {
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs text-white/55 hover:bg-white/5 hover:text-white transition-colors"
           >
             <ChevronLeft className={cn("w-3.5 h-3.5 transition-transform", sidebarCollapsed && "rotate-180")} />
-            {!sidebarCollapsed && <span>Collapse</span>}
+            {!sidebarCollapsed && <span>{t("Collapse")}</span>}
           </button>
         </div>
       )}
