@@ -35,16 +35,22 @@ export async function createBranch(input: unknown): Promise<Result<Branch>> {
     if (clash) return err(`Branch code ${code} already exists`);
     // If this is the tenant's first branch, make it primary regardless of input.
     const count = await db.branch.count();
-    const created = await db.branch.create({
-      data: {
-        tenantId: ctx.tenantId,
-        name: d.name,
-        code,
-        region: d.region ?? "",
-        address: d.address ?? "",
-        phone: d.phone ?? "",
-        isPrimary: d.isPrimary ?? count === 0,
-      },
+    const isPrimary = d.isPrimary ?? count === 0;
+    const created = await db.$transaction(async (tx) => {
+      if (isPrimary) {
+        await tx.branch.updateMany({ where: { tenantId: ctx.tenantId }, data: { isPrimary: false } });
+      }
+      return tx.branch.create({
+        data: {
+          tenantId: ctx.tenantId,
+          name: d.name,
+          code,
+          region: d.region ?? "",
+          address: d.address ?? "",
+          phone: d.phone ?? "",
+          isPrimary,
+        },
+      });
     });
     return ok(rowToBranch(created));
   });
@@ -58,12 +64,36 @@ export async function updateBranch(input: unknown): Promise<Result<Branch>> {
   for (const [k, v] of Object.entries(rest)) {
     if (v !== undefined && k !== "code") data[k] = v;
   }
-  return withAuth(async () => {
+  return withAuth(async (ctx) => {
     try {
-      const updated = await db.branch.update({ where: { id }, data });
+      const updated = await db.$transaction(async (tx) => {
+        // Only one branch can be primary: promoting this one demotes the others.
+        if (data.isPrimary === true) {
+          await tx.branch.updateMany({ where: { tenantId: ctx.tenantId, id: { not: id } }, data: { isPrimary: false } });
+        }
+        return tx.branch.update({ where: { id }, data });
+      });
       return ok(rowToBranch(updated));
     } catch {
       return err("Branch not found");
     }
+  });
+}
+
+export async function deleteBranch(input: unknown): Promise<Result<{ id: string }>> {
+  const id = typeof input === "object" && input !== null && "id" in input ? String((input as { id: unknown }).id) : "";
+  if (!id) return err("Branch id is required");
+  return withAuth(async () => {
+    const branch = await db.branch.findFirst({ where: { id } });
+    if (!branch) return err("Branch not found");
+    const [sales, stock] = await Promise.all([
+      db.pOSSale.count({ where: { branchId: id } }),
+      db.branchStock.count({ where: { branchId: id, onHand: { gt: 0 } } }),
+    ]);
+    if (sales > 0) return err("This branch has sales history and can't be deleted.");
+    if (stock > 0) return err("This branch still holds stock. Transfer or zero it before deleting.");
+    await db.branchStock.deleteMany({ where: { branchId: id } });
+    await db.branch.delete({ where: { id } });
+    return ok({ id });
   });
 }

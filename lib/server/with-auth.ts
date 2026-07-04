@@ -23,6 +23,7 @@ export async function withAuth<T>(fn: (ctx: RequestContext) => Promise<T>): Prom
     tenantId: user.tenantId,
     userId: user.id,
     role: user.role,
+    userName: user.name ?? "",
   };
   return runWithContext(ctx, () => fn(ctx));
 }

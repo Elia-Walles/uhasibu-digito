@@ -2,10 +2,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
-import { ShoppingCart, BookOpen, Wallet, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
+import { ShoppingCart, BookOpen, Wallet, Sparkles, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { HeroBackground } from "@/components/landing/HeroBackground";
 import { useT } from "@/lib/hooks/useT";
+
+const TRUST = ["TRA-compliant", "TZS-native", "Bank-grade security"];
 
 const FEATURES = [
   { icon: ShoppingCart, title: "Point of Sale", desc: "Sell, track stock and print EFD receipts across every branch." },
@@ -45,21 +48,20 @@ export function Landing() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-ud-primary opacity-10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-[28rem] h-[28rem] rounded-full bg-ud-gold opacity-10 blur-3xl" />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-8 pt-16 sm:pt-24 pb-12 text-center">
+        <HeroBackground variant="light" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-8 pt-16 sm:pt-24 pb-24 sm:pb-32 text-center">
           <motion.div
             initial={reduce ? false : { opacity: 0, y: 16 }}
             animate={reduce ? {} : { opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ud-primary-50 text-ud-primary text-xs font-semibold uppercase tracking-[0.08em]">
-              <ShieldCheck className="w-3.5 h-3.5" /> {t("Akaunti yako, nguvu yako")}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold uppercase tracking-[0.08em]">
+              <ShieldCheck className="w-3.5 h-3.5 text-ud-primary-glow" /> {t("Akaunti yako, nguvu yako")}
             </div>
-            <h1 className="mt-5 font-display font-extrabold text-4xl sm:text-6xl leading-[1.05] text-balance">
+            <h1 className="mt-5 font-display font-extrabold text-4xl sm:text-6xl leading-[1.05] text-balance text-white">
               {t("Tanzania's intelligent financial platform")}
             </h1>
-            <p className="mt-5 max-w-2xl mx-auto text-ud-text-secondary text-base sm:text-lg text-balance">
+            <p className="mt-5 max-w-2xl mx-auto text-white/80 text-base sm:text-lg text-balance">
               {t("Twenty modules, one platform from Point of Sale to general ledger, payroll, TRA compliance and a smart AI assistant.")}
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -67,15 +69,28 @@ export function Landing() {
                 <Button variant="primary" size="lg" icon={<ArrowRight className="w-4 h-4" />}>{t("Start free")}</Button>
               </Link>
               <Link href="/pricing">
-                <Button variant="outline" size="lg">{t("View pricing")}</Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="bg-white/10 border-white/30 text-white backdrop-blur hover:bg-white/20 hover:text-white hover:border-white/40"
+                >
+                  {t("View pricing")}
+                </Button>
               </Link>
+            </div>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs sm:text-sm text-white/75">
+              {TRUST.map((item) => (
+                <span key={item} className="inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-ud-primary-glow" /> {t(item)}
+                </span>
+              ))}
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* Features */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-8 py-12">
+      <section className="relative z-10 max-w-6xl mx-auto px-4 sm:px-8 -mt-14 sm:-mt-20 pb-12">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((f, i) => {
             const Icon = f.icon;
@@ -84,9 +99,10 @@ export function Landing() {
                 key={f.title}
                 {...rise}
                 transition={{ ...(reduce ? {} : { duration: 0.45, delay: i * 0.06 }) }}
-                className="rounded-2xl bg-ud-surface border border-ud-border shadow-card p-5"
+                {...(reduce ? {} : { whileHover: { y: -3 } })}
+                className="group rounded-2xl bg-ud-surface border border-ud-border shadow-card p-5 transition-shadow hover:shadow-card-hover"
               >
-                <div className="w-10 h-10 rounded-xl bg-ud-primary-50 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-ud-primary-50 flex items-center justify-center transition-colors group-hover:bg-ud-primary-100">
                   <Icon className="w-5 h-5 text-ud-primary" />
                 </div>
                 <h3 className="mt-3 font-display font-bold">{t(f.title)}</h3>

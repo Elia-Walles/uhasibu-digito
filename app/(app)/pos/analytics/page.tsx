@@ -165,23 +165,51 @@ export default function POSAnalyticsPage() {
             </div>
           </div>
 
-          {/* Top items */}
-          <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
-            <h3 className="font-display font-bold text-base mb-4">{t("Top selling products")}</h3>
-            <div className="space-y-2.5">
-              {analytics.topItems.map((item) => {
-                const max = analytics.topItems[0]?.sales || 1;
-                return (
-                  <div key={item.itemName} className="flex items-center gap-3">
-                    <div className="w-32 sm:w-44 truncate text-sm">{item.itemName}</div>
-                    <div className="flex-1 h-2 rounded-full bg-ud-surface-2 overflow-hidden">
-                      <div className="h-full rounded-full bg-ud-primary" style={{ width: `${Math.max(4, (item.sales / max) * 100)}%` }} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Top items */}
+            <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
+              <h3 className="font-display font-bold text-base mb-4">{t("Top selling products")}</h3>
+              <div className="space-y-2.5">
+                {analytics.topItems.map((item) => {
+                  const max = analytics.topItems[0]?.sales || 1;
+                  return (
+                    <div key={item.itemName} className="flex items-center gap-3">
+                      <div className="w-28 sm:w-40 truncate text-sm">{item.itemName}</div>
+                      <div className="flex-1 h-2 rounded-full bg-ud-surface-2 overflow-hidden">
+                        <div className="h-full rounded-full bg-ud-primary" style={{ width: `${Math.max(4, (item.sales / max) * 100)}%` }} />
+                      </div>
+                      <div className="w-14 text-right text-xs font-mono text-ud-text-muted">{item.quantity}×</div>
+                      <div className="w-24 text-right text-sm font-mono font-medium">{formatTZS(item.sales, true)}</div>
                     </div>
-                    <div className="w-16 text-right text-xs font-mono text-ud-text-muted">{item.quantity}×</div>
-                    <div className="w-24 text-right text-sm font-mono font-medium">{formatTZS(item.sales, true)}</div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sales by cashier */}
+            <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
+              <h3 className="font-display font-bold text-base mb-4">{t("Sales by cashier")}</h3>
+              <div className="space-y-2.5">
+                {analytics.byCashier.map((c) => {
+                  const max = analytics.byCashier[0]?.sales || 1;
+                  return (
+                    <div key={c.cashierId ?? c.cashierName} className="flex items-center gap-3">
+                      <div className="w-28 sm:w-40 truncate text-sm">{c.cashierName}</div>
+                      <div className="flex-1 h-2 rounded-full bg-ud-surface-2 overflow-hidden">
+                        <div className="h-full rounded-full bg-ud-gold" style={{ width: `${Math.max(4, (c.sales / max) * 100)}%` }} />
+                      </div>
+                      <div className="w-14 text-right text-xs font-mono text-ud-text-muted">{c.transactions}×</div>
+                      <div className="w-24 text-right text-sm font-mono font-medium">{formatTZS(c.sales, true)}</div>
+                    </div>
+                  );
+                })}
+                {analytics.byCashier.length === 0 && <div className="text-sm text-ud-text-muted">{t("No cashier data yet.")}</div>}
+                {analytics.refundedCount > 0 && (
+                  <div className="pt-2 mt-2 border-t border-ud-border text-xs text-ud-text-muted">
+                    {t("{n} refunded sale(s) excluded from these totals.", { n: analytics.refundedCount })}
                   </div>
-                );
-              })}
+                )}
+              </div>
             </div>
           </div>
         </div>

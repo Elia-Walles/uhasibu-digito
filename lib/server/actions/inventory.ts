@@ -2,11 +2,11 @@
 import type { InventoryItem as DbItem, StockMovement as DbMovement } from "@prisma/client";
 import { db } from "@/lib/server/db";
 import { withAuth } from "@/lib/server/with-auth";
-import { applyStockMovement } from "@/lib/server/stock-movement";
-import { createItemSchema, recordMovementSchema } from "@/lib/server/schemas/inventory";
+import { applyStockMovement, StockError } from "@/lib/server/stock-movement";
+import { createItemSchema, updateItemSchema, deleteItemSchema, recordMovementSchema } from "@/lib/server/schemas/inventory";
 import { ok, err, type Result } from "@/lib/server/result";
 import { decToNum, dateOnly } from "@/lib/server/serialize";
-import type { InventoryItem, StockMovement, CostingMethod, StockStatus, MovementType } from "@/types";
+import type { InventoryItem, StockMovement, BranchStock, CostingMethod, StockStatus, MovementType } from "@/types";
 
 function statusFor(onHand: number, reorderLevel: number): StockStatus {
   if (onHand <= 0) return "OutOfStock";
@@ -39,6 +39,7 @@ function rowToMovement(r: DbMovement): StockMovement {
     date: dateOnly(r.date),
     reference: r.reference,
     itemId: r.itemId,
+    branchId: r.branchId,
     itemName: r.itemName,
     itemCode: r.itemCode,
     type: r.type as MovementType,
@@ -94,13 +95,81 @@ export async function createInventoryItem(input: unknown): Promise<Result<Invent
   });
 }
 
+export async function updateInventoryItem(input: unknown): Promise<Result<InventoryItem>> {
+  const parsed = updateItemSchema.safeParse(input);
+  if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+  const { id, ...fields } = parsed.data;
+  return withAuth(async () => {
+    const item = await db.inventoryItem.findFirst({ where: { id } });
+    if (!item) return err("Item not found");
+
+    const onHand = decToNum(item.onHand);
+    const reorderLevel = fields.reorderLevel ?? decToNum(item.reorderLevel);
+    const unitCost = fields.unitCost ?? decToNum(item.unitCost);
+
+    const data: Record<string, string | number> = {};
+    for (const [k, v] of Object.entries(fields)) if (v !== undefined) data[k] = v;
+    data.status = statusFor(onHand, reorderLevel);
+    data.totalValue = onHand * unitCost;
+
+    const updated = await db.inventoryItem.update({ where: { id }, data });
+    return ok(rowToItem(updated));
+  });
+}
+
+export async function deleteInventoryItem(input: unknown): Promise<Result<{ id: string }>> {
+  const parsed = deleteItemSchema.safeParse(input);
+  if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+  const { id } = parsed.data;
+  return withAuth(async () => {
+    const item = await db.inventoryItem.findFirst({ where: { id } });
+    if (!item) return err("Item not found");
+    const [movements, saleLines] = await Promise.all([
+      db.stockMovement.count({ where: { itemId: id } }),
+      db.pOSSaleLine.count({ where: { itemId: id } }),
+    ]);
+    if (movements > 0 || saleLines > 0) {
+      return err("This item has stock movements or sales history and can't be deleted. Zero its stock and stop using it instead.");
+    }
+    if (decToNum(item.onHand) > 0) return err("Set on-hand to zero before deleting this item.");
+    await db.branchStock.deleteMany({ where: { itemId: id } });
+    await db.inventoryItem.delete({ where: { id } });
+    return ok({ id });
+  });
+}
+
+export async function listBranchStock(itemId?: string): Promise<BranchStock[]> {
+  return withAuth(async () => {
+    const rows = await db.branchStock.findMany({
+      where: itemId ? { itemId } : {},
+      orderBy: { createdAt: "asc" },
+    });
+    return rows.map((r) => ({ id: r.id, branchId: r.branchId, itemId: r.itemId, onHand: decToNum(r.onHand) }));
+  });
+}
+
 export async function recordStockMovement(input: unknown): Promise<Result<{ itemId: string; newOnHand: number }>> {
   const parsed = recordMovementSchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
   const d = parsed.data;
   return withAuth(async (ctx) => {
-    const result = await db.$transaction((tx) => applyStockMovement(tx, ctx.tenantId, d));
-    if (!result) return err("Item not found");
-    return ok({ itemId: d.itemId, newOnHand: result.newOnHand });
+    try {
+      const result = await db.$transaction((tx) =>
+        applyStockMovement(tx, ctx.tenantId, {
+          itemId: d.itemId,
+          type: d.type,
+          quantity: d.quantity,
+          unitCost: d.unitCost,
+          narration: d.narration,
+          ...(d.branchId ? { branchId: d.branchId } : {}),
+          enforceStock: d.type === "OUT",
+        }),
+      );
+      if (!result) return err("Item not found");
+      return ok({ itemId: d.itemId, newOnHand: result.newOnHand });
+    } catch (e) {
+      if (e instanceof StockError) return err(e.message);
+      throw e;
+    }
   });
 }

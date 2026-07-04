@@ -209,6 +209,7 @@ export interface StockMovement {
   date: string;
   reference: string;
   itemId: string;
+  branchId: string | null;
   itemName: string;
   itemCode: string;
   type: MovementType;
@@ -217,6 +218,14 @@ export interface StockMovement {
   totalValue: number;
   balanceAfter: number;
   narration: string;
+}
+
+/** Per-branch on-hand quantity for an item (global total lives on InventoryItem.onHand). */
+export interface BranchStock {
+  id: string;
+  branchId: string;
+  itemId: string;
+  onHand: number;
 }
 
 // ---------- Point of Sale ----------
@@ -239,9 +248,13 @@ export interface POSSaleLine {
   quantity: number;
   unitPrice: number;
   unitCost: number;
+  discountPct: number;
+  vatPct: number;
   lineTotal: number;
   lineCost: number;
 }
+
+export type POSSaleStatus = "completed" | "refunded";
 
 export interface POSSale {
   id: string;
@@ -251,12 +264,22 @@ export interface POSSale {
   invoiceId: string | null;
   cashierId: string | null;
   cashierName: string;
+  customerId: string | null;
   customerName: string;
   paymentMethod: PaymentMethod;
+  paymentRef: string;
+  status: POSSaleStatus;
+  refundedAt: string | null;
   soldAt: string;
+  subtotal: number;
+  discount: number;
+  vatAmount: number;
   total: number;
+  amountTendered: number | null;
+  changeDue: number | null;
   costOfSales: number;
   grossProfit: number;
+  efdNumber: string;
   lines: POSSaleLine[];
 }
 
@@ -268,8 +291,10 @@ export interface POSAnalytics {
   marginPct: number;
   transactionCount: number;
   averageBasket: number;
+  refundedCount: number;
   byBranch: { branchId: string | null; branchName: string; sales: number; grossProfit: number; transactions: number }[];
   byPaymentMethod: { method: PaymentMethod; sales: number; transactions: number }[];
+  byCashier: { cashierId: string | null; cashierName: string; sales: number; transactions: number }[];
   daily: { date: string; sales: number; costOfSales: number; grossProfit: number }[];
   topItems: { itemName: string; quantity: number; sales: number; grossProfit: number }[];
 }

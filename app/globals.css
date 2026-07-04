@@ -210,3 +210,17 @@ body {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ===== Receipt printing ===== */
+/* When printing a POS receipt, hide everything except the receipt body. */
+@media print {
+  body * { visibility: hidden; }
+  #receipt-print, #receipt-print * { visibility: visible; }
+  #receipt-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 16px;
+  }
+}

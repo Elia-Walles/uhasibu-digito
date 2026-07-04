@@ -4,11 +4,11 @@ import { TIER_RANK, minTierForPath, normalizeTier } from "@/lib/auth/tiers";
 // Edge-safe Auth.js config shared with the proxy/middleware. NO Node-only imports
 // here (no Prisma, no bcrypt) it runs on the edge runtime and only decodes the JWT
 // cookie to decide route access. lib/auth/tiers.ts is pure and edge-safe.
-const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/legal", "/pricing"];
+const PUBLIC_PREFIXES = ["/login", "/register", "/verify-email", "/forgot-password", "/reset-password", "/legal", "/pricing"];
 
 // Routes any authenticated user may reach regardless of subscription tier (so a
-// plan-less `free` account can still pick a plan / manage settings).
-const TIER_EXEMPT_PREFIXES = ["/select-plan", "/settings"];
+// plan-less `free` account can still complete onboarding / pick a plan / manage settings).
+const TIER_EXEMPT_PREFIXES = ["/onboarding", "/select-plan", "/settings"];
 
 export const authConfig = {
   pages: { signIn: "/login" },
@@ -36,11 +36,12 @@ export const authConfig = {
         return true;
       }
 
-      // Tier gating: redirect to the pricing page if the plan is below the route's requirement.
+      // Tier gating: a not-yet-onboarded (`free`) or under-tier account is sent to the onboarding
+      // wizard to complete business info + pick a plan. (Plan changes later use /select-plan.)
       const tier = normalizeTier(auth.user.tier);
       const required = minTierForPath(pathname);
       if (TIER_RANK[tier] < TIER_RANK[required]) {
-        const url = new URL("/select-plan", nextUrl.origin);
+        const url = new URL("/onboarding", nextUrl.origin);
         url.searchParams.set("from", pathname);
         return Response.redirect(url);
       }

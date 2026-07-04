@@ -10,6 +10,9 @@ export interface RequestContext {
   tenantId: string;
   userId: string;
   role: UserRole;
+  /** Display name of the acting user (e.g. the POS cashier). Set by withAuth; may be absent
+   *  for the few contexts constructed manually (upload route, tests). */
+  userName?: string;
 }
 
 // Cache the AsyncLocalStorage on globalThis so HMR (dev/Turbopack) can't create a second

@@ -11,6 +11,8 @@ export const STANDARD_COA: COAAccount[] = [
   { code: "1110", name: "CRDB TZS Account",            type: "Asset",       parentCode: "1100", openingBalance: 0, movement: 0, closingBalance: 0, level: 2 },
   { code: "1120", name: "NMB TZS Account",             type: "Asset",       parentCode: "1100", openingBalance: 0, movement: 0, closingBalance: 0, level: 2 },
   { code: "1130", name: "Stanbic USD Account",         type: "Asset",       parentCode: "1100", openingBalance: 0, movement: 0, closingBalance: 0, level: 2 },
+  { code: "1140", name: "Cash on Hand",                type: "Asset",       parentCode: "1100", openingBalance: 0, movement: 0, closingBalance: 0, level: 2 },
+  { code: "1150", name: "Mobile Money (M-Pesa)",       type: "Asset",       parentCode: "1100", openingBalance: 0, movement: 0, closingBalance: 0, level: 2 },
   { code: "1200", name: "Trade Receivables",           type: "Asset",       parentCode: "1000", openingBalance: 0, movement: 0, closingBalance: 0, level: 1 },
   { code: "1300", name: "Inventory",                   type: "Asset",       parentCode: "1000", openingBalance: 0, movement: 0, closingBalance: 0, level: 1 },
   { code: "1500", name: "Property, Plant & Equipment", type: "Asset",       parentCode: "1000", openingBalance: 0, movement: 0, closingBalance: 0, level: 1 },

@@ -1,27 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
-  Mail, Lock, User as UserIcon, Building2, Phone, MapPin,
-  Eye, EyeOff, ArrowLeft, ArrowRight, ShoppingCart, BookOpen, Wallet, Sparkles,
+  Mail, Lock, MapPin, Eye, EyeOff, ArrowLeft, ArrowRight,
+  ShoppingCart, BookOpen, Wallet, Sparkles, Wand2,
 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Select";
+import { PasswordChecklist } from "@/components/ui/PasswordChecklist";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { useT } from "@/lib/hooks/useT";
-import { signIn } from "next-auth/react";
-import { registerTenant } from "@/lib/server/actions/auth";
-import { BUSINESS_TYPES } from "@/lib/server/schemas/auth";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { registerCredentials, checkEmailAvailability } from "@/lib/server/actions/auth";
+import { isStrongPassword, generateStrongPassword } from "@/lib/utils/password";
 import toast from "react-hot-toast";
 
-const TZ_REGIONS = [
-  "Dar es Salaam", "Arusha", "Mwanza", "Dodoma", "Mbeya", "Morogoro", "Tanga",
-  "Kilimanjaro", "Zanzibar", "Geita", "Kagera", "Tabora", "Other",
-];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+type EmailStatus = "idle" | "checking" | "available" | "taken";
 
 const FEATURES = [
   { icon: ShoppingCart, label: "Point of Sale" },
@@ -33,45 +32,71 @@ const FEATURES = [
 export default function RegisterPage() {
   const router = useRouter();
   const t = useT();
+  const reduce = useReducedMotion();
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [businessType, setBusinessType] = useState("");
-  const [region, setRegion] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<EmailStatus>("idle");
+
+  const debouncedEmail = useDebounce(email, 400);
+
+  // Live availability check: once the debounced email is a plausible address, ask the server
+  // whether it's free so a duplicate surfaces before submit. Guarded against out-of-order results.
+  useEffect(() => {
+    if (!EMAIL_RE.test(debouncedEmail)) {
+      setEmailStatus("idle");
+      return;
+    }
+    let cancelled = false;
+    setEmailStatus("checking");
+    checkEmailAvailability({ email: debouncedEmail })
+      .then((res) => {
+        if (!cancelled) setEmailStatus(res.available ? "available" : "taken");
+      })
+      .catch(() => {
+        if (!cancelled) setEmailStatus("idle");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedEmail]);
+
+  const passwordValid = isStrongPassword(password);
+  const confirmMismatch = confirm.length > 0 && confirm !== password;
+  const canSubmit =
+    EMAIL_RE.test(email) &&
+    emailStatus !== "taken" &&
+    emailStatus !== "checking" &&
+    passwordValid &&
+    password === confirm;
+
+  const emailFeedback: { error?: string; hint?: string } =
+    emailStatus === "taken"
+      ? { error: t("This email is already registered") }
+      : emailStatus === "checking"
+        ? { hint: t("Checking availability…") }
+        : emailStatus === "available"
+          ? { hint: t("Email available") }
+          : {};
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!canSubmit) return;
     setLoading(true);
     try {
-      const res = await registerTenant({
-        name,
-        companyName,
-        email,
-        password,
-        businessType: businessType as (typeof BUSINESS_TYPES)[number],
-        region,
-        ...(phone ? { phone } : {}),
-      });
+      const res = await registerCredentials({ email, password });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      const signInRes = await signIn("credentials", { email, password, redirect: false });
-      if (signInRes?.error) {
-        toast.success(t("Account created please sign in"));
-        router.push("/login");
-        return;
-      }
-      // Carry a plan picked on the public pricing page (/register?plan=key) into onboarding,
-      // where it is auto-activated. Only forward a known plan key.
-      const picked = new URLSearchParams(window.location.search).get("plan");
-      const validPlan = ["starter", "business", "standard", "premium"].includes(picked ?? "") ? picked : null;
-      toast.success(t("Account created. Choose your plan to get started."));
-      router.push(validPlan ? `/select-plan?plan=${validPlan}` : "/select-plan");
+      // Email verification is required before sign-in send the user to the "check your inbox"
+      // screen. In dev (no SMTP) the action returns the link so the flow stays testable.
+      const params = new URLSearchParams({ email });
+      if (res.data.devLink) params.set("devLink", res.data.devLink);
+      toast.success(t("Account created check your email to verify"));
+      router.push(`/verify-email?${params.toString()}`);
     } catch {
       toast.error(t("Could not create your account"));
     } finally {
@@ -80,17 +105,19 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
+    <div className="min-h-screen grid lg:grid-cols-2">
       <AuthBrandPanel
         headline={t("Run your shop and your books from one place.")}
         subcopy={t("Start with Point of Sale, then grow into full Tanzanian-ready accounting, tax and payroll, all on Uhasibu Digito.")}
         features={FEATURES.map((f) => ({ ...f, label: t(f.label) }))}
       />
 
-      <div className="relative flex flex-col justify-center p-6 sm:p-10 lg:p-16 bg-ud-surface">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-ud-primary-50/60 to-transparent" />
+      <div className="relative flex flex-col justify-center p-6 sm:p-10 lg:p-14 bg-ud-surface-2 overflow-hidden">
+        {/* ambient accents */}
+        <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-ud-primary opacity-[0.07] blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-20 w-80 h-80 rounded-full bg-ud-gold opacity-[0.05] blur-3xl" />
 
-        <div className="absolute top-5 right-5 flex items-center gap-2">
+        <div className="absolute top-5 right-5 z-20 flex items-center gap-2">
           <LanguageSwitcher />
           <Link
             href="/"
@@ -101,77 +128,106 @@ export default function RegisterPage() {
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={reduce ? false : { opacity: 0, y: 16 }}
+          animate={reduce ? {} : { opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="relative w-full max-w-md mx-auto"
+          className="relative z-10 w-full max-w-md mx-auto"
         >
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-ud-primary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ud-primary">
-            <Sparkles className="w-3 h-3" /> {t("Get started free")}
-          </div>
-          <h1 className="mt-4 font-display text-3xl font-extrabold text-ud-text-primary">{t("Create your account")}</h1>
-          <p className="mt-1.5 text-sm text-ud-text-muted">{t("Set up your company in a couple of minutes.")}</p>
+          {/* Elevated form card */}
+          <div className="rounded-3xl border border-ud-border bg-ud-surface shadow-elevated p-7 sm:p-9">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-ud-primary-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ud-primary">
+              <Sparkles className="w-3 h-3" /> {t("Get started free")}
+            </div>
+            <h1 className="mt-4 font-display text-3xl font-extrabold text-ud-text-primary">{t("Create your account")}</h1>
+            <p className="mt-1.5 text-sm text-ud-text-muted">{t("Sign up with your email you'll set up your company next.")}</p>
 
-          <form onSubmit={onSubmit} className="mt-7 space-y-3">
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Input label={t("Full name")}    value={name}        onChange={(e) => setName(e.target.value)}        prefixIcon={<UserIcon className="w-4 h-4" />} autoComplete="name" required />
-              <Input label={t("Company name")} value={companyName} onChange={(e) => setCompanyName(e.target.value)} prefixIcon={<Building2 className="w-4 h-4" />} autoComplete="organization" required />
-            </div>
-            <Input label={t("Email")} value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="you@company.co.tz" prefixIcon={<Mail className="w-4 h-4" />} autoComplete="email" required />
-            <div className="grid sm:grid-cols-2 gap-3">
-              <Select
-                label={t("Business type")}
-                value={businessType}
-                onValueChange={setBusinessType}
-                placeholder={t("Select type")}
-                options={BUSINESS_TYPES.map((bt) => ({ value: bt, label: bt }))}
+            <form onSubmit={onSubmit} className="mt-7 space-y-3">
+              <Input
+                label={t("Email")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder="you@company.co.tz"
+                prefixIcon={<Mail className="w-4 h-4" />}
+                autoComplete="email"
+                required
+                {...emailFeedback}
               />
-              <Select
-                label={t("Region")}
-                value={region}
-                onValueChange={setRegion}
-                placeholder={t("Select region")}
-                options={TZ_REGIONS.map((r) => ({ value: r, label: r }))}
+              <div>
+                <Input
+                  label={t("Password")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("At least 8 characters")}
+                  prefixIcon={<Lock className="w-4 h-4" />}
+                  autoComplete="new-password"
+                  suffixIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="text-ud-text-muted hover:text-ud-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ud-primary rounded"
+                      aria-label={showPassword ? t("Hide password") : t("Show password")}
+                      aria-pressed={showPassword}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  }
+                  required
+                />
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const suggestion = generateStrongPassword();
+                      setPassword(suggestion);
+                      setConfirm(suggestion);
+                      setShowPassword(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-ud-primary hover:text-ud-primary-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ud-primary focus-visible:ring-offset-2 rounded"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" /> {t("Suggest a strong password")}
+                  </button>
+                </div>
+                <PasswordChecklist password={password} />
+              </div>
+              <Input
+                label={t("Confirm password")}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                type={showPassword ? "text" : "password"}
+                placeholder={t("Re-enter your password")}
+                prefixIcon={<Lock className="w-4 h-4" />}
+                autoComplete="new-password"
+                required
+                {...(confirmMismatch ? { error: t("Passwords do not match") } : {})}
               />
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                loading={loading}
+                disabled={!canSubmit}
+                fullWidth
+                icon={!loading ? <ArrowRight className="w-4 h-4" /> : undefined}
+              >
+                {loading ? t("Creating account…") : t("Create account")}
+              </Button>
+            </form>
+
+            <div className="my-5 flex items-center gap-3 text-xs text-ud-text-faint">
+              <span className="h-px flex-1 bg-ud-border" />
+              {t("or")}
+              <span className="h-px flex-1 bg-ud-border" />
             </div>
-            <Input label={t("Phone (optional)")} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+255 712 345 678" prefixIcon={<Phone className="w-4 h-4" />} autoComplete="tel" />
-            <Input
-              label={t("Password")}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type={showPassword ? "text" : "password"}
-              placeholder={t("At least 8 characters")}
-              prefixIcon={<Lock className="w-4 h-4" />}
-              autoComplete="new-password"
-              suffixIcon={
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="text-ud-text-muted hover:text-ud-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ud-primary rounded"
-                  aria-label={showPassword ? t("Hide password") : t("Show password")}
-                  aria-pressed={showPassword}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              }
-              required
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              loading={loading}
-              fullWidth
-              icon={!loading ? <ArrowRight className="w-4 h-4" /> : undefined}
-            >
-              {loading ? t("Creating account…") : t("Create account")}
-            </Button>
-          </form>
+
+            <GoogleAuthButton label={t("Continue with Google")} />
+          </div>
 
           <div className="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-ud-text-faint">
             <MapPin className="w-3 h-3" /> {t("Tanzania-ready · TZS · TRA compliant")}
           </div>
-          <div className="mt-4 text-sm text-ud-text-muted text-center">
+          <div className="mt-3 text-sm text-ud-text-muted text-center">
             {t("Already have an account?")} <Link href="/login" className="text-ud-primary font-medium hover:underline">{t("Sign in")}</Link>
           </div>
         </motion.div>

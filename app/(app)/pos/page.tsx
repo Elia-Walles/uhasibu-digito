@@ -19,6 +19,7 @@ import { ReceiptModal } from "@/components/pos/ReceiptModal";
 import { SaleLineEditor, newLine, linesValid, linesTotal, type EditorLine } from "@/components/pos/SaleLineEditor";
 import { useBranches } from "@/lib/hooks/useBranches";
 import { useInventory } from "@/lib/hooks/useInventory";
+import { useCustomers } from "@/lib/hooks/useCustomers";
 import { usePOSSales, recordSale, type POSFilter } from "@/lib/hooks/usePOS";
 import { formatTZS } from "@/lib/utils/currency";
 import { formatDateTime } from "@/lib/utils/dates";
@@ -31,6 +32,7 @@ export default function POSSalesPage() {
   const t = useT();
   const { branches } = useBranches();
   const { inventory, refresh: refreshInventory } = useInventory();
+  const { customers } = useCustomers();
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -55,7 +57,10 @@ export default function POSSalesPage() {
   const [lines, setLines] = useState<EditorLine[]>([newLine()]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [branchId, setBranchId] = useState("");
-  const [customerName, setCustomerName] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [tendered, setTendered] = useState(0);
+  const [paymentRef, setPaymentRef] = useState("");
 
   useEffect(() => {
     if (!branchId && branches.length > 0) setBranchId(branches.find((b) => b.isPrimary)?.id ?? branches[0]!.id);
@@ -66,10 +71,18 @@ export default function POSSalesPage() {
   const avgBasket = sales.length > 0 ? totalSales / sales.length : 0;
   const canSubmit = linesValid(lines, inventory);
 
+  const gross = linesTotal(lines);
+  const orderDiscount = Math.min(Math.max(0, discount), gross);
+  const payable = gross - orderDiscount;
+  const changeDue = paymentMethod === "cash" && tendered > 0 ? Math.max(0, tendered - payable) : 0;
+
   function openModal() {
     setLines([newLine()]);
     setPaymentMethod("cash");
-    setCustomerName("");
+    setCustomerId("");
+    setDiscount(0);
+    setTendered(0);
+    setPaymentRef("");
     setOpen(true);
   }
 
@@ -83,7 +96,10 @@ export default function POSSalesPage() {
       const res = await recordSale({
         paymentMethod,
         ...(branchId ? { branchId } : {}),
-        ...(customerName.trim() ? { customerName: customerName.trim() } : {}),
+        ...(customerId ? { customerId } : {}),
+        ...(orderDiscount > 0 ? { discountAmount: orderDiscount } : {}),
+        ...(paymentMethod === "cash" && tendered > 0 ? { amountTendered: tendered } : {}),
+        ...(paymentRef.trim() ? { paymentRef: paymentRef.trim() } : {}),
         lines: lines.map((l) => ({ itemId: l.itemId, quantity: l.quantity, unitPrice: l.unitPrice })),
       });
       if (!res.ok) {
@@ -103,7 +119,11 @@ export default function POSSalesPage() {
     { key: "soldAt", label: "Date & time", sortable: true, accessor: (r) => r.soldAt, render: (r) => <span className="text-ud-text-secondary">{formatDateTime(r.soldAt)}</span> },
     { key: "branchName", label: "Branch", render: (r) => <Badge variant="default" size="sm">{r.branchName || ""}</Badge> },
     { key: "customerName", label: "Customer", render: (r) => <span className="truncate">{r.customerName}</span> },
+    { key: "cashierName", label: "Cashier", render: (r) => <span className="truncate text-ud-text-secondary">{r.cashierName || "—"}</span> },
     { key: "paymentMethod", label: "Method", render: (r) => <Badge variant={PAYMENT_BADGE[r.paymentMethod]} size="sm">{r.paymentMethod.toUpperCase()}</Badge> },
+    { key: "status", label: "Status", render: (r) => r.status === "refunded"
+      ? <Badge variant="danger" size="sm">{t("Refunded")}</Badge>
+      : <Badge variant="success" size="sm">{t("Paid")}</Badge> },
     { key: "grossProfit", label: "Profit", sortable: true, align: "right", accessor: (r) => r.grossProfit, render: (r) => <CurrencyDisplay amount={r.grossProfit} showSymbol={false} colored /> },
     { key: "total", label: "Total", sortable: true, align: "right", accessor: (r) => r.total, render: (r) => <CurrencyDisplay amount={r.total} showSymbol={false} className="font-medium" /> },
   ];
@@ -153,7 +173,7 @@ export default function POSSalesPage() {
         <DataTable data={sales} columns={COLS} pageSize={15} initialSortKey="soldAt" initialSortDir="desc" rowKey={(r) => r.id} onRowClick={(r) => setActive(r)} />
       )}
 
-      <ReceiptModal sale={active} onClose={() => setActive(null)} />
+      <ReceiptModal sale={active} onClose={() => setActive(null)} onRefunded={() => void Promise.all([refresh(), refreshInventory()])} />
 
       <Modal
         open={open}
@@ -165,7 +185,7 @@ export default function POSSalesPage() {
           <>
             <Button variant="ghost" onClick={() => setOpen(false)}>{t("Cancel")}</Button>
             <Button variant="primary" loading={saving} disabled={!canSubmit} onClick={() => void submit()}>
-              {t("Record {total}", { total: formatTZS(linesTotal(lines)) })}
+              {t("Record {total}", { total: formatTZS(payable) })}
             </Button>
           </>
         }
@@ -180,12 +200,37 @@ export default function POSSalesPage() {
               <Select label="Branch" value={branchId} onValueChange={setBranchId}
                 options={branches.map((b) => ({ value: b.id, label: b.name }))} />
             )}
-            <Input label={t("Customer (optional)")} value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder={t("Leave blank if not provided")} />
+            <Select label={t("Customer")} value={customerId} onValueChange={setCustomerId}
+              options={[{ value: "", label: t("Walk-in customer") }, ...customers.map((c) => ({ value: c.id, label: c.name }))]} />
           </div>
 
-          <div className="flex justify-between items-center pt-2 border-t border-ud-border">
-            <span className="text-sm text-ud-text-secondary">{t("Total")}</span>
-            <span className="font-display font-bold text-lg tabular-nums">{formatTZS(linesTotal(lines))}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Input label={t("Discount (TZS)")} type="number" value={String(discount)} onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))} />
+            {paymentMethod === "cash" ? (
+              <Input label={t("Amount tendered")} type="number" value={String(tendered)} onChange={(e) => setTendered(Math.max(0, Number(e.target.value) || 0))} />
+            ) : (
+              <Input label={t("Payment reference")} value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} placeholder={paymentMethod === "mpesa" ? "M-Pesa code" : "Approval code"} />
+            )}
+          </div>
+
+          <div className="space-y-1.5 pt-3 border-t border-ud-border text-sm">
+            <div className="flex justify-between text-ud-text-secondary">
+              <span>{t("Subtotal")}</span><span className="tabular-nums">{formatTZS(gross)}</span>
+            </div>
+            {orderDiscount > 0 && (
+              <div className="flex justify-between text-ud-text-secondary">
+                <span>{t("Discount")}</span><span className="tabular-nums">- {formatTZS(orderDiscount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-1">
+              <span className="font-medium">{t("Total")}</span>
+              <span className="font-display font-bold text-lg tabular-nums">{formatTZS(payable)}</span>
+            </div>
+            {paymentMethod === "cash" && tendered > 0 && (
+              <div className="flex justify-between text-ud-primary font-medium">
+                <span>{t("Change due")}</span><span className="tabular-nums">{formatTZS(changeDue)}</span>
+              </div>
+            )}
           </div>
         </div>
       </Modal>

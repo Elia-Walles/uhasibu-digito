@@ -3,6 +3,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { HeroBackground } from "@/components/landing/HeroBackground";
 import { useT } from "@/lib/hooks/useT";
 
 export interface AuthFeature {
@@ -28,18 +29,7 @@ export function AuthBrandPanel({ headline, subcopy, features, trust = DEFAULT_TR
   const t = useT();
   return (
     <div className="relative hidden lg:flex flex-col justify-between p-12 gradient-obsidian text-white overflow-hidden">
-      {/* ambient accents */}
-      <div className="absolute -top-32 -right-32 w-[28rem] h-[28rem] rounded-full bg-ud-primary opacity-20 blur-3xl" />
-      <div className="absolute -bottom-40 -left-24 w-[26rem] h-[26rem] rounded-full bg-ud-gold opacity-10 blur-3xl" />
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
-        }}
-      />
+      <HeroBackground variant="obsidian" />
 
       <motion.div
         initial={{ opacity: 0, y: -10 }}

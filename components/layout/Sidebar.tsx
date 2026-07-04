@@ -8,7 +8,7 @@ import {
   ShoppingCart, Boxes, Users, Truck,
   Wallet, FileSpreadsheet, ShieldCheck, Target, Landmark,
   Sparkles, FolderOpen, Settings, X, ChevronLeft, ClipboardCheck,
-  Receipt, LineChart, FileText, ShieldHalf,
+  Receipt, LineChart, FileText, ShieldHalf, Calculator,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
@@ -42,6 +42,7 @@ const NAV: NavSection[] = [
   {
     label: "POINT OF SALE",
     items: [
+      { label: "Register",  href: "/pos/register",  icon: Calculator,   minTier: "starter" },
       { label: "Sales",     href: "/pos",           icon: ShoppingCart, minTier: "starter" },
       { label: "Inventory", href: "/pos/inventory", icon: Boxes,        minTier: "starter" },
       { label: "Invoice",   href: "/pos/invoice",   icon: FileText,     minTier: "starter" },

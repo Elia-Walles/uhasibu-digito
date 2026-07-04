@@ -72,10 +72,11 @@ model User {
 
   tenant              Tenant?              @relation(fields: [tenantId], references: [id])
   department          Department?          @relation(fields: [departmentId], references: [id])
-  accounts            Account[]
-  sessions            Session[]
-  memberships         Membership[]
-  passwordResetTokens PasswordResetToken[]
+  accounts                Account[]
+  sessions                Session[]
+  memberships             Membership[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -141,6 +142,26 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+// Email verification — short-lived single-use tokens (only the SHA-256 hash is stored).
+// Mirrors PasswordResetToken. A new credential account cannot sign in until its token is consumed
+// (User.emailVerified set).
+model EmailVerificationToken {
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  tokenHash     String    @unique @map("token_hash")
+  expiresAt     DateTime  @map("expires_at")
+  usedAt        DateTime? @map("used_at")
+  // The 6-digit code (sha256 hash) generated on-demand when the user opens the code page.
+  codeHash      String?   @map("code_hash")
+  codeExpiresAt DateTime? @map("code_expires_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
 
 // Company identity (1:1 with tenant) — replaces the old COMPANY mock constant. Drives
@@ -606,6 +627,7 @@ model StockMovement {
   id           String   @id @default(cuid())
   tenantId     String   @map("tenant_id")
   itemId       String   @map("item_id")
+  branchId     String?  @map("branch_id")
   date         DateTime
   reference    String
   itemName     String   @map("item_name")
@@ -625,8 +647,29 @@ model StockMovement {
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@index([tenantId, itemId, date])
+  @@index([tenantId, branchId, date])
   @@index([itemId])
   @@map("stock_movements")
+}
+
+// Per-branch on-hand quantity for an item. InventoryItem.onHand stays the global total
+// (sum across branches); this table holds the branch-level breakdown. Tenant-scoped by the
+// client extension. Plain scalar branchId/itemId (no FK relation) — same convention as the
+// hot POS/movement tables under relationMode = "prisma".
+model BranchStock {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  branchId  String   @map("branch_id")
+  itemId    String   @map("item_id")
+  onHand    Decimal  @default(0) @map("on_hand") @db.Decimal(20, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, branchId, itemId])
+  @@index([tenantId])
+  @@index([tenantId, branchId])
+  @@index([itemId])
+  @@map("branch_stock")
 }
 
 // ===================================================================
@@ -664,12 +707,23 @@ model POSSale {
   invoiceId     String?  @map("invoice_id")
   cashierId     String?  @map("cashier_id")
   cashierName   String   @default("") @map("cashier_name")
+  customerId    String?  @map("customer_id")
   customerName  String   @default("Walk-in customer") @map("customer_name")
   paymentMethod String   @map("payment_method") // PaymentMethod: mpesa | cash | card
+  paymentRef    String   @default("") @map("payment_ref")
+  status        String   @default("completed") // completed | refunded
+  refundedAt    DateTime? @map("refunded_at")
   soldAt        DateTime @map("sold_at")
+  subtotal      Decimal  @default(0) @db.Decimal(20, 2)
+  discount      Decimal  @default(0) @db.Decimal(20, 2)
+  vatAmount     Decimal  @default(0) @map("vat_amount") @db.Decimal(20, 2)
   total         Decimal  @default(0) @db.Decimal(20, 2)
+  amountTendered Decimal? @map("amount_tendered") @db.Decimal(20, 2)
+  changeDue     Decimal? @map("change_due") @db.Decimal(20, 2)
   costOfSales   Decimal  @default(0) @map("cost_of_sales") @db.Decimal(20, 2)
   grossProfit   Decimal  @default(0) @map("gross_profit") @db.Decimal(20, 2)
+  efdNumber     String   @default("") @map("efd_number")
+  journalRef    String   @default("") @map("journal_ref")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
   createdById   String?  @map("created_by_id")
@@ -692,6 +746,8 @@ model POSSaleLine {
   quantity    Decimal  @default(0) @db.Decimal(20, 2)
   unitPrice   Decimal  @default(0) @map("unit_price") @db.Decimal(20, 2)
   unitCost    Decimal  @default(0) @map("unit_cost") @db.Decimal(20, 2)
+  discountPct Decimal  @default(0) @map("discount_pct") @db.Decimal(20, 2)
+  vatPct      Decimal  @default(0) @map("vat_pct") @db.Decimal(20, 2)
   lineTotal   Decimal  @default(0) @map("line_total") @db.Decimal(20, 2)
   lineCost    Decimal  @default(0) @map("line_cost") @db.Decimal(20, 2)
   createdAt   DateTime @default(now()) @map("created_at")

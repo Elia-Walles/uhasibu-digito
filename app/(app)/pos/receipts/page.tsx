@@ -21,7 +21,7 @@ const PAYMENT_BADGE: Record<PaymentMethod, "teal" | "info" | "gold"> = {
 };
 
 export default function POSReceiptsPage() {
-  const { sales, loading } = usePOSSales({});
+  const { sales, loading, refresh } = usePOSSales({});
   const [search, setSearch] = useState("");
   const [active, setActive] = useState<POSSale | null>(null);
 
@@ -38,6 +38,9 @@ export default function POSReceiptsPage() {
     { key: "soldAt", label: "Issued", sortable: true, accessor: (r) => r.soldAt, render: (r) => <span className="text-ud-text-secondary">{formatDateTime(r.soldAt)}</span> },
     { key: "customerName", label: "Customer", render: (r) => <span className="truncate">{r.customerName}</span> },
     { key: "paymentMethod", label: "Method", render: (r) => <Badge variant={PAYMENT_BADGE[r.paymentMethod]} size="sm">{r.paymentMethod.toUpperCase()}</Badge> },
+    { key: "status", label: "Status", render: (r) => r.status === "refunded"
+      ? <Badge variant="danger" size="sm">Refunded</Badge>
+      : <Badge variant="success" size="sm">Paid</Badge> },
     { key: "total", label: "Total", sortable: true, align: "right", accessor: (r) => r.total, render: (r) => <CurrencyDisplay amount={r.total} showSymbol={false} className="font-medium" /> },
   ];
 
@@ -45,7 +48,7 @@ export default function POSReceiptsPage() {
     <PageWrapper>
       <PageHeader
         title="Receipts"
-        subtitle="Receipts issued at the point of sale tap a row to view or reprint"
+        subtitle="Receipts issued at the point of sale — tap a row to view, print or refund"
         breadcrumbs={[{ label: "Point of Sale", href: "/pos" }, { label: "Receipts" }]}
       />
 
@@ -71,7 +74,7 @@ export default function POSReceiptsPage() {
         />
       )}
 
-      <ReceiptModal sale={active} onClose={() => setActive(null)} />
+      <ReceiptModal sale={active} onClose={() => setActive(null)} onRefunded={() => void refresh()} />
     </PageWrapper>
   );
 }

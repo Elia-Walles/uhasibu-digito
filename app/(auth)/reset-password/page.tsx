@@ -2,14 +2,16 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Lock, Eye, EyeOff, ArrowLeft, ArrowRight, ShieldCheck, KeyRound, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { PasswordChecklist } from "@/components/ui/PasswordChecklist";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
 import { useT } from "@/lib/hooks/useT";
 import { resetPassword } from "@/lib/server/actions/auth";
+import { isStrongPassword } from "@/lib/utils/password";
 import toast from "react-hot-toast";
 
 const FEATURES = [
@@ -25,6 +27,8 @@ function ResetForm() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const canSubmit = isStrongPassword(password) && password === confirm;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,6 +97,7 @@ function ResetForm() {
           }
           required
         />
+        {password.length > 0 && <PasswordChecklist password={password} />}
         <Input
           label={t("Confirm password")}
           type={showPassword ? "text" : "password"}
@@ -102,12 +107,14 @@ function ResetForm() {
           prefixIcon={<Lock className="w-4 h-4" />}
           autoComplete="new-password"
           required
+          {...(confirm.length > 0 && confirm !== password ? { error: t("Passwords do not match") } : {})}
         />
         <Button
           type="submit"
           variant="primary"
           size="lg"
           loading={loading}
+          disabled={!canSubmit}
           fullWidth
           icon={!loading ? <ArrowRight className="w-4 h-4" /> : undefined}
         >
@@ -124,18 +131,21 @@ function ResetForm() {
 
 export default function ResetPasswordPage() {
   const t = useT();
+  const reduce = useReducedMotion();
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
+    <div className="min-h-screen grid lg:grid-cols-2">
       <AuthBrandPanel
         headline={t("One step to secure access.")}
         subcopy={t("Set a fresh password and you're back in. Your reset link is single-use and encrypted end to end.")}
         features={FEATURES.map((f) => ({ ...f, label: t(f.label) }))}
       />
 
-      <div className="relative flex flex-col justify-center p-6 sm:p-10 lg:p-16 bg-ud-surface">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-ud-primary-50/60 to-transparent" />
+      <div className="relative flex flex-col justify-center p-6 sm:p-10 lg:p-14 bg-ud-surface-2 overflow-hidden">
+        {/* ambient accents */}
+        <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-ud-primary opacity-[0.07] blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-20 w-80 h-80 rounded-full bg-ud-gold opacity-[0.05] blur-3xl" />
 
-        <div className="absolute top-5 right-5 flex items-center gap-2">
+        <div className="absolute top-5 right-5 z-20 flex items-center gap-2">
           <LanguageSwitcher />
           <Link
             href="/login"
@@ -146,14 +156,16 @@ export default function ResetPasswordPage() {
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={reduce ? false : { opacity: 0, y: 16 }}
+          animate={reduce ? {} : { opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="relative w-full max-w-sm mx-auto"
+          className="relative z-10 w-full max-w-md mx-auto"
         >
-          <Suspense fallback={<p className="text-sm text-ud-text-muted">{t("Loading…")}</p>}>
-            <ResetForm />
-          </Suspense>
+          <div className="rounded-3xl border border-ud-border bg-ud-surface shadow-elevated p-7 sm:p-9">
+            <Suspense fallback={<p className="text-sm text-ud-text-muted">{t("Loading…")}</p>}>
+              <ResetForm />
+            </Suspense>
+          </div>
         </motion.div>
       </div>
     </div>

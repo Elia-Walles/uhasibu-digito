@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ClipboardList, Check, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -27,24 +27,42 @@ export default function StocktakePage() {
   const { inventory, recordMovement } = useInventory();
   const [step, setStep] = useState(0);
   const [location, setLocation] = useState("DSM-Main");
+  const [countDate, setCountDate] = useState(new Date().toISOString().split("T")[0]!);
+  const [countedBy, setCountedBy] = useState("");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [posting, setPosting] = useState(false);
+
+  const itemsAtLocation = useMemo(() => inventory.filter((i) => i.location === location), [inventory, location]);
+
+  // Real variances: only items whose entered count differs from the system on-hand.
+  const variances = useMemo(
+    () =>
+      Object.entries(counts)
+        .map(([id, counted]) => {
+          const item = inventory.find((i) => i.id === id);
+          if (!item) return null;
+          const delta = counted - item.onHand;
+          return delta === 0 ? null : { item, counted, delta };
+        })
+        .filter((v): v is { item: (typeof inventory)[number]; counted: number; delta: number } => v !== null),
+    [counts, inventory],
+  );
 
   async function complete() {
     setPosting(true);
     try {
       let adjustments = 0;
-      for (const [itemId, counted] of Object.entries(counts)) {
-        const item = inventory.find((i) => i.id === itemId);
-        if (!item) continue;
-        const delta = counted - item.onHand;
-        if (delta === 0) continue;
+      for (const { item, delta } of variances) {
         const res = await recordMovement({
-          itemId,
+          itemId: item.id,
           type: "ADJUSTMENT",
           quantity: delta,
           unitCost: item.unitCost,
-          narration: t("Stocktake adjustment @ {location}", { location }),
+          narration: t("Stocktake @ {location} on {date}{by}", {
+            location,
+            date: countDate,
+            by: countedBy.trim() ? ` · ${countedBy.trim()}` : "",
+          }),
         });
         if (res.ok) adjustments += 1;
       }
@@ -76,8 +94,8 @@ export default function StocktakePage() {
               <div className="space-y-4 max-w-md">
                 <h3 className="font-display font-bold text-lg">{t("Stocktake setup")}</h3>
                 <Select label="Location" value={location} onValueChange={setLocation} options={[{ value: "DSM-Main", label: "DSM Main warehouse" }, { value: "DSM-Annex", label: "DSM Annex" }, { value: "Zanzibar", label: "Zanzibar branch" }, { value: "Mwanza", label: "Mwanza" }]} />
-                <Input label="Count date" type="date" defaultValue={new Date().toISOString().split("T")[0]} />
-                <Input label="Counted by" defaultValue="Peter Msangi" />
+                <Input label="Count date" type="date" value={countDate} onChange={(e) => setCountDate(e.target.value)} />
+                <Input label="Counted by" value={countedBy} onChange={(e) => setCountedBy(e.target.value)} placeholder={t("Name of the person counting")} />
               </div>
             )}
             {step === 1 && (
@@ -103,7 +121,7 @@ export default function StocktakePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {inventory.filter((i) => i.location === location).slice(0, 12).map((item, i) => (
+                      {itemsAtLocation.map((item, i) => (
                         <tr key={item.id} className={i % 2 === 1 ? "bg-ud-surface-2/50" : ""}>
                           <td className="px-3 py-2"><div className="font-medium">{item.name}</div><div className="text-xs text-ud-text-muted">{item.code}</div></td>
                           <td className="px-3 py-2 text-right font-mono">{item.onHand}</td>
@@ -126,10 +144,42 @@ export default function StocktakePage() {
             {step === 3 && (
               <div className="space-y-3">
                 <h3 className="font-display font-bold text-lg">{t("Review variances")}</h3>
-                <div className="p-4 rounded-xl bg-ud-warning-bg border border-ud-warning/20 text-sm text-ud-warning">
-                  {t("3 items have variances. Review carefully before posting.")}
-                </div>
-                <p className="text-sm text-ud-text-muted">{t("Adjustments will be posted to the General Ledger as an inventory adjustment journal entry.")}</p>
+                {variances.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-ud-success-bg border border-ud-success/20 text-sm text-ud-success">
+                    {t("No variances — every counted item matches the system.")}
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-4 rounded-xl bg-ud-warning-bg border border-ud-warning/20 text-sm text-ud-warning">
+                      {t("{n} item(s) have variances. Review carefully before posting.", { n: variances.length })}
+                    </div>
+                    <div className="overflow-x-auto rounded-xl border border-ud-border max-h-80 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-ud-surface-2 sticky top-0">
+                          <tr>
+                            <th className="text-left px-3 py-2 text-xs uppercase tracking-[0.06em]" scope="col">{t("Item")}</th>
+                            <th className="text-right px-3 py-2 text-xs uppercase tracking-[0.06em]" scope="col">{t("System qty")}</th>
+                            <th className="text-right px-3 py-2 text-xs uppercase tracking-[0.06em]" scope="col">{t("Counted")}</th>
+                            <th className="text-right px-3 py-2 text-xs uppercase tracking-[0.06em]" scope="col">{t("Variance")}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {variances.map(({ item, counted, delta }, i) => (
+                            <tr key={item.id} className={i % 2 === 1 ? "bg-ud-surface-2/50" : ""}>
+                              <td className="px-3 py-2"><div className="font-medium">{item.name}</div><div className="text-xs text-ud-text-muted">{item.code}</div></td>
+                              <td className="px-3 py-2 text-right font-mono">{item.onHand}</td>
+                              <td className="px-3 py-2 text-right font-mono">{counted}</td>
+                              <td className={`px-3 py-2 text-right font-mono font-medium ${delta < 0 ? "text-ud-danger" : "text-ud-success"}`}>
+                                {delta > 0 ? `+${delta}` : delta}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+                <p className="text-sm text-ud-text-muted">{t("Posting records an inventory adjustment movement per item and updates on-hand levels. Each appears in Stock Movements.")}</p>
               </div>
             )}
             {step === 4 && (

@@ -14,8 +14,24 @@ export const createItemSchema = z.object({
   costingMethod: z.enum(["FIFO", "LIFO", "WeightedAverage"]).default("WeightedAverage"),
 });
 
+export const updateItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1, "Item name is required").optional(),
+  category: z.string().trim().optional(),
+  unit: z.string().trim().optional(),
+  reorderLevel: z.number().nonnegative().optional(),
+  unitCost: z.number().nonnegative().optional(),
+  sellingPrice: z.number().nonnegative().optional(),
+  location: z.string().trim().optional(),
+  supplier: z.string().trim().optional(),
+  costingMethod: z.enum(["FIFO", "LIFO", "WeightedAverage"]).optional(),
+});
+
+export const deleteItemSchema = z.object({ id: z.string().min(1) });
+
 export const recordMovementSchema = z.object({
   itemId: z.string().min(1, "Pick an item"),
+  branchId: z.string().trim().optional(),
   type: z.enum(["IN", "OUT", "TRANSFER", "ADJUSTMENT"]),
   quantity: z.number(),
   unitCost: z.number().nonnegative().default(0),
@@ -23,4 +39,5 @@ export const recordMovementSchema = z.object({
 });
 
 export type CreateItemInput = z.infer<typeof createItemSchema>;
+export type UpdateItemInput = z.infer<typeof updateItemSchema>;
 export type RecordMovementInput = z.infer<typeof recordMovementSchema>;

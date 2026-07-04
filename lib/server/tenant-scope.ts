@@ -30,6 +30,7 @@ export const TENANT_SCOPED_MODELS = [
   "PipelineDeal",
   "InventoryItem",
   "StockMovement",
+  "BranchStock",
   "Branch",
   "POSSale",
   "POSSaleLine",
