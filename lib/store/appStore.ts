@@ -34,35 +34,9 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       sidebarOpen: false,
       sidebarCollapsed: false,
-      notifications: [
-        {
-          id: "n1",
-          type: "warning",
-          title: "VAT return due",
-          message: "October 2024 VAT return is due in 4 days",
-          timestamp: new Date().toISOString(),
-          read: false,
-          link: "/tax/vat-returns",
-        },
-        {
-          id: "n2",
-          type: "info",
-          title: "Payroll ready",
-          message: "October payroll is ready to review",
-          timestamp: new Date().toISOString(),
-          read: false,
-          link: "/payroll/run-payroll",
-        },
-        {
-          id: "n3",
-          type: "error",
-          title: "Low stock alerts",
-          message: "12 items below reorder level",
-          timestamp: new Date().toISOString(),
-          read: false,
-          link: "/inventory/items",
-        },
-      ],
+      // The bell now reads real server notifications (useNotifications); this local list is legacy
+      // (still fed by a couple of client-side reminders) and starts empty — no mock seed data.
+      notifications: [],
       emailNotifications: DEFAULT_EMAIL_PREFS,
       locale: "en",
       setLocale: (locale) => set({ locale }),

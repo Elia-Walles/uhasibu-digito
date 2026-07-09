@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/cron/tax-reminders", "schedule": "0 3 * * *" }
+    { "path": "/api/cron/tax-reminders", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/recurring-invoices", "schedule": "0 2 * * *" }
   ]
 }

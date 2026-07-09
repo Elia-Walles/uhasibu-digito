@@ -12,14 +12,16 @@ const prisma = new PrismaClient({ adapter: createMariaDbAdapter() });
 
 const OWNER_EMAIL = "eliawalles56@gmail.com";
 const OWNER_NAME = "elia walles";
-const OWNER_PASSWORD = "Walles.777";
+// Passwords come from the environment for production; the literals are dev-only fallbacks. Set
+// SEED_OWNER_PASSWORD / SEED_ADMIN_PASSWORD before seeding a real deployment (see GO-LIVE.md).
+const OWNER_PASSWORD = process.env.SEED_OWNER_PASSWORD ?? "Walles.777";
 const COMPANY_NAME = "AFYALEAD COMPANY";
 const COMPANY_SLUG = "afyalead";
 
 // Tenant-less platform super-admin (operator) has no tenant, lands straight in /admin.
 const PLATFORM_ADMIN_EMAIL = "uhasibudigito@gmail.com";
 const PLATFORM_ADMIN_NAME = "Uhasibu Digito Admin";
-const PLATFORM_ADMIN_PASSWORD = "Uhasibu@digito3035";
+const PLATFORM_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "Uhasibu@digito3035";
 
 /** Delete a tenant and every row scoped to it (children before parents), if it exists. */
 async function wipeTenant(slug: string) {

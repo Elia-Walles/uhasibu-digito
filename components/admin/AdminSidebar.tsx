@@ -4,7 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  LayoutDashboard, Building2, Users, CreditCard, Receipt, Layers, ScrollText, Settings,
+  LayoutDashboard, Building2, Users, CreditCard, Receipt, ReceiptText, Layers, ScrollText, Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useT } from "@/lib/hooks/useT";
@@ -22,6 +22,7 @@ const ADMIN_NAV: AdminNavItem[] = [
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
   { label: "Payments", href: "/admin/payments", icon: Receipt },
+  { label: "Subscription invoices", href: "/admin/subscription-invoices", icon: ReceiptText },
   { label: "Plans", href: "/admin/plans", icon: Layers },
   { label: "Audit log", href: "/admin/audit", icon: ScrollText },
   { label: "Settings", href: "/admin/settings", icon: Settings },

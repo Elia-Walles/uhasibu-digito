@@ -3,6 +3,7 @@ import { formatTZS } from "@/lib/utils/currency";
 
 interface CurrencyDisplayProps {
   amount: number;
+  /** @deprecated Money is always shown in full — abbreviations (K/M/B) are no longer used on cards. */
   compact?: boolean | undefined;
   colored?: boolean | undefined;
   showSymbol?: boolean | undefined;
@@ -11,13 +12,13 @@ interface CurrencyDisplayProps {
 
 export function CurrencyDisplay({
   amount,
-  compact = false,
   colored = false,
   showSymbol = true,
   className,
 }: CurrencyDisplayProps) {
   const isNeg = amount < 0;
-  const display = formatTZS(Math.abs(amount), compact);
+  // Always full grouped numbers (e.g. 90,000,000) — never abbreviated on financial cards/cells.
+  const display = formatTZS(Math.abs(amount));
   // Strip currency symbol if not wanted
   const value = showSymbol ? display : display.replace(/[A-Za-z\s]+/g, "").trim();
 

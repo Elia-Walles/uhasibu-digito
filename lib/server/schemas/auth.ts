@@ -1,11 +1,64 @@
 import { z } from "zod";
+import { isValidPhoneNumber } from "libphonenumber-js";
 import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from "@/lib/utils/password";
 
-export const BUSINESS_TYPES = ["Retail", "Restaurant", "Wholesale", "Services", "Other"] as const;
+// Industry list for the onboarding "Business type" picker — alphabetical, "Other" last.
+// Stored as a plain string (the picker also allows a custom "Other" value), so this drives
+// the UI options only, not a DB enum.
+export const BUSINESS_TYPES = [
+  "Agriculture",
+  "Automotive",
+  "Construction",
+  "Consulting",
+  "Education",
+  "Financial Services",
+  "Food & Beverage",
+  "Healthcare",
+  "Hospitality",
+  "Import/Export",
+  "Logistics & Transport",
+  "Manufacturing",
+  "Media & Entertainment",
+  "Mining",
+  "NGO / Non-profit",
+  "Pharmacy",
+  "Professional Services",
+  "Real Estate",
+  "Restaurant",
+  "Retail",
+  "Services",
+  "Technology",
+  "Telecommunications",
+  "Tourism & Travel",
+  "Wholesale",
+  "Other",
+] as const;
 
-// Tanzanian mobile format shared by sign-up/onboarding: +255 7xx xxx xxx (spaces optional).
+// "Where did you hear from us" options — alphabetical, "Other" last. Free-text "Other" allowed.
+export const HEARD_FROM_SOURCES = [
+  "Advertisement",
+  "Blog or Article",
+  "Event or Conference",
+  "Facebook",
+  "Friend or Colleague",
+  "Google Search",
+  "Instagram",
+  "LinkedIn",
+  "Radio or TV",
+  "Referral",
+  "TikTok",
+  "X (Twitter)",
+  "YouTube",
+  "Other",
+] as const;
+
+// International phone: optional, accepts empty, otherwise must be a valid number in any country
+// (the onboarding PhoneField emits E.164 via libphonenumber-js).
 const phoneField = z
-  .union([z.literal(""), z.string().trim().regex(/^\+255\s?7\d{2}\s?\d{3}\s?\d{3}$/, "Use format +255 7xx xxx xxx")])
+  .union([
+    z.literal(""),
+    z.string().trim().refine((v) => isValidPhoneNumber(v), "Enter a valid phone number"),
+  ])
   .optional();
 
 // Sign-up now creates login credentials only email + password. Company/business details are
@@ -32,17 +85,31 @@ export const resendVerificationSchema = z.object({
   email: z.email("Enter a valid email address"),
 });
 
-// Post-login "complete registration" step (essentials only). The remaining company fields
-// (TIN, VAT, EFD, address, financial year…) stay editable in Settings → Company.
+// Post-login "complete registration" step. The remaining company fields (TIN, VAT, EFD,
+// financial year…) stay editable in Settings → Company. businessType/heardFrom are free strings
+// because the pickers allow a custom "Other" value.
 export const onboardingProfileSchema = z.object({
   name: z.string().trim().min(1, "Your name is required"),
   companyName: z.string().trim().min(1, "Company name is required"),
-  businessType: z.enum(BUSINESS_TYPES, { message: "Select your business type" }),
-  region: z.string().trim().min(1, "Region is required"),
+  businessType: z.string().trim().min(1, "Select your business type"),
+  country: z.string().trim().min(1, "Select your country"),
+  countryCode: z.string().trim().min(2, "Country is required").max(2),
+  region: z.string().trim().min(1, "Select your region"),
+  district: z.string().trim().min(1, "Select your district"),
+  street: z.string().trim().optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  heardFrom: z.string().trim().optional(),
   phone: phoneField,
+  phoneCountryCode: z.string().trim().optional(),
 });
 
 export type OnboardingProfileInput = z.infer<typeof onboardingProfileSchema>;
+
+// Partial autosave: every field optional so a half-filled form can be persisted as the user types.
+export const onboardingDraftSchema = onboardingProfileSchema.partial();
+
+export type OnboardingDraftInput = z.infer<typeof onboardingDraftSchema>;
 
 export const forgotPasswordSchema = z.object({
   email: z.email("Enter a valid email address"),

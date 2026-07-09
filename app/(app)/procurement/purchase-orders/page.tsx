@@ -184,7 +184,7 @@ export default function PurchaseOrdersPage() {
                   <div className="sm:col-span-2"><Input type="number" value={l.quantity || ""}  onChange={(e) => updateLine(l.id, { quantity:  Number(e.target.value) || 0 })} placeholder={t("Qty")} className="text-right" /></div>
                   <div className="sm:col-span-2"><Input type="number" value={l.unitPrice || ""} onChange={(e) => updateLine(l.id, { unitPrice: Number(e.target.value) || 0 })} placeholder={t("Unit Price")} className="text-right font-mono" /></div>
                   <div className="sm:col-span-2 flex items-center gap-1">
-                    <span className="font-mono text-sm tabular-nums">{formatTZS(l.lineTotal, true).replace("TSh ", "")}</span>
+                    <span className="font-mono text-sm tabular-nums">{formatTZS(l.lineTotal).replace("TSh ", "")}</span>
                     {form.lines.length > 1 && (
                       <button onClick={() => removeLine(l.id)} className="ml-auto p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label={t("Remove")}>
                         <X className="w-3.5 h-3.5" />

@@ -18,6 +18,7 @@ export const updateCompanySchema = z.object({
   website: z.string().trim().optional(),
   financialYearStart: z.string().trim().optional(),
   financialYearEnd: z.string().trim().optional(),
+  fiscalYearStartMonth: z.number().int().min(1).max(12).optional(),
   baseCurrency: z.string().trim().optional(),
   secondaryCurrency: z.string().trim().optional(),
 });

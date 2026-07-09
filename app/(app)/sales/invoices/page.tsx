@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Plus, Mail } from "lucide-react";
+import { Plus, Mail, Download, Link2 } from "lucide-react";
 import toast from "react-hot-toast";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -13,11 +13,12 @@ import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Attachments } from "@/components/ui/Attachments";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { useInvoices } from "@/lib/hooks/useInvoices";
 import { useT } from "@/lib/hooks/useT";
-import { useAppStore } from "@/lib/store/appStore";
 import { formatDate, isOverdue } from "@/lib/utils/dates";
 import { formatTZS } from "@/lib/utils/currency";
 import type { Invoice, InvoiceStatus } from "@/types";
@@ -45,13 +46,37 @@ const ALL_STATUSES: InvoiceStatus[] = ["Draft", "Sent", "Paid", "Overdue", "Canc
 
 export default function InvoicesPage() {
   const t = useT();
-  const { invoices, updateInvoiceStatus, loading: invLoading } = useInvoices();
+  const { invoices, updateInvoiceStatus, recordInvoicePayment, loading: invLoading } = useInvoices();
   const loading = invLoading;
-  const emailPrefs = useAppStore((s) => s.emailNotifications);
-  const addNotification = useAppStore((s) => s.addNotification);
   const [tab, setTab] = useState<TabKey>("All");
   const [search, setSearch] = useState("");
   const [editTarget, setEditTarget] = useState<Invoice | null>(null);
+  const [payAmount, setPayAmount] = useState(0);
+  const [payMethod, setPayMethod] = useState("Bank Transfer");
+  const [paying, setPaying] = useState(false);
+
+  // Keep the modal's payment form pointed at the live invoice + defaulted to the outstanding amount.
+  const active = editTarget ? invoices.find((i) => i.id === editTarget.id) ?? editTarget : null;
+  const outstanding = active ? Math.max(0, active.total - active.amountPaid) : 0;
+
+  async function recordPayment() {
+    if (!active || payAmount <= 0) {
+      toast.error(t("Enter a payment amount"));
+      return;
+    }
+    setPaying(true);
+    try {
+      const res = await recordInvoicePayment({ invoiceId: active.id, amount: payAmount, method: payMethod });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(t("Payment recorded · receipt emailed"));
+      setPayAmount(0);
+    } finally {
+      setPaying(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     let data = invoices;
@@ -78,20 +103,8 @@ export default function InvoicesPage() {
       return;
     }
     void updateInvoiceStatus(invoice.id, status);
-    if (emailPrefs[status]) {
-      addNotification({
-        id: `inv-status-${invoice.id}-${status}-${Date.now()}`,
-        type: status === "Paid" ? "success" : status === "Overdue" || status === "Cancelled" ? "warning" : "info",
-        title: `${invoice.number} → ${status}`,
-        message: `${invoice.customerName} · ${formatTZS(invoice.total, true)}`,
-        timestamp: new Date().toISOString(),
-        read: false,
-        link: "/sales/invoices",
-      });
-      toast.success(t("Status updated · customer notified"));
-    } else {
-      toast.success(t("Status updated"));
-    }
+    // A receipt email is sent by the server only on the Paid transition.
+    toast.success(status === "Paid" ? t("Marked paid · receipt emailed to customer") : t("Status updated"));
     setEditTarget(null);
   }
 
@@ -132,7 +145,7 @@ export default function InvoicesPage() {
         open={editTarget !== null}
         onOpenChange={(o) => !o && setEditTarget(null)}
         title={editTarget ? t("Update {n}", { n: editTarget.number }) : ""}
-        description={editTarget ? `${editTarget.customerName} · ${formatTZS(editTarget.total, true)}` : ""}
+        description={editTarget ? `${editTarget.customerName} · ${formatTZS(editTarget.total)}` : ""}
         size="md"
       >
         {editTarget && (
@@ -151,12 +164,52 @@ export default function InvoicesPage() {
                   }`}
                 >
                   {t(s)}
-                  {emailPrefs[s] && (
-                    <div className="text-[10px] text-ud-text-muted mt-1 inline-flex items-center gap-0.5"><Mail className="w-2.5 h-2.5" />{t("Notify")}</div>
+                  {s === "Paid" && (
+                    <div className="text-[10px] text-ud-text-muted mt-1 inline-flex items-center gap-0.5"><Mail className="w-2.5 h-2.5" />{t("Emails receipt")}</div>
                   )}
                 </button>
               ))}
             </div>
+            {active && active.status !== "Draft" && active.status !== "Cancelled" && (
+              <div className="pt-3 border-t border-ud-border space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-ud-text-muted">{t("Paid")}: <span className="font-mono">{formatTZS(active.amountPaid)}</span></span>
+                  <span className="font-medium">{t("Outstanding")}: <span className="font-mono text-ud-primary">{formatTZS(outstanding)}</span></span>
+                </div>
+                {outstanding > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                    <Input label={t("Amount")} type="number" value={String(payAmount)} onChange={(e) => setPayAmount(Number(e.target.value) || 0)} className="text-right font-mono" />
+                    <Select label={t("Method")} value={payMethod} onValueChange={setPayMethod}
+                      options={[{ value: "Cash", label: "Cash" }, { value: "M-Pesa", label: "M-Pesa" }, { value: "Bank Transfer", label: "Bank Transfer" }, { value: "Cheque", label: "Cheque" }, { value: "Card", label: "Card" }]} />
+                    <Button variant="primary" loading={paying} onClick={() => void recordPayment()}>{t("Record payment")}</Button>
+                  </div>
+                )}
+              </div>
+            )}
+            {editTarget.status !== "Draft" && editTarget.status !== "Cancelled" && (
+              <div className="pt-3 border-t border-ud-border flex flex-wrap items-center gap-4">
+                <a href={`/api/invoices/${editTarget.id}/pdf`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-ud-primary hover:underline">
+                  <Download className="w-3.5 h-3.5" /> {t("Download PDF")}
+                </a>
+                {editTarget.publicToken && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(`${window.location.origin}/invoice/${editTarget.publicToken}`).then(() => toast.success(t("Public link copied")));
+                    }}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-ud-text-secondary hover:text-ud-primary"
+                  >
+                    <Link2 className="w-3.5 h-3.5" /> {t("Copy public link")}
+                  </button>
+                )}
+              </div>
+            )}
+            {editTarget.status === "Draft" && (
+              <div className="pt-3 border-t border-ud-border">
+                <Link href={`/sales/new-invoice?id=${editTarget.id}`} className="text-sm font-medium text-ud-primary hover:underline">{t("Edit this draft →")}</Link>
+              </div>
+            )}
             <div className="pt-3 border-t border-ud-border">
               <Attachments ownerType="Invoice" ownerId={editTarget.id} label={t("Invoice documents")} />
             </div>

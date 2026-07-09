@@ -4,6 +4,7 @@ import {
   listAssets,
   createAsset as createAction,
   disposeAsset as disposeAction,
+  runDepreciation as runDepreciationAction,
 } from "@/lib/server/actions/fixed-assets";
 import { type Result } from "@/lib/server/result";
 import type { FixedAsset } from "@/types";
@@ -11,8 +12,10 @@ import type { FixedAsset } from "@/types";
 export interface UseFixedAssets {
   assets: FixedAsset[];
   loading: boolean;
+  refresh: () => Promise<void>;
   addAsset: (a: FixedAsset) => Promise<Result<FixedAsset>>;
   disposeAsset: (id: string, proceeds: number, date: string) => Promise<Result<{ id: string; gainLoss: number }>>;
+  runDepreciation: (period: string) => Promise<Result<{ period: string; amount: number; assets: number }>>;
 }
 
 function toCreateInput(a: FixedAsset) {
@@ -50,6 +53,7 @@ export function useFixedAssets(): UseFixedAssets {
   return {
     assets: serverAssets,
     loading,
+    refresh,
     addAsset: async (a) => {
       const r = await createAction(toCreateInput(a));
       if (r.ok) await refresh();
@@ -57,6 +61,11 @@ export function useFixedAssets(): UseFixedAssets {
     },
     disposeAsset: async (id, proceeds, date) => {
       const r = await disposeAction({ id, proceeds, date });
+      if (r.ok) await refresh();
+      return r;
+    },
+    runDepreciation: async (period) => {
+      const r = await runDepreciationAction({ period });
       if (r.ok) await refresh();
       return r;
     },

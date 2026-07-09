@@ -6,8 +6,10 @@ import { Menu, Search, Bell, ChevronDown, LogOut, User as UserIcon, Settings as 
 import { Avatar } from "@/components/ui/Avatar";
 import { useCurrentUser, useSignOut } from "@/lib/auth/client";
 import { useAppStore } from "@/lib/store/appStore";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useRouter } from "next/navigation";
 import { formatTZS } from "@/lib/utils/currency";
+import { fromNow } from "@/lib/utils/dates";
 import { useCompany } from "@/lib/hooks/useCompany";
 import { useT } from "@/lib/hooks/useT";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
@@ -19,9 +21,9 @@ export function TopBar() {
   const signOut = useSignOut();
   const { company } = useCompany();
   const t = useT();
-  const { toggleSidebar, notifications, sidebarCollapsed } = useAppStore();
+  const { toggleSidebar, sidebarCollapsed } = useAppStore();
+  const { notifications, unread, markRead, markAllRead } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
-  const unread = notifications.filter((n) => !n.read).length;
 
   return (
     <header
@@ -51,7 +53,7 @@ export function TopBar() {
           {/* Cash position pill */}
           <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-ud-primary-50 text-ud-primary text-xs font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-ud-primary-glow animate-pulse-soft" />
-            <span>{t("Cash:")} <span className="font-mono tabular-nums">{formatTZS(312_800_000, true)}</span></span>
+            <span>{t("Cash:")} <span className="font-mono tabular-nums">{formatTZS(312_800_000)}</span></span>
           </div>
 
           {/* Language */}
@@ -79,7 +81,7 @@ export function TopBar() {
                 <div className="px-4 py-3 border-b border-ud-border flex items-center justify-between">
                   <span className="font-display font-bold text-sm">{t("Notifications")}</span>
                   {unread > 0 && (
-                    <span className="text-xs bg-ud-danger/10 text-ud-danger px-2 py-0.5 rounded-full font-medium">{t("{n} new", { n: unread })}</span>
+                    <button onClick={() => void markAllRead()} className="text-xs font-medium text-ud-primary hover:underline">{t("Mark all read")}</button>
                   )}
                 </div>
                 <div className="max-h-80 overflow-y-auto">
@@ -90,16 +92,19 @@ export function TopBar() {
                       <Link
                         key={n.id}
                         href={n.link ?? "#"}
-                        className="block px-4 py-3 hover:bg-ud-surface-2 border-b border-ud-border last:border-b-0"
+                        onClick={() => { if (!n.read) void markRead(n.id); }}
+                        className={cn("block px-4 py-3 hover:bg-ud-surface-2 border-b border-ud-border last:border-b-0", !n.read && "bg-ud-primary-50/40")}
                       >
                         <div className="flex items-start gap-2">
                           <span className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
                             n.type === "error" ? "bg-ud-danger" :
                             n.type === "warning" ? "bg-ud-warning" :
-                            n.type === "success" ? "bg-ud-success" : "bg-ud-info")} />
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium text-ud-text-primary truncate">{n.title}</div>
-                            <div className="text-xs text-ud-text-muted truncate">{n.message}</div>
+                            n.type === "success" || n.type === "payment" ? "bg-ud-success" : "bg-ud-info",
+                            n.read && "opacity-40")} />
+                          <div className="min-w-0 flex-1">
+                            <div className={cn("text-sm truncate", n.read ? "font-medium text-ud-text-secondary" : "font-semibold text-ud-text-primary")}>{n.title}</div>
+                            <div className="text-xs text-ud-text-muted line-clamp-2">{n.body}</div>
+                            <div className="text-[10px] text-ud-text-faint mt-0.5">{fromNow(n.createdAt)}</div>
                           </div>
                         </div>
                       </Link>

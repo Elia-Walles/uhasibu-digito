@@ -17,10 +17,14 @@ export const createQuotationSchema = z.object({
   lines: z.array(quotationLineInputSchema).min(1, "Add at least one line item"),
 });
 
+// Manual status changes only — "Converted" is set exclusively by convertQuotation (atomic).
 export const updateQuotationStatusSchema = z.object({
   id: z.string().min(1),
-  status: z.enum(["Draft", "Sent", "Accepted", "Expired", "Converted"]),
-  convertedInvoiceId: z.string().optional(),
+  status: z.enum(["Draft", "Sent", "Accepted", "Expired"]),
+});
+
+export const convertQuotationSchema = z.object({
+  quotationId: z.string().min(1),
 });
 
 export type CreateQuotationInput = z.infer<typeof createQuotationSchema>;

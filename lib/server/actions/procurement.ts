@@ -6,7 +6,10 @@ import {
   createSupplierSchema,
   createPurchaseOrderSchema,
   updatePOMatchSchema,
+  recordSupplierPaymentSchema,
 } from "@/lib/server/schemas/procurement";
+import { postSupplierBill, postSupplierPayment } from "@/lib/server/gl-postings";
+import { postInputVat } from "@/lib/server/pos-posting";
 import { ok, err, type Result } from "@/lib/server/result";
 import { decToNum, dateOnly } from "@/lib/server/serialize";
 import { computeInvoiceTotals } from "@/lib/utils/invoice-totals";
@@ -167,20 +170,67 @@ export async function updatePOMatch(input: unknown): Promise<Result<PurchaseOrde
   const parsed = updatePOMatchSchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
   const { id, poConfirmed, grnReceived, invoiceReceived } = parsed.data;
-  return withAuth(async () => {
-    try {
-      const updated = await db.purchaseOrder.update({
+  return withAuth(async (ctx) => {
+    const po = await db.purchaseOrder.findFirst({ where: { id }, include: { lines: true } });
+    if (!po) return err("Purchase order not found");
+
+    // The invoice being received is the point the liability (and stock) is recognised → post the bill.
+    const bookBill = invoiceReceived === true && !po.invoiceReceived && !po.journalRef;
+
+    const updated = await db.$transaction(async (tx) => {
+      const u = await tx.purchaseOrder.update({
         where: { id },
         data: {
           ...(poConfirmed !== undefined ? { poConfirmed } : {}),
           ...(grnReceived !== undefined ? { grnReceived } : {}),
           ...(invoiceReceived !== undefined ? { invoiceReceived } : {}),
+          ...(bookBill ? { status: "Received", journalRef: po.number } : {}),
         },
         include: { lines: true },
       });
-      return ok(rowToPO(updated));
-    } catch {
-      return err("Purchase order not found");
-    }
+      if (bookBill) {
+        await postSupplierBill(tx, ctx.tenantId, ctx, {
+          reference: po.number,
+          date: dateOnly(po.date),
+          net: decToNum(po.subtotal),
+          vat: decToNum(po.vatAmount),
+        });
+        await postInputVat(tx, ctx.tenantId, {
+          date: dateOnly(po.date),
+          reference: po.number,
+          description: `Supplier bill ${po.number}`,
+          net: decToNum(po.subtotal),
+          vat: decToNum(po.vatAmount),
+        });
+        await tx.supplier.update({ where: { id: po.supplierId }, data: { outstandingBalance: { increment: decToNum(po.total) } } });
+      }
+      return u;
+    });
+    return ok(rowToPO(updated));
+  });
+}
+
+/**
+ * Records a payment to a supplier and posts it to the GL (Dr Trade Payables, Cr cash/bank),
+ * reducing the supplier's outstanding balance. Clamped to the outstanding amount.
+ */
+export async function recordSupplierPayment(input: unknown): Promise<Result<{ id: string; amount: number }>> {
+  const parsed = recordSupplierPaymentSchema.safeParse(input);
+  if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+  const d = parsed.data;
+  return withAuth(async (ctx) => {
+    const supplier = await db.supplier.findFirst({ where: { id: d.supplierId } });
+    if (!supplier) return err("Supplier not found");
+    const outstanding = decToNum(supplier.outstandingBalance);
+    if (outstanding <= 0) return err("This supplier has no outstanding balance");
+    const amount = Math.min(d.amount, outstanding);
+    const date = d.date ?? dateOnly(new Date());
+    const reference = `SUP-PMT-${Date.now().toString(36).toUpperCase()}`;
+
+    await db.$transaction(async (tx) => {
+      await postSupplierPayment(tx, ctx.tenantId, ctx, { reference, date, amount, method: d.method });
+      await tx.supplier.update({ where: { id: supplier.id }, data: { outstandingBalance: { decrement: amount } } });
+    });
+    return ok({ id: supplier.id, amount });
   });
 }

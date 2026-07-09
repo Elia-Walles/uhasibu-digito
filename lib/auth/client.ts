@@ -5,11 +5,13 @@ import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
 import type { UserRole } from "@/types";
 
 export interface CurrentUser {
+  id: string;
   name: string;
   role: UserRole;
   email: string;
   initials: string;
   tenantId: string;
+  branchId: string | null;
   isSuperAdmin: boolean;
 }
 
@@ -26,11 +28,13 @@ export function useCurrentUser(): CurrentUser | null {
   if (!u) return null;
   const name = u.name ?? u.email ?? "User";
   return {
+    id: u.id ?? "",
     name,
     role: u.role,
     email: u.email ?? "",
     initials: initialsFor(name),
     tenantId: u.tenantId ?? "",
+    branchId: u.branchId ?? null,
     isSuperAdmin: u.isSuperAdmin === true,
   };
 }

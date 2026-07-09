@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, Plus, Globe, Loader2, ClipboardCheck } from "lucide-react";
 import { HealthGauge } from "@/components/charts/HealthGauge";
 import type { AIMessage } from "@/types";
+import { getFinancialHealth, type FinancialHealth } from "@/lib/server/actions/reports";
+import { formatTZS } from "@/lib/utils/currency";
 import { cn } from "@/lib/utils/cn";
 import { useT } from "@/lib/hooks/useT";
 
@@ -41,6 +43,19 @@ export default function AIAssistantPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const msgCounter = useRef(0);
   const sessionId = useId();
+
+  const [health, setHealth] = useState<FinancialHealth | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot fetch on mount
+    void getFinancialHealth().then(setHealth).catch(() => {});
+  }, []);
+  const healthScore = health
+    ? Math.round(Math.max(5, Math.min(98,
+        40
+        + (Math.min(Math.max(health.currentRatio, 0), 3) / 3) * 30
+        + (Math.min(Math.max(health.netMargin, 0), 20) / 20) * 20
+        + (health.dso > 0 && health.dso < 45 ? 10 : 0))))
+    : 0;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -253,19 +268,24 @@ export default function AIAssistantPage() {
       <aside className="hidden xl:flex flex-col border-l border-white/5 p-5">
         <div className="text-[10px] tracking-[0.16em] text-white/40 font-semibold mb-3">{t("FINANCIAL HEALTH")}</div>
         <div className="flex justify-center mb-5">
-          <HealthGauge score={74} size={170} variant="dark" />
+          <HealthGauge score={healthScore} size={170} variant="dark" />
         </div>
-        <div className="text-center text-sm text-white/70 mb-5">{t("Strong financial position")}</div>
+        <div className="text-center text-sm text-white/70 mb-5">
+          {!health ? t("Loading…") : healthScore >= 70 ? t("Strong financial position") : healthScore >= 45 ? t("Stable position") : t("Needs attention")}
+        </div>
 
         <div className="space-y-3 text-xs">
-          {[
-            { label: "Liquidity Ratio",      value: "3.86x", trend: "up"   },
-            { label: "Gross Margin",         value: "50.6%", trend: "flat" },
-            { label: "Operating Margin",     value: "14.7%", trend: "up"   },
-            { label: "Net Margin",           value: "9.5%",  trend: "up"   },
-            { label: "DSO",                  value: "38d",   trend: "down" },
-            { label: "Inventory Turnover",   value: "3.3x",  trend: "up"   },
-          ].map((m) => (
+          {(health
+            ? [
+                { label: "Liquidity Ratio", value: `${health.currentRatio.toFixed(2)}x` },
+                { label: "Gross Margin", value: `${health.grossMargin.toFixed(1)}%` },
+                { label: "Net Margin", value: `${health.netMargin.toFixed(1)}%` },
+                { label: "DSO", value: `${Math.round(health.dso)}d` },
+                { label: "Cash", value: formatTZS(health.cash) },
+                { label: "Receivables", value: formatTZS(health.receivables) },
+              ]
+            : []
+          ).map((m) => (
             <div key={m.label} className="flex items-center justify-between p-2.5 rounded-xl glass-light">
               <span className="text-white/65">{t(m.label)}</span>
               <span className="font-mono tabular-nums font-medium text-white">{m.value}</span>

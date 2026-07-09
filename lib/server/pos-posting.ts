@@ -132,6 +132,64 @@ export async function postOutputVat(tx: Tx, tenantId: string, input: OutputVatIn
   });
 }
 
+/** Record input (recoverable) VAT on a purchase into the period's VAT return + an Input transaction. */
+export async function postInputVat(tx: Tx, tenantId: string, input: OutputVatInput): Promise<void> {
+  if (input.vat <= 0) return;
+  const period = periodOf(input.date);
+  const existing = await tx.vATReturn.findFirst({ where: { tenantId, period } });
+  const ret = existing
+    ? await tx.vATReturn.update({
+        where: { id: existing.id },
+        data: {
+          inputVAT: Number(existing.inputVAT) + input.vat,
+          vatPayable: Number(existing.outputVAT) - (Number(existing.inputVAT) + input.vat),
+        },
+      })
+    : await tx.vATReturn.create({
+        data: { tenantId, period, outputVAT: 0, inputVAT: input.vat, vatPayable: -input.vat },
+      });
+
+  await tx.vATTransaction.create({
+    data: {
+      tenantId,
+      vatReturnId: ret.id,
+      direction: "Input",
+      date: new Date(input.date),
+      reference: input.reference,
+      description: input.description,
+      netAmount: input.net,
+      vatRate: VAT_RATE * 100,
+      vatAmount: input.vat,
+    },
+  });
+}
+
+/** Back out input VAT when a purchase/expense is deleted: negate the return totals + reversing txn. */
+export async function reverseInputVat(tx: Tx, tenantId: string, input: OutputVatInput): Promise<void> {
+  if (input.vat <= 0) return;
+  const period = periodOf(input.date);
+  const ret = await tx.vATReturn.findFirst({ where: { tenantId, period } });
+  if (!ret) return;
+  const newInput = Number(ret.inputVAT) - input.vat;
+  await tx.vATReturn.update({
+    where: { id: ret.id },
+    data: { inputVAT: newInput, vatPayable: Number(ret.outputVAT) - newInput },
+  });
+  await tx.vATTransaction.create({
+    data: {
+      tenantId,
+      vatReturnId: ret.id,
+      direction: "Input",
+      date: new Date(input.date),
+      reference: input.reference,
+      description: `Reversal · ${input.description}`,
+      netAmount: -input.net,
+      vatRate: VAT_RATE * 100,
+      vatAmount: -input.vat,
+    },
+  });
+}
+
 /** Back out output VAT on refund: negate the return totals and record a reversing transaction. */
 export async function reverseOutputVat(tx: Tx, tenantId: string, input: OutputVatInput): Promise<void> {
   if (input.vat <= 0) return;

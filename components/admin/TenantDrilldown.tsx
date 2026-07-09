@@ -68,7 +68,7 @@ export function TenantDrilldown({ tenantId }: { tenantId: string }) {
               label: c.label,
               ...(c.align ? { align: c.align } : {}),
               ...(c.align === "right"
-                ? { render: (r: Record<string, string | number>) => formatTZS(Number(r[c.key]) || 0, true) }
+                ? { render: (r: Record<string, string | number>) => formatTZS(Number(r[c.key]) || 0) }
                 : {}),
             }))}
           />

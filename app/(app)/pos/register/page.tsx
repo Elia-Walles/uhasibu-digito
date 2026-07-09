@@ -7,6 +7,8 @@ import { ReceiptModal } from "@/components/pos/ReceiptModal";
 import { useInventory } from "@/lib/hooks/useInventory";
 import { useBranches } from "@/lib/hooks/useBranches";
 import { useCustomers } from "@/lib/hooks/useCustomers";
+import { useCurrentUser } from "@/lib/auth/client";
+import { isBranchRestricted } from "@/lib/auth/roles";
 import { recordSale } from "@/lib/hooks/usePOS";
 import { formatTZS } from "@/lib/utils/currency";
 import { useT } from "@/lib/hooks/useT";
@@ -32,6 +34,9 @@ export default function RegisterPage() {
   const { inventory, refresh: refreshInventory } = useInventory();
   const { branches } = useBranches();
   const { customers } = useCustomers();
+  const me = useCurrentUser();
+  // Branch-restricted staff (Branch Manager / Cashier) always sell from their own branch.
+  const lockedBranch = me && isBranchRestricted(me.role) ? me.branchId : null;
 
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -45,8 +50,12 @@ export default function RegisterPage() {
   const [lastSale, setLastSale] = useState<POSSale | null>(null);
 
   useEffect(() => {
-    if (!branchId && branches.length > 0) setBranchId(branches.find((b) => b.isPrimary)?.id ?? branches[0]!.id);
-  }, [branches, branchId]);
+    if (lockedBranch) {
+      setBranchId(lockedBranch);
+    } else if (!branchId && branches.length > 0) {
+      setBranchId(branches.find((b) => b.isPrimary)?.id ?? branches[0]!.id);
+    }
+  }, [branches, branchId, lockedBranch]);
 
   const products = useMemo(() => {
     const q = search.toLowerCase();
@@ -135,7 +144,7 @@ export default function RegisterPage() {
           <div className="flex items-center gap-3 mb-4">
             <h1 className="font-display text-xl font-bold">{t("Register")}</h1>
             {branches.length > 0 && (
-              <select value={branchId} onChange={(e) => setBranchId(e.target.value)} className={cn(fieldCls, "w-auto")} aria-label={t("Branch")}>
+              <select value={branchId} onChange={(e) => setBranchId(e.target.value)} disabled={!!lockedBranch} className={cn(fieldCls, "w-auto", lockedBranch && "opacity-70 cursor-not-allowed")} aria-label={t("Branch")}>
                 {branches.map((b) => <option key={b.id} value={b.id} className="text-ud-text-primary">{b.name}</option>)}
               </select>
             )}

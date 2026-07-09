@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
-import { FileText, Download, ShieldCheck } from "lucide-react";
+import { FileText, Download, FileSpreadsheet } from "lucide-react";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { useReports, type ReportFormat } from "@/lib/hooks/useReports";
 import { fromNow } from "@/lib/utils/dates";
 import { useT } from "@/lib/hooks/useT";
 import type { Report, ReportCategory } from "@/types";
@@ -34,13 +35,19 @@ const REPORTS: Report[] = [
 
 export default function ReportsCenterPage() {
   const t = useT();
-  const [generating, setGenerating] = useState<string | null>(null);
+  const { download } = useReports();
+  const [busy, setBusy] = useState<string | null>(null);
 
-  async function generate(r: Report) {
-    setGenerating(r.id);
-    await new Promise((resolve) => setTimeout(resolve, 1400));
-    setGenerating(null);
-    toast.success(t("{name} ready · downloaded", { name: t(r.name) }));
+  async function generate(r: Report, format: ReportFormat) {
+    setBusy(`${r.id}:${format}`);
+    try {
+      await download(r.id, format);
+      toast.success(t("{name} downloaded", { name: t(r.name) }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("Could not generate {name}", { name: t(r.name) }));
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -74,16 +81,22 @@ export default function ReportsCenterPage() {
                     <Button
                       size="sm"
                       variant="primary"
-                      onClick={() => generate(r)}
-                      loading={generating === r.id}
-                      icon={!generating ? <Download className="w-3 h-3" /> : undefined}
+                      onClick={() => generate(r, "xlsx")}
+                      loading={busy === `${r.id}:xlsx`}
+                      icon={busy === `${r.id}:xlsx` ? undefined : <FileSpreadsheet className="w-3 h-3" />}
                       className="flex-1"
                     >
-                      {generating === r.id ? t("Generating…") : t("Generate")}
+                      {busy === `${r.id}:xlsx` ? t("Generating…") : t("Excel")}
                     </Button>
-                    {cat === "Financial" && (
-                      <Button size="sm" variant="outline" icon={<ShieldCheck className="w-3 h-3" />} aria-label={t("Apply stamp")} />
-                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => generate(r, "csv")}
+                      loading={busy === `${r.id}:csv`}
+                      icon={busy === `${r.id}:csv` ? undefined : <Download className="w-3 h-3" />}
+                    >
+                      {t("CSV")}
+                    </Button>
                   </div>
                 </div>
               ))}

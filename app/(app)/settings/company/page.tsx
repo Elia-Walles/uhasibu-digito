@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Save, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { useCompany } from "@/lib/hooks/useCompany";
 import { useT } from "@/lib/hooks/useT";
@@ -12,6 +13,8 @@ import type { UpdateCompanyInput } from "@/lib/server/schemas/company";
 import toast from "react-hot-toast";
 
 type FormState = UpdateCompanyInput;
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 export default function CompanySettingsPage() {
   const t = useT();
@@ -33,6 +36,7 @@ export default function CompanySettingsPage() {
         address: company.address,
         email: company.email,
         phone: company.phone,
+        fiscalYearStartMonth: company.fiscalYearStartMonth,
       });
     }
   }, [company]);
@@ -113,6 +117,15 @@ export default function CompanySettingsPage() {
           </div>
           <Input label={t("Email")} type="email" value={form.email ?? ""} onChange={(e) => update("email", e.target.value)} />
           <Input label={t("Phone")} value={form.phone ?? ""} onChange={(e) => update("phone", e.target.value)} />
+          <Select
+            label={t("Financial year starts")}
+            value={String(form.fiscalYearStartMonth ?? 1)}
+            onValueChange={(v) => { setForm((f) => ({ ...f, fiscalYearStartMonth: Number(v) })); setDirty(true); }}
+            options={MONTHS.map((m, i) => ({ value: String(i + 1), label: m }))}
+          />
+          <div className="flex items-end">
+            <p className="text-xs text-ud-text-muted">{t("Drives all statement periods, the trial balance, and year-end close.")}</p>
+          </div>
         </div>
       )}
     </div>

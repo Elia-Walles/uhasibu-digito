@@ -6,13 +6,15 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Lock, LogOut, Sparkles } from "lucide-react";
 import { PricingCard } from "@/components/billing/PricingCard";
+import { SubscriptionInvoiceView } from "@/components/billing/SubscriptionInvoiceView";
 import { normalizeTier, minTierForPath, type Tier } from "@/lib/auth/tiers";
-import { selectPlan } from "@/lib/server/actions/billing";
+import { createSubscriptionInvoice, submitSubscriptionInvoice } from "@/lib/server/actions/billing";
 import { usePublicPlans } from "@/lib/hooks/usePublicPlans";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { useSignOut } from "@/lib/auth/client";
 import { useT } from "@/lib/hooks/useT";
+import type { SubscriptionInvoiceView as Invoice } from "@/types/billing";
 import toast from "react-hot-toast";
 
 function moduleLabel(path: string): string {
@@ -28,6 +30,8 @@ function SelectPlanInner() {
   const t = useT();
   const { plans, loading } = usePublicPlans();
   const [pending, setPending] = useState<Tier | null>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const currentTier = normalizeTier(session?.user?.tier);
   const from = params.get("from");
@@ -38,16 +42,31 @@ function SelectPlanInner() {
   async function choose(tier: Exclude<Tier, "free">) {
     setPending(tier);
     try {
-      const res = await selectPlan({ tier });
+      const res = await createSubscriptionInvoice({ planKey: tier });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      await update(); // re-reads the tier into the JWT (jwt callback `update` branch)
-      toast.success(t("You're on the {tier} plan. Welcome aboard!", { tier }));
-      router.push(from && requiredTier ? from : "/dashboard");
+      setInvoice(res.data);
     } finally {
       setPending(null);
+    }
+  }
+
+  async function onDoneInvoice() {
+    if (!invoice) return;
+    setSubmitting(true);
+    try {
+      const res = await submitSubscriptionInvoice({ invoiceId: invoice.id });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      await update(); // apply the pending-approval gate
+      toast.success(t("Invoice sent. We'll activate your account once payment is confirmed."));
+      router.push("/pending-approval");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -80,6 +99,23 @@ function SelectPlanInner() {
       </header>
 
       <main className="relative max-w-6xl mx-auto px-4 sm:px-8 py-10 sm:py-14">
+        {invoice ? (
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-6">
+              <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-balance">{t("Complete your payment")}</h1>
+              <p className="mt-2 text-sm text-ud-text-muted text-balance">
+                {t("Pay this invoice by bank transfer, then click Done. We'll activate your account once payment is confirmed.")}
+              </p>
+            </div>
+            <SubscriptionInvoiceView
+              invoice={invoice}
+              submitting={submitting}
+              onDone={() => void onDoneInvoice()}
+              onBack={() => setInvoice(null)}
+            />
+          </div>
+        ) : (
+        <>
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -122,6 +158,8 @@ function SelectPlanInner() {
         <p className="mt-8 text-center text-xs text-ud-text-muted">
           {t("Prices in Tanzanian Shillings (TZS), billed yearly. You can change your plan at any time from Settings.")}
         </p>
+        </>
+        )}
       </main>
     </div>
   );

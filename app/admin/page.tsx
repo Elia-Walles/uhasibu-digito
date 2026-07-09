@@ -28,10 +28,10 @@ export default function AdminOverviewPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <AdminKpi index={0} label={t("Tenants")} value={String(o.totalTenants)} hint={t("{n} with active plan", { n: o.activeTenants })} />
-        <AdminKpi index={1} label={t("MRR")} value={formatTZS(o.mrrTzs, true)} hint={t("{amount} ARR", { amount: formatTZS(o.arrTzs, true) })} />
+        <AdminKpi index={1} label={t("MRR")} value={formatTZS(o.mrrTzs)} hint={t("{amount} ARR", { amount: formatTZS(o.arrTzs) })} />
         <AdminKpi index={2} label={t("Users")} value={String(o.totalUsers)} hint={t("{n} super-admins", { n: o.superAdmins })} />
         <AdminKpi index={3} label={t("Signups this month")} value={String(o.signupsThisMonth)} />
-        <AdminKpi index={4} label={t("Payments this month")} value={formatTZS(o.paymentsThisMonthTzs, true)} />
+        <AdminKpi index={4} label={t("Payments this month")} value={formatTZS(o.paymentsThisMonthTzs)} />
         {o.tenantsByTier.map((row, i) => (
           <AdminKpi key={row.tier} index={5 + i} label={t("{tier} tenants", { tier: row.tier })} value={String(row.count)} />
         ))}

@@ -14,15 +14,43 @@ export interface DashboardData {
   upcomingTax: TaxFiling[];
 }
 
+interface Movement {
+  debit: number;
+  credit: number;
+}
+
+/** Aggregate GL movements per account code over an optional date range (all-time if `from` is null). */
+async function glMovements(from: Date | null, to: Date): Promise<Map<string, Movement>> {
+  const rows = await db.gLEntry.findMany({
+    where: from ? { date: { gte: from, lte: to } } : { date: { lte: to } },
+    select: { accountCode: true, debit: true, credit: true },
+  });
+  const map = new Map<string, Movement>();
+  for (const r of rows) {
+    const m = map.get(r.accountCode) ?? { debit: 0, credit: 0 };
+    m.debit += decToNum(r.debit);
+    m.credit += decToNum(r.credit);
+    map.set(r.accountCode, m);
+  }
+  return map;
+}
+
+/**
+ * Dashboard KPIs, all derived from the General Ledger so they reconcile with the trial balance
+ * and financial statements (the single source of truth): cash = balance of cash/bank accounts
+ * (codes 11xx), receivables = Trade Receivables (1200), revenue = income-account movement.
+ */
 export async function getDashboard(): Promise<DashboardData> {
   return withAuth(async () => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const fyStart = new Date(now.getFullYear(), 0, 1);
 
-    const [bankAgg, custAgg, invoices, filings, statements] = await Promise.all([
-      db.bankAccount.aggregate({ _sum: { balance: true } }),
-      db.customer.aggregate({ _sum: { outstandingBalance: true } }),
-      db.invoice.findMany({ select: { total: true, status: true, issueDate: true } }),
+    const [coaRows, glCum, glFy, glMtd, filings, statements] = await Promise.all([
+      db.cOAAccount.findMany({ select: { code: true, type: true } }),
+      glMovements(null, now), // cumulative balances as at now
+      glMovements(fyStart, now), // FY-to-date flow
+      glMovements(monthStart, now), // month-to-date flow
       db.taxFiling.findMany({
         where: { status: { in: ["Pending", "Upcoming", "Overdue"] } },
         orderBy: { dueDate: "asc" },
@@ -31,18 +59,31 @@ export async function getDashboard(): Promise<DashboardData> {
       getStatements("FY"),
     ]);
 
-    const counted = invoices.filter((i) => i.status !== "Draft" && i.status !== "Cancelled");
-    const salesToDate = counted.reduce((s, i) => s + decToNum(i.total), 0);
-    const revenueMtd = counted
-      .filter((i) => i.issueDate >= monthStart)
-      .reduce((s, i) => s + decToNum(i.total), 0);
+    const incomeCodes = new Set(coaRows.filter((a) => a.type === "Income").map((a) => a.code));
+
+    // Cash & bank: debit-normal balance of every 11xx detail account (matches the cash-flow definition).
+    let cashPosition = 0;
+    for (const [code, m] of glCum) {
+      if (code.startsWith("11") && code.length > 4) cashPosition += m.debit - m.credit;
+    }
+    // Receivables: debit-normal balance of Trade Receivables.
+    const ar = glCum.get("1200");
+    const receivables = ar ? ar.debit - ar.credit : 0;
+    // Revenue: credit-normal income movement.
+    const sumIncome = (map: Map<string, Movement>) => {
+      let total = 0;
+      for (const [code, m] of map) if (incomeCodes.has(code)) total += m.credit - m.debit;
+      return total;
+    };
+    const salesToDate = sumIncome(glFy);
+    const revenueMtd = sumIncome(glMtd);
     const netLine = statements.incomeStatement.find((l) => l.label === "Net profit");
 
     return {
       revenueMtd,
       salesToDate,
-      cashPosition: decToNum(bankAgg._sum.balance ?? 0),
-      receivables: decToNum(custAgg._sum.outstandingBalance ?? 0),
+      cashPosition,
+      receivables,
       netProfitFy: netLine?.current ?? 0,
       upcomingTax: filings.map((f) => ({
         id: f.id,

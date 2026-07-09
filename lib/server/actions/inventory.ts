@@ -1,7 +1,8 @@
 "use server";
 import type { InventoryItem as DbItem, StockMovement as DbMovement } from "@prisma/client";
 import { db } from "@/lib/server/db";
-import { withAuth } from "@/lib/server/with-auth";
+import { withAuth, branchScope } from "@/lib/server/with-auth";
+import { isBranchRestricted } from "@/lib/auth/roles";
 import { applyStockMovement, StockError } from "@/lib/server/stock-movement";
 import { createItemSchema, updateItemSchema, deleteItemSchema, recordMovementSchema } from "@/lib/server/schemas/inventory";
 import { ok, err, type Result } from "@/lib/server/result";
@@ -139,9 +140,11 @@ export async function deleteInventoryItem(input: unknown): Promise<Result<{ id: 
 }
 
 export async function listBranchStock(itemId?: string): Promise<BranchStock[]> {
-  return withAuth(async () => {
+  return withAuth(async (ctx) => {
+    // Branch-restricted staff only see their own branch's per-branch stock.
+    const scope = branchScope(ctx);
     const rows = await db.branchStock.findMany({
-      where: itemId ? { itemId } : {},
+      where: { ...(itemId ? { itemId } : {}), ...(scope ? { branchId: scope } : {}) },
       orderBy: { createdAt: "asc" },
     });
     return rows.map((r) => ({ id: r.id, branchId: r.branchId, itemId: r.itemId, onHand: decToNum(r.onHand) }));
@@ -153,6 +156,10 @@ export async function recordStockMovement(input: unknown): Promise<Result<{ item
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
   const d = parsed.data;
   return withAuth(async (ctx) => {
+    // Branch-restricted staff can only move their own branch's stock.
+    const scope = branchScope(ctx);
+    if (isBranchRestricted(ctx.role) && !scope) return err("Your account isn't assigned to a branch. Ask an administrator.");
+    const branchId = scope ?? d.branchId;
     try {
       const result = await db.$transaction((tx) =>
         applyStockMovement(tx, ctx.tenantId, {
@@ -161,7 +168,7 @@ export async function recordStockMovement(input: unknown): Promise<Result<{ item
           quantity: d.quantity,
           unitCost: d.unitCost,
           narration: d.narration,
-          ...(d.branchId ? { branchId: d.branchId } : {}),
+          ...(branchId ? { branchId } : {}),
           enforceStock: d.type === "OUT",
         }),
       );

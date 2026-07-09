@@ -4,9 +4,12 @@ import {
   listQuotations,
   createQuotation as createAction,
   updateQuotationStatus as updateAction,
+  convertQuotation as convertAction,
 } from "@/lib/server/actions/quotations";
 import { type Result } from "@/lib/server/result";
-import type { Quotation, QuotationStatus } from "@/types";
+import type { Quotation, Invoice } from "@/types";
+
+export type ManualQuotationStatus = "Draft" | "Sent" | "Accepted" | "Expired";
 
 export interface CreateQuotationLine {
   description: string;
@@ -30,11 +33,8 @@ export interface UseQuotations {
   quotations: Quotation[];
   loading: boolean;
   createQuotation: (p: CreateQuotationPayload) => Promise<Result<Quotation>>;
-  updateQuotationStatus: (
-    id: string,
-    status: QuotationStatus,
-    convertedInvoiceId?: string,
-  ) => Promise<Result<Quotation>>;
+  updateQuotationStatus: (id: string, status: ManualQuotationStatus) => Promise<Result<Quotation>>;
+  convertQuotation: (quotationId: string) => Promise<Result<Invoice>>;
 }
 
 export function useQuotations(): UseQuotations {
@@ -63,8 +63,13 @@ export function useQuotations(): UseQuotations {
       if (r.ok) await refresh();
       return r;
     },
-    updateQuotationStatus: async (id, status, convertedInvoiceId) => {
-      const r = await updateAction({ id, status, ...(convertedInvoiceId ? { convertedInvoiceId } : {}) });
+    updateQuotationStatus: async (id, status) => {
+      const r = await updateAction({ id, status });
+      if (r.ok) await refresh();
+      return r;
+    },
+    convertQuotation: async (quotationId) => {
+      const r = await convertAction({ quotationId });
       if (r.ok) await refresh();
       return r;
     },

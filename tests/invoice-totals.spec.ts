@@ -18,9 +18,9 @@ describe("invoice totals", () => {
     expect(t.total).toBe(2950);
   });
 
-  it("rounds VAT to the nearest shilling", () => {
+  it("computes per-line VAT to two decimals", () => {
     const t = computeInvoiceTotals([{ quantity: 1, unitPrice: 333, discountPct: 0 }]);
-    expect(t.vatAmount).toBe(Math.round(333 * 0.18)); // 60
-    expect(t.total).toBe(333 + 60);
+    expect(t.vatAmount).toBe(59.94); // 333 × 18%, rounded to 2dp (single source of truth)
+    expect(t.total).toBe(392.94);
   });
 });

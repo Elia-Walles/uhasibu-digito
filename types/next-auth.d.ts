@@ -10,7 +10,9 @@ declare module "next-auth" {
       id: string;
       tenantId: string;
       role: UserRole;
+      branchId: string | null; // set for branch-restricted staff (Branch Manager / Cashier)
       tier: Tier;
+      status: string; // "active" | "pending_approval"
       isSuperAdmin: boolean;
     } & DefaultSession["user"];
   }
@@ -27,7 +29,9 @@ declare module "next-auth/jwt" {
   interface JWT {
     tenantId?: string | null;
     role?: UserRole;
+    branchId?: string | null;
     tier?: Tier;
+    tenantStatus?: string;
     isSuperAdmin?: boolean;
   }
 }

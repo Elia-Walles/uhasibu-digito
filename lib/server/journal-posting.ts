@@ -1,6 +1,6 @@
 import type { db } from "./db";
 import type { RequestContext } from "./request-context";
-import { bankIdForAccountCode } from "@/lib/utils/bank-account-mapping";
+import { recordAudit, moduleForRef } from "./audit";
 
 // The interactive-transaction client for the extended `db` (no lifecycle methods).
 type Tx = Omit<typeof db, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
@@ -20,6 +20,14 @@ export interface JournalPayload {
   date: string; // YYYY-MM-DD
 }
 
+/** Thrown when a journal is dated inside a closed/locked accounting period. */
+export class PostingLockError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PostingLockError";
+  }
+}
+
 /**
  * The compound write: inside one transaction, create the JournalEntryGroup + GLEntry
  * rows, and for any line whose accountCode maps to a bank account, insert a matching
@@ -35,6 +43,14 @@ export async function applyJournalEntry(
 ): Promise<{ groupId: string }> {
   const date = new Date(payload.date);
   const narration = payload.narration || `Journal ${payload.reference}`;
+
+  // Posting lock: reject any entry dated on/before the books-locked-through date (closed period).
+  const company = await tx.companyProfile.findFirst({ select: { booksLockedThrough: true } });
+  if (company?.booksLockedThrough && date <= company.booksLockedThrough) {
+    throw new PostingLockError(
+      `The books are closed through ${company.booksLockedThrough.toISOString().split("T")[0]}. This entry falls in a locked period.`,
+    );
+  }
 
   const group = await tx.journalEntryGroup.create({
     data: {
@@ -66,16 +82,17 @@ export async function applyJournalEntry(
       },
     });
 
-    const bankId = bankIdForAccountCode(line.accountCode);
+    // Bank mirror: if this line's COA code is linked to a BankAccount (via coaAccountCode),
+    // move that account's balance and append a BankTransaction so Banking ⇄ GL stay in sync.
     const delta = line.debit - line.credit;
-    if (bankId && delta !== 0) {
-      const acc = await tx.bankAccount.findFirst({ where: { id: bankId, tenantId } });
+    if (delta !== 0) {
+      const acc = await tx.bankAccount.findFirst({ where: { tenantId, coaAccountCode: line.accountCode } });
       if (acc) {
         const newBalance = Number(acc.balance) + delta;
         await tx.bankTransaction.create({
           data: {
             tenantId,
-            bankAccountId: bankId,
+            bankAccountId: acc.id,
             date,
             description: narration,
             debit: delta < 0 ? -delta : 0,
@@ -85,36 +102,96 @@ export async function applyJournalEntry(
             matched: false,
           },
         });
-        await tx.bankAccount.update({ where: { id: bankId }, data: { balance: newBalance } });
+        await tx.bankAccount.update({ where: { id: acc.id }, data: { balance: newBalance } });
       }
     }
   }
+
+  // Immutable audit trail — one entry per posted journal (covers every financial module).
+  await recordAudit(tx, tenantId, ctx, {
+    action: "Posted",
+    module: moduleForRef(payload.reference),
+    recordRef: payload.reference,
+    details: narration,
+  });
 
   return { groupId: group.id };
 }
 
 /**
- * Undo a previously-posted entry: drop its GL rows + group, remove the bank
- * transactions it created (matched by reference), and back out their net effect on
- * each BankAccount.balance.
+ * Append-only reversal: instead of deleting the original, post a CONTRA entry (reference
+ * `<ref>-REV`) with every debit/credit swapped, mark the original group `Reversed`, and back out
+ * the bank mirror with an opposite BankTransaction. History is preserved; because reports sum all
+ * GLEntry rows, the original + contra net to zero. Idempotent — only active `Posted` groups are
+ * reversed. No ctx needed: the contra reuses the original's poster.
  */
 export async function reverseJournalEntry(tx: Tx, tenantId: string, reference: string): Promise<void> {
-  const bankTxns = await tx.bankTransaction.findMany({ where: { tenantId, reference } });
-  const netByAccount = new Map<string, number>();
-  for (const t of bankTxns) {
-    const net = Number(t.credit) - Number(t.debit);
-    netByAccount.set(t.bankAccountId, (netByAccount.get(t.bankAccountId) ?? 0) + net);
-  }
+  const revRef = `${reference}-REV`;
+  const groups = await tx.journalEntryGroup.findMany({
+    where: { tenantId, reference, status: "Posted" },
+    include: { entries: true },
+  });
 
-  await tx.bankTransaction.deleteMany({ where: { tenantId, reference } });
-
-  for (const [bankId, net] of netByAccount) {
-    const acc = await tx.bankAccount.findFirst({ where: { id: bankId, tenantId } });
-    if (acc) {
-      await tx.bankAccount.update({ where: { id: bankId }, data: { balance: Number(acc.balance) - net } });
+  for (const g of groups) {
+    const revGroup = await tx.journalEntryGroup.create({
+      data: {
+        tenantId,
+        reference: revRef,
+        narration: `Reversal of ${reference}`,
+        status: "Posted",
+        reversesRef: reference,
+        postedById: g.postedById,
+        postedAt: new Date(),
+      },
+    });
+    for (const e of g.entries) {
+      await tx.gLEntry.create({
+        data: {
+          tenantId,
+          groupId: revGroup.id,
+          date: e.date,
+          reference: revRef,
+          narration: `Reversal of ${reference}`,
+          account: e.account,
+          accountCode: e.accountCode,
+          costCentre: e.costCentre,
+          debit: e.credit, // swapped
+          credit: e.debit,
+          balance: Number(e.credit) - Number(e.debit),
+          postedBy: e.postedBy,
+          status: "Posted",
+        },
+      });
     }
+    await tx.journalEntryGroup.update({ where: { id: g.id }, data: { status: "Reversed", reversedByRef: revRef } });
   }
 
-  await tx.gLEntry.deleteMany({ where: { tenantId, reference } });
-  await tx.journalEntryGroup.deleteMany({ where: { tenantId, reference } });
+  // Back out the bank mirror with contra transactions (append-only).
+  const bankTxns = await tx.bankTransaction.findMany({ where: { tenantId, reference } });
+  for (const bt of bankTxns) {
+    const acc = await tx.bankAccount.findFirst({ where: { id: bt.bankAccountId, tenantId } });
+    if (!acc) continue;
+    const net = Number(bt.credit) - Number(bt.debit);
+    const newBalance = Number(acc.balance) - net;
+    await tx.bankTransaction.create({
+      data: {
+        tenantId,
+        bankAccountId: bt.bankAccountId,
+        date: bt.date,
+        description: `Reversal of ${reference}`,
+        debit: bt.credit, // swapped
+        credit: bt.debit,
+        balance: newBalance,
+        reference: revRef,
+        matched: false,
+      },
+    });
+    await tx.bankAccount.update({ where: { id: acc.id }, data: { balance: newBalance } });
+  }
+
+  if (groups.length > 0) {
+    await tx.auditLog.create({
+      data: { tenantId, userName: "System", action: "Reversed", module: moduleForRef(reference), recordRef: reference, ipAddress: "server", details: `Reversed ${reference}` },
+    });
+  }
 }

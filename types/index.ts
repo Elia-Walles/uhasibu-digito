@@ -10,7 +10,9 @@ export type UserRole =
   | "Accountant"
   | "Data Entry"
   | "HR Manager"
-  | "Auditor";
+  | "Auditor"
+  | "Branch Manager"
+  | "Cashier";
 
 export interface User {
   id: string;
@@ -40,6 +42,7 @@ export interface Company {
   phone: string;
   website: string;
   financialYear: { start: string; end: string };
+  fiscalYearStartMonth: number;
   baseCurrency: string;
   secondaryCurrency: string;
   logoUrl?: string;
@@ -133,10 +136,57 @@ export interface Invoice {
   discount: number;
   vatAmount: number;
   total: number;
+  amountPaid: number;
   status: InvoiceStatus;
   efdNumber: string;
   notes: string;
+  publicToken?: string;
   paidAt?: string;
+}
+
+export interface InvoicePayment {
+  id: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  customerId: string;
+  customerName: string;
+  amount: number;
+  method: string;
+  reference: string;
+  paidAt: string;
+}
+
+export type ExpensePaymentMethod = "cash" | "mpesa" | "bank" | "credit";
+
+export interface Expense {
+  id: string;
+  date: string;
+  category: string; // COA expense account code
+  categoryName: string;
+  payee: string;
+  description: string;
+  amount: number;
+  vatAmount: number;
+  paymentMethod: ExpensePaymentMethod;
+  reference: string;
+}
+
+// ---------- Recurring invoices ----------
+export type RecurringFrequency = "Weekly" | "Monthly" | "Quarterly" | "Yearly";
+
+export interface RecurringInvoice {
+  id: string;
+  customerId: string;
+  customerName: string;
+  frequency: RecurringFrequency;
+  interval: number;
+  nextRunAt: string; // YYYY-MM-DD
+  startDate: string; // YYYY-MM-DD
+  endDate?: string; // YYYY-MM-DD
+  active: boolean;
+  notes: string;
+  lastInvoiceId?: string;
+  lines: InvoiceLine[];
 }
 
 // ---------- Customers ----------
@@ -457,6 +507,7 @@ export interface BankAccount {
   accountNumber: string;
   currency: BankCurrency;
   balance: number;
+  coaAccountCode: string;
   balanceUSD?: number;
   transactions: BankTransaction[];
 }
@@ -563,6 +614,7 @@ export interface BudgetLine {
   id: string;
   lineItem: string;
   category: string;
+  coaAccountCode?: string;
   annualBudget: number;
   mtdBudget: number;
   mtdActual: number;

@@ -81,7 +81,7 @@ export default function AdminTenantsPage() {
               { key: "userCount", label: tr("Users"), align: "right" },
               { key: "subscriptionStatus", label: tr("Subscription"), render: (row) =>
                 row.subscriptionStatus ? <StatusPill value={row.subscriptionStatus} /> : <span className="text-ud-text-faint"></span> },
-              { key: "mrrTzs", label: tr("MRR"), align: "right", render: (row) => formatTZS(row.mrrTzs, true) },
+              { key: "mrrTzs", label: tr("MRR"), align: "right", render: (row) => formatTZS(row.mrrTzs) },
               { key: "createdAt", label: tr("Joined"), render: (row) => row.createdAt.slice(0, 10) },
             ]}
           />

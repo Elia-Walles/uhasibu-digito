@@ -10,6 +10,9 @@ export interface RequestContext {
   tenantId: string;
   userId: string;
   role: UserRole;
+  /** Branch the acting user is bound to (Branch Manager / Cashier). Null/undefined for the owner
+   *  and finance roles, who see every branch. */
+  branchId?: string | null;
   /** Display name of the acting user (e.g. the POS cashier). Set by withAuth; may be absent
    *  for the few contexts constructed manually (upload route, tests). */
   userName?: string;

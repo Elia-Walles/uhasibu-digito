@@ -2,11 +2,12 @@
 import type { Quotation as DbQuotation, QuotationLine as DbQuotationLine } from "@prisma/client";
 import { db } from "@/lib/server/db";
 import { withAuth } from "@/lib/server/with-auth";
-import { createQuotationSchema, updateQuotationStatusSchema } from "@/lib/server/schemas/quotations";
+import { createQuotationSchema, updateQuotationStatusSchema, convertQuotationSchema } from "@/lib/server/schemas/quotations";
+import { createInvoice } from "@/lib/server/actions/invoices";
 import { ok, err, type Result } from "@/lib/server/result";
 import { decToNum, dateOnly } from "@/lib/server/serialize";
 import { computeInvoiceTotals } from "@/lib/utils/invoice-totals";
-import type { Quotation, InvoiceLine, QuotationStatus } from "@/types";
+import type { Quotation, Invoice, InvoiceLine, QuotationStatus } from "@/types";
 
 type DbQuotationWithLines = DbQuotation & { lines: DbQuotationLine[] };
 
@@ -106,18 +107,52 @@ export async function createQuotation(input: unknown): Promise<Result<Quotation>
 export async function updateQuotationStatus(input: unknown): Promise<Result<Quotation>> {
   const parsed = updateQuotationStatusSchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
-  const { id, status, convertedInvoiceId } = parsed.data;
+  const { id, status } = parsed.data;
 
   return withAuth(async () => {
-    try {
-      const updated = await db.quotation.update({
-        where: { id },
-        data: { status, ...(convertedInvoiceId !== undefined ? { convertedInvoiceId } : {}) },
-        include: { lines: true },
-      });
-      return ok(rowToQuotation(updated));
-    } catch {
-      return err("Quotation not found");
-    }
+    const existing = await db.quotation.findFirst({ where: { id } });
+    if (!existing) return err("Quotation not found");
+    if (existing.status === "Converted") return err("A converted quotation can't change status");
+    const updated = await db.quotation.update({
+      where: { id },
+      data: { status },
+      include: { lines: true },
+    });
+    return ok(rowToQuotation(updated));
+  });
+}
+
+/**
+ * Convert a quotation into an issued (Sent) invoice atomically: createInvoice carries the lines,
+ * marks the quotation Converted and links both sides inside a single transaction, so there is no
+ * window where an invoice exists but the quotation is still open, and re-conversion is rejected.
+ */
+export async function convertQuotation(input: unknown): Promise<Result<Invoice>> {
+  const parsed = convertQuotationSchema.safeParse(input);
+  if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+  const { quotationId } = parsed.data;
+
+  return withAuth(async () => {
+    const q = await db.quotation.findFirst({ where: { id: quotationId }, include: { lines: true } });
+    if (!q) return err("Quotation not found");
+    if (q.status === "Converted") return err("This quotation was already converted to an invoice");
+
+    const issueDate = dateOnly(new Date());
+    const dueDate = dateOnly(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    return createInvoice({
+      customerId: q.customerId,
+      issueDate,
+      dueDate,
+      status: "Sent",
+      notes: q.notes ? `Converted from quotation ${q.number} · ${q.notes}` : `Converted from quotation ${q.number}`,
+      quotationId: q.id,
+      lines: q.lines.map((l) => ({
+        description: l.description,
+        quantity: decToNum(l.quantity),
+        unitPrice: decToNum(l.unitPrice),
+        discountPct: decToNum(l.discountPct),
+        vatPct: decToNum(l.vatPct),
+      })),
+    });
   });
 }

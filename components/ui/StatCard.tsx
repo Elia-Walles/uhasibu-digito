@@ -42,7 +42,7 @@ export function StatCard({
   icon,
   variant = "teal",
   loading,
-  format = "compact",
+  format = "currency",
   className,
   footer,
 }: StatCardProps) {
@@ -74,7 +74,7 @@ export function StatCard({
       <div className="text-xs font-medium opacity-80 tracking-[0.06em] uppercase">{t(label)}</div>
       <div className="mt-3 flex items-baseline gap-1.5">
         {prefix && <span className="font-mono text-base opacity-90">{prefix}</span>}
-        <AnimatedNumber value={value} format={format} className="font-display font-bold text-3xl tabular-nums" />
+        <AnimatedNumber value={value} format={format} className="font-display font-bold text-2xl sm:text-3xl tabular-nums leading-tight break-words" />
         {suffix && <span className="font-mono text-sm opacity-90">{suffix}</span>}
       </div>
       {trendValue !== undefined && (
@@ -103,8 +103,9 @@ function AnimatedNumber({
   useEffect(() => {
     const unsub = rounded.on("change", (latest) => {
       const num = typeof latest === "number" ? latest : Number(latest);
-      if (format === "currency") setDisplay(formatTZS(num));
-      else if (format === "compact") setDisplay(formatTZS(num, true));
+      // "compact" is retained for API compatibility but no longer abbreviates — financial cards
+      // always show full grouped numbers (e.g. 90,000,000), never 90M / 1K.
+      if (format === "currency" || format === "compact") setDisplay(formatTZS(num));
       else if (format === "number") setDisplay(num.toLocaleString());
       else setDisplay(String(num));
     });

@@ -30,7 +30,7 @@ export function AppInitializer() {
         id: `tax-reminder-${filing.id}`,
         type: "warning",
         title: `${filing.type} filing due in ${days} day${days === 1 ? "" : "s"}`,
-        message: `Period: ${filing.period} · ${formatTZS(filing.amount, true)} payable`,
+        message: `Period: ${filing.period} · ${formatTZS(filing.amount)} payable`,
         timestamp: now,
         read: false,
         link: TAX_LINKS[filing.type] ?? "/tax/calendar",

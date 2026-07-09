@@ -2,6 +2,7 @@
 import { db } from "@/lib/server/db";
 import { withAuth } from "@/lib/server/with-auth";
 import { decToNum } from "@/lib/server/serialize";
+import { fiscalYearBounds, priorFiscalYearBounds, fiscalQuarterBounds, type FiscalYearBounds } from "@/lib/server/fiscal";
 import type { FinancialStatementLine } from "@/types";
 
 export type StatementPeriod = "Q1" | "Q2" | "Q3" | "Q4" | "FY";
@@ -17,19 +18,14 @@ export interface PeriodView {
   equityChanges: FinancialStatementLine[];
 }
 
-const QUARTER_MONTHS: Record<StatementPeriod, [number, number]> = {
-  Q1: [0, 2], Q2: [3, 5], Q3: [6, 8], Q4: [9, 11], FY: [0, 11],
-};
-
 interface Account { code: string; name: string; type: string }
 interface Movement { debit: number; credit: number }
 
-function rangeEnd(year: number, period: StatementPeriod): Date {
-  const [, endM] = QUARTER_MONTHS[period];
-  return new Date(year, endM + 1, 0, 23, 59, 59, 999);
-}
-function rangeStart(year: number): Date {
-  return new Date(year, 0, 1, 0, 0, 0, 0);
+/** The flow window (start/end) for a period inside a fiscal year. */
+function periodWindow(period: StatementPeriod, fy: FiscalYearBounds): { start: Date; end: Date } {
+  if (period === "FY") return { start: fy.fyStart, end: fy.fyEnd };
+  const q = Number(period[1]) as 1 | 2 | 3 | 4;
+  return fiscalQuarterBounds(fy.fyStart, q);
 }
 
 /** Net debit-positive movement for an account over [start, end]. */
@@ -115,20 +111,110 @@ function buildBalanceSheet(accounts: Account[], curCum: Map<string, Movement>, p
   return lines;
 }
 
-function buildCashFlow(accounts: Account[], curCum: Map<string, Movement>, openCum: Map<string, Movement>, net: { cur: number; prior: number }): FinancialStatementLine[] {
-  const cashAccounts = accounts.filter((a) => a.code.startsWith("11") && a.code.length > 4);
+interface CashFlowFigures {
+  netProfit: number;
+  operating: { label: string; amount: number }[];
+  investing: { label: string; amount: number }[];
+  financing: { label: string; amount: number }[];
+  operatingTotal: number;
+  investingTotal: number;
+  financingTotal: number;
+  netMovement: number;
+  cashStart: number;
+  cashEnd: number;
+}
+
+/**
+ * Indirect-method cash flow figures for one period, spanning fiscal-year-start (`opening`) to the
+ * selected period end (`closing`). Every non-cash account is partitioned into exactly one section,
+ * so operating + investing + financing reconciles exactly to the movement in cash: for a balanced
+ * ledger the debit-normal balances of all accounts sum to zero, hence
+ * Δcash = −Σ(Δ of every other account) = netProfit + Σ(cash impact of each balance-sheet account).
+ */
+function cashFlowFigures(accounts: Account[], closing: Map<string, Movement>, opening: Map<string, Movement>): CashFlowFigures {
+  // Movement in an account's debit-normal balance between opening and closing.
+  const flowDN = (code: string) => {
+    const c = movementFor(code, closing);
+    const o = movementFor(code, opening);
+    return (c.debit - c.credit) - (o.debit - o.credit);
+  };
+  // Cash effect of a balance-sheet account's movement: a rise in an asset consumes cash, a rise in
+  // a liability/equity account releases it.
+  const cashImpact = (code: string) => -flowDN(code);
+
+  // Net profit for the period = negative sum of the P&L accounts' debit-normal movement.
+  const plTypes = new Set(["Income", "CostOfSales", "Expense"]);
+  const netProfit = -accounts.filter((a) => plTypes.has(a.type)).reduce((s, a) => s + flowDN(a.code), 0);
+
+  const operating = [
+    { label: "Depreciation & amortisation", amount: cashImpact("1590") },
+    { label: "Trade & other receivables", amount: cashImpact("1200") },
+    { label: "Inventory", amount: cashImpact("1300") },
+    { label: "Input VAT recoverable", amount: cashImpact("1250") },
+    { label: "Trade & other payables", amount: cashImpact("2100") },
+    { label: "Statutory payables", amount: cashImpact("2150") },
+    { label: "Tax payable", amount: cashImpact("2200") },
+  ];
+  const investing = [
+    { label: "Property, plant & equipment", amount: cashImpact("1500") },
+    { label: "Intangible assets", amount: cashImpact("1600") },
+  ];
+  const financing = [
+    { label: "Share capital", amount: cashImpact("3100") },
+    { label: "Opening balance equity", amount: cashImpact("3900") },
+    { label: "Retained earnings movement", amount: cashImpact("3200") },
+    { label: "Bank loans", amount: cashImpact("2300") },
+  ];
+
+  const sum = (xs: { amount: number }[]) => xs.reduce((s, x) => s + x.amount, 0);
+  const operatingTotal = netProfit + sum(operating);
+  const investingTotal = sum(investing);
+  const financingTotal = sum(financing);
+
+  // Cash & cash equivalents: the leaf accounts under 1100 (1110–1150), excluding the 1100 rollup.
+  const cashAccounts = accounts.filter((a) => a.code.startsWith("11") && a.code !== "1100");
   const cashAt = (moves: Map<string, Movement>) => cashAccounts.reduce((s, a) => {
     const m = movementFor(a.code, moves);
     return s + (m.debit - m.credit);
   }, 0);
-  const closing = cashAt(curCum);
-  const opening = cashAt(openCum);
-  return [
-    { label: "Net profit for the period", current: net.cur, prior: net.prior },
-    { label: "Net movement in cash", current: closing - opening, prior: 0, isTotal: true },
-    { label: "Cash at start of period", current: opening, prior: 0 },
-    { label: "Cash at end of period", current: closing, prior: 0, isTotal: true },
-  ];
+
+  return {
+    netProfit, operating, investing, financing,
+    operatingTotal, investingTotal, financingTotal,
+    netMovement: operatingTotal + investingTotal + financingTotal,
+    cashStart: cashAt(opening),
+    cashEnd: cashAt(closing),
+  };
+}
+
+function buildCashFlow(
+  accounts: Account[],
+  curCum: Map<string, Movement>, openCum: Map<string, Movement>,
+  priCum: Map<string, Movement>, priOpenCum: Map<string, Movement>,
+): FinancialStatementLine[] {
+  const cur = cashFlowFigures(accounts, curCum, openCum);
+  const pri = cashFlowFigures(accounts, priCum, priOpenCum);
+  const lines: FinancialStatementLine[] = [];
+
+  const section = (header: string, curRows: { label: string; amount: number }[], priRows: { label: string; amount: number }[], total: string, curTotal: number, priTotal: number, lead?: { label: string; c: number; p: number }) => {
+    lines.push({ label: header, current: 0, prior: 0, isHeader: true });
+    if (lead) lines.push({ label: lead.label, current: lead.c, prior: lead.p, indent: 1 });
+    for (let i = 0; i < curRows.length; i += 1) {
+      const c = curRows[i]!.amount, p = priRows[i]!.amount;
+      if (c === 0 && p === 0) continue;
+      lines.push({ label: curRows[i]!.label, current: c, prior: p, indent: 1 });
+    }
+    lines.push({ label: total, current: curTotal, prior: priTotal, isTotal: true });
+  };
+
+  section("Operating activities", cur.operating, pri.operating, "Net cash from operating activities", cur.operatingTotal, pri.operatingTotal, { label: "Net profit for the period", c: cur.netProfit, p: pri.netProfit });
+  section("Investing activities", cur.investing, pri.investing, "Net cash from investing activities", cur.investingTotal, pri.investingTotal);
+  section("Financing activities", cur.financing, pri.financing, "Net cash from financing activities", cur.financingTotal, pri.financingTotal);
+
+  lines.push({ label: "Net movement in cash", current: cur.netMovement, prior: pri.netMovement, isTotal: true });
+  lines.push({ label: "Cash at start of period", current: cur.cashStart, prior: pri.cashStart, indent: 1 });
+  lines.push({ label: "Cash at end of period", current: cur.cashEnd, prior: pri.cashEnd, isTotal: true });
+  return lines;
 }
 
 function buildEquityChanges(accounts: Account[], openCum: Map<string, Movement>, net: { cur: number; prior: number }): FinancialStatementLine[] {
@@ -145,13 +231,15 @@ function buildEquityChanges(accounts: Account[], openCum: Map<string, Movement>,
 }
 
 async function movementsBetween(start: Date, end: Date): Promise<Map<string, Movement>> {
-  const rows = await db.gLEntry.findMany({ where: { date: { gte: start, lte: end } }, select: { accountCode: true, debit: true, credit: true } });
+  // DB-side aggregation over the [tenantId, accountCode, date] index — no full-table load.
+  const rows = await db.gLEntry.groupBy({
+    by: ["accountCode"],
+    where: { date: { gte: start, lte: end } },
+    _sum: { debit: true, credit: true },
+  });
   const map = new Map<string, Movement>();
   for (const r of rows) {
-    const m = map.get(r.accountCode) ?? { debit: 0, credit: 0 };
-    m.debit += decToNum(r.debit);
-    m.credit += decToNum(r.credit);
-    map.set(r.accountCode, m);
+    map.set(r.accountCode, { debit: decToNum(r._sum.debit ?? 0), credit: decToNum(r._sum.credit ?? 0) });
   }
   return map;
 }
@@ -207,34 +295,40 @@ export async function getTrialBalance(): Promise<TrialBalanceView> {
 
 export async function getStatements(period: StatementPeriod): Promise<PeriodView> {
   return withAuth(async () => {
-    const year = new Date().getFullYear();
-    const priorYear = year - 1;
+    const now = new Date();
     const [coaRows, company] = await Promise.all([
       db.cOAAccount.findMany({ select: { code: true, name: true, type: true } }),
-      db.companyProfile.findFirst({ select: { name: true } }),
+      db.companyProfile.findFirst({ select: { name: true, fiscalYearStartMonth: true } }),
     ]);
     const accounts: Account[] = coaRows.map((a) => ({ code: a.code, name: a.name, type: a.type }));
 
-    // Flow movements within the selected period; cumulative balances up to the period end.
-    const [curFlow, priFlow, curCum, priCum, openCum] = await Promise.all([
-      movementsBetween(new Date(year, QUARTER_MONTHS[period][0], 1), rangeEnd(year, period)),
-      movementsBetween(new Date(priorYear, QUARTER_MONTHS[period][0], 1), rangeEnd(priorYear, period)),
-      movementsBetween(new Date(2000, 0, 1), rangeEnd(year, period)),
-      movementsBetween(new Date(2000, 0, 1), rangeEnd(priorYear, period)),
-      movementsBetween(new Date(2000, 0, 1), new Date(rangeStart(year).getTime() - 1)),
+    const startMonth = company?.fiscalYearStartMonth ?? 1;
+    const curFy = fiscalYearBounds(now, startMonth);
+    const priFy = priorFiscalYearBounds(now, startMonth);
+    const curWin = periodWindow(period, curFy);
+    const priWin = periodWindow(period, priFy);
+
+    // Flow movements within the selected period; cumulative balances up to the period end;
+    // opening cumulative = everything before the current fiscal year begins.
+    const [curFlow, priFlow, curCum, priCum, openCum, priOpenCum] = await Promise.all([
+      movementsBetween(curWin.start, curWin.end),
+      movementsBetween(priWin.start, priWin.end),
+      movementsBetween(new Date(2000, 0, 1), curWin.end),
+      movementsBetween(new Date(2000, 0, 1), priWin.end),
+      movementsBetween(new Date(2000, 0, 1), new Date(curFy.fyStart.getTime() - 1)),
+      movementsBetween(new Date(2000, 0, 1), new Date(priFy.fyStart.getTime() - 1)),
     ]);
 
     const is = buildIncomeStatement(accounts, curFlow, priFlow);
     const bs = buildBalanceSheet(accounts, curCum, priCum, is.net);
-    const cf = buildCashFlow(accounts, curCum, openCum, is.net);
+    const cf = buildCashFlow(accounts, curCum, openCum, priCum, priOpenCum);
     const eq = buildEquityChanges(accounts, openCum, is.net);
 
-    const label = period === "FY" ? `FY ${year}` : `${period} ${year}`;
     return {
       period,
       companyName: company?.name ?? "Your Company",
-      currentLabel: label,
-      priorLabel: period === "FY" ? `FY ${priorYear}` : `${period} ${priorYear}`,
+      currentLabel: period === "FY" ? curFy.label : `${period} ${curFy.label}`,
+      priorLabel: period === "FY" ? priFy.label : `${period} ${priFy.label}`,
       incomeStatement: is.lines,
       balanceSheet: bs,
       cashFlow: cf,

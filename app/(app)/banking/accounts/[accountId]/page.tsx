@@ -101,13 +101,13 @@ export default function BankAccountDetailPage() {
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
           <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{t("Inflows (filtered)")}</div>
           <div className="font-display font-extrabold text-2xl tabular-nums mt-2 text-ud-success">
-            {isUSD ? `$${inflows.toLocaleString()}` : formatTZS(inflows, true)}
+            {isUSD ? `$${inflows.toLocaleString()}` : formatTZS(inflows)}
           </div>
         </div>
         <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card">
           <div className="text-xs uppercase tracking-[0.08em] font-semibold text-ud-text-muted">{t("Outflows (filtered)")}</div>
           <div className="font-display font-extrabold text-2xl tabular-nums mt-2 text-ud-danger">
-            {isUSD ? `$${outflows.toLocaleString()}` : formatTZS(outflows, true)}
+            {isUSD ? `$${outflows.toLocaleString()}` : formatTZS(outflows)}
           </div>
         </div>
       </div>

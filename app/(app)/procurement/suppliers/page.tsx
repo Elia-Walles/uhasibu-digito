@@ -40,10 +40,32 @@ function emptyForm(): FormState {
 
 export default function SuppliersPage() {
   const t = useT();
-  const { suppliers, createSupplier, loading: procLoading } = useProcurement();
+  const { suppliers, createSupplier, recordSupplierPayment, loading: procLoading } = useProcurement();
   const loading = procLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
+  const [payTarget, setPayTarget] = useState<Supplier | null>(null);
+  const [payAmount, setPayAmount] = useState(0);
+  const [payMethod, setPayMethod] = useState("Bank Transfer");
+  const [paying, setPaying] = useState(false);
+
+  function openPay(s: Supplier) {
+    setPayTarget(s);
+    setPayAmount(s.outstandingBalance);
+    setPayMethod("Bank Transfer");
+  }
+  async function pay() {
+    if (!payTarget || payAmount <= 0) return toast.error(t("Enter a payment amount"));
+    setPaying(true);
+    try {
+      const res = await recordSupplierPayment({ supplierId: payTarget.id, amount: payAmount, method: payMethod });
+      if (!res.ok) return toast.error(res.error);
+      toast.success(t("Payment posted to ledger"));
+      setPayTarget(null);
+    } finally {
+      setPaying(false);
+    }
+  }
 
   async function save() {
     if (!form.name.trim()) {
@@ -88,6 +110,11 @@ export default function SuppliersPage() {
           <Star key={i} className={`w-3 h-3 ${i < r.performanceRating ? "fill-ud-gold text-ud-gold" : "text-ud-border"}`} />
         ))}
       </div>
+    ) },
+    { key: "actions", label: "", align: "right", width: "110px", render: (r) => (
+      r.outstandingBalance > 0
+        ? <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openPay(r); }}>{t("Record payment")}</Button>
+        : null
     ) },
   ];
 
@@ -134,6 +161,29 @@ export default function SuppliersPage() {
             <Input label={t("Bank account #")} value={form.bankAccount} onChange={(e) => setForm({ ...form, bankAccount: e.target.value })} />
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={payTarget !== null}
+        onOpenChange={(o) => !o && setPayTarget(null)}
+        title="Record supplier payment"
+        description={payTarget ? t("Posts Dr Trade Payables, Cr cash/bank for {name}.", { name: payTarget.name }) : ""}
+        size="sm"
+        footer={<><Button variant="ghost" onClick={() => setPayTarget(null)}>{t("Cancel")}</Button><Button variant="primary" loading={paying} onClick={() => void pay()}>{t("Record payment")}</Button></>}
+      >
+        {payTarget && (
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-ud-text-muted">{t("Outstanding")}</span>
+              <CurrencyDisplay amount={payTarget.outstandingBalance} className="font-medium" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input label={t("Amount")} type="number" value={String(payAmount)} onChange={(e) => setPayAmount(Number(e.target.value) || 0)} className="text-right font-mono" />
+              <Select label={t("Method")} value={payMethod} onValueChange={setPayMethod}
+                options={["Bank Transfer", "M-Pesa", "Cash", "Cheque"].map((m) => ({ value: m, label: m }))} />
+            </div>
+          </div>
+        )}
       </Modal>
     </PageWrapper>
   );

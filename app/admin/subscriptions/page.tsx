@@ -32,7 +32,7 @@ export default function AdminSubscriptionsPage() {
               { key: "tenantName", label: t("Tenant"), render: (s) => s.tenantName ?? s.tenantId },
               { key: "planName", label: t("Plan") },
               { key: "status", label: t("Status"), render: (s) => <StatusPill value={s.status} /> },
-              { key: "amountTzs", label: t("Amount"), align: "right", render: (s) => formatTZS(s.amountTzs, true) },
+              { key: "amountTzs", label: t("Amount"), align: "right", render: (s) => formatTZS(s.amountTzs) },
               { key: "startedAt", label: t("Started"), render: (s) => s.startedAt.slice(0, 10) },
               { key: "currentPeriodEnd", label: t("Renews"), render: (s) => s.currentPeriodEnd?.slice(0, 10) ?? "" },
               { key: "actions", label: "", align: "right", render: (s) =>

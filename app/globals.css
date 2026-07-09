@@ -211,12 +211,14 @@ body {
   border-radius: 4px;
 }
 
-/* ===== Receipt printing ===== */
-/* When printing a POS receipt, hide everything except the receipt body. */
+/* ===== Receipt / invoice printing ===== */
+/* When printing a POS receipt or an invoice, hide everything except that document. */
 @media print {
   body * { visibility: hidden; }
-  #receipt-print, #receipt-print * { visibility: visible; }
-  #receipt-print {
+  #receipt-print, #receipt-print *,
+  #invoice-print, #invoice-print * { visibility: visible; }
+  #receipt-print,
+  #invoice-print {
     position: absolute;
     left: 0;
     top: 0;

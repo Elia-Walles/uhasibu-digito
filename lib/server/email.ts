@@ -5,11 +5,18 @@ import nodemailer, { type Transporter } from "nodemailer";
 // and memoised. When SMTP isn't configured (local dev / preview without creds) sendMail
 // no-ops and logs instead of throwing, so flows that send mail still complete.
 
+interface MailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 interface MailInput {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  attachments?: MailAttachment[];
 }
 
 let cached: Transporter | null = null;
@@ -47,14 +54,21 @@ function fromAddress(): string {
  * Send an email. Returns true if dispatched, false if SMTP is unconfigured (logged) or the
  * send failed (callers treat a false as "not delivered" and proceed never throws).
  */
-export async function sendMail({ to, subject, html, text }: MailInput): Promise<boolean> {
+export async function sendMail({ to, subject, html, text, attachments }: MailInput): Promise<boolean> {
   const tx = transporter();
   if (!tx) {
     console.warn(`[email] SMTP not configured skipped send to ${to}: "${subject}"`);
     return false;
   }
   try {
-    await tx.sendMail({ from: fromAddress(), to, subject, html, ...(text ? { text } : {}) });
+    await tx.sendMail({
+      from: fromAddress(),
+      to,
+      subject,
+      html,
+      ...(text ? { text } : {}),
+      ...(attachments?.length ? { attachments } : {}),
+    });
     return true;
   } catch (err) {
     console.error(`[email] send failed to ${to}:`, err);

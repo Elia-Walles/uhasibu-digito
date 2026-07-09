@@ -13,28 +13,33 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { useBudgetLines } from "@/lib/hooks/useBudgetLines";
+import { useCOA } from "@/lib/hooks/useCOA";
 import { useT } from "@/lib/hooks/useT";
-import type { BudgetLine } from "@/types";
 
 interface FormState {
   lineItem: string;
   category: string;
   annualBudget: number;
-  ytdActual: number;
+  coaAccountCode: string;
 }
 
 function emptyForm(): FormState {
-  return { lineItem: "", category: "Operations", annualBudget: 0, ytdActual: 0 };
+  return { lineItem: "", category: "Operations", annualBudget: 0, coaAccountCode: "" };
 }
 
 export default function BudgetingPage() {
   const t = useT();
   const { budgetLines, loading: dataLoading, addBudgetLine } = useBudgetLines();
+  const { accounts } = useCOA();
   const loading = dataLoading;
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
 
   const existingCategories = Array.from(new Set(budgetLines.map((b) => b.category))).sort();
+  // Budgets track revenue and spend, so offer income, cost-of-sales and expense accounts (parents allowed).
+  const budgetAccounts = accounts
+    .filter((a) => (a.type === "Income" || a.type === "Expense" || a.type === "CostOfSales") && a.code !== "4000" && a.code !== "6000")
+    .map((a) => ({ value: a.code, label: `${a.code} · ${a.name}` }));
 
   async function save() {
     if (!form.lineItem.trim()) {
@@ -45,26 +50,21 @@ export default function BudgetingPage() {
       toast.error(t("Annual budget must be greater than zero"));
       return;
     }
-    const monthly = form.annualBudget / 12;
-    const ytdBudget = monthly * 10; // assume Oct (10 months)
-    const line: BudgetLine = {
-      id: `b_new_${Date.now()}`,
+    if (!form.coaAccountCode) {
+      toast.error(t("Pick the GL account to track actuals against"));
+      return;
+    }
+    const r = await addBudgetLine({
       lineItem: form.lineItem.trim(),
       category: form.category,
       annualBudget: form.annualBudget,
-      mtdBudget: monthly,
-      mtdActual: form.ytdActual / 10,
-      mtdVariance: monthly - form.ytdActual / 10,
-      ytdBudget,
-      ytdActual: form.ytdActual,
-      ytdVariance: ytdBudget - form.ytdActual,
-    };
-    const r = await addBudgetLine(line);
+      coaAccountCode: form.coaAccountCode,
+    });
     if (!r.ok) {
       toast.error(r.error);
       return;
     }
-    toast.success(t("Added {name}", { name: line.lineItem }));
+    toast.success(t("Added {name}", { name: form.lineItem.trim() }));
     setAddOpen(false);
     setForm(emptyForm());
   }
@@ -85,7 +85,7 @@ export default function BudgetingPage() {
       {loading ? <CardGridSkeleton count={12} cols={3} /> : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {budgetLines.map((b) => {
-            const util = (b.ytdActual / b.ytdBudget) * 100;
+            const util = b.ytdBudget > 0 ? (b.ytdActual / b.ytdBudget) * 100 : 0;
             const overspent = util > 100;
             const variant = overspent ? "danger" : util > 90 ? "warning" : "teal";
             return (
@@ -120,7 +120,7 @@ export default function BudgetingPage() {
         open={addOpen}
         onOpenChange={setAddOpen}
         title="Add budget line"
-        description="Add a budget line. YTD actual is optional leave at zero if you haven't spent against it yet."
+        description="Set an annual target and link it to a GL account — actuals are read live from the ledger."
         size="md"
         footer={
           <>
@@ -145,10 +145,15 @@ export default function BudgetingPage() {
               { value: "Capex",       label: "Capex" },
             ].concat(existingCategories.filter((c) => !["Personnel","Facilities","Operations","Sales","Finance","Compliance","Capex"].includes(c)).map((c) => ({ value: c, label: c })))}
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input label={t("Annual budget (TZS)")} type="number" value={String(form.annualBudget)} onChange={(e) => setForm({ ...form, annualBudget: Number(e.target.value) || 0 })} />
-            <Input label={t("YTD actual (TZS)")}    type="number" value={String(form.ytdActual)}    onChange={(e) => setForm({ ...form, ytdActual: Number(e.target.value) || 0 })} />
-          </div>
+          <Select
+            label={t("Track actuals from GL account")}
+            value={form.coaAccountCode}
+            onValueChange={(v) => setForm({ ...form, coaAccountCode: v })}
+            placeholder={t("Select an account")}
+            options={budgetAccounts}
+          />
+          <Input label={t("Annual budget (TZS)")} type="number" value={String(form.annualBudget)} onChange={(e) => setForm({ ...form, annualBudget: Number(e.target.value) || 0 })} />
+          <p className="text-xs text-ud-text-muted">{t("Year-to-date and month-to-date actuals are pulled live from this account's ledger movement.")}</p>
         </div>
       </Modal>
     </PageWrapper>

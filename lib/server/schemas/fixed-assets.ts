@@ -10,12 +10,17 @@ export const createAssetSchema = z.object({
   residualValue: z.number().nonnegative().default(0),
   usefulLifeYears: z.number().int().nonnegative().default(0),
   depreciationMethod: z.enum(["StraightLine", "ReducingBalance"]).default("StraightLine"),
+  paymentMethod: z.enum(["cash", "mpesa", "bank", "credit"]).default("bank"),
 });
 
 export const disposeAssetSchema = z.object({
   id: z.string().min(1),
   proceeds: z.number().nonnegative(),
   date: z.string().min(1),
+});
+
+export const runDepreciationSchema = z.object({
+  period: z.string().regex(/^\d{4}-\d{2}$/, "Period must be YYYY-MM"),
 });
 
 export type CreateAssetInput = z.infer<typeof createAssetSchema>;

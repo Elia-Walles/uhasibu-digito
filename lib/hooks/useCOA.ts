@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { listCOAAccounts } from "@/lib/server/actions/ledger";
+import { getChartOfAccounts } from "@/lib/server/actions/ledger";
 import type { COAAccount } from "@/types";
 
 export interface UseCOA {
@@ -15,7 +15,7 @@ export function useCOA(): UseCOA {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      setAccounts(await listCOAAccounts());
+      setAccounts(await getChartOfAccounts());
     } finally {
       setLoading(false);
     }

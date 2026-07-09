@@ -1,6 +1,7 @@
 import type { db } from "./db";
 import type { RequestContext } from "./request-context";
 import { calculateDeductions } from "@/lib/utils/paye";
+import { postPayrollRun } from "./gl-postings";
 
 // The interactive-transaction client for the extended `db`.
 type Tx = Omit<typeof db, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
@@ -20,7 +21,7 @@ export interface PayrollRunInput {
 export async function buildPayrollRun(
   tx: Tx,
   tenantId: string,
-  _ctx: RequestContext,
+  ctx: RequestContext,
   input: PayrollRunInput,
 ): Promise<{ payrollRunId: string; employeeCount: number }> {
   const employees = await tx.employee.findMany({ where: { tenantId } });
@@ -66,6 +67,25 @@ export async function buildPayrollRun(
         netPay: c.d.netPay,
       },
     });
+  }
+
+  // Post the payroll journal to the GL so it flows into the statements.
+  const gross = sum((d) => d.grossPay);
+  if (gross > 0) {
+    const reference = `PAY-${input.period}`;
+    await postPayrollRun(tx, tenantId, ctx, {
+      period: input.period,
+      reference,
+      date: new Date().toISOString().split("T")[0]!,
+      gross,
+      paye: sum((d) => d.paye),
+      nssfEmployee: sum((d) => d.nssf_employee),
+      nssfEmployer: sum((d) => d.nssf_employer),
+      sdl: sum((d) => d.sdl),
+      wcf: sum((d) => d.wcf),
+      heslb: sum((d) => d.heslb),
+    });
+    await tx.payrollRun.update({ where: { id: run.id }, data: { journalRef: reference } });
   }
 
   return { payrollRunId: run.id, employeeCount: computed.length };

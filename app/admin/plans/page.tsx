@@ -75,7 +75,7 @@ export default function AdminPlansPage() {
                 </div>
               ) },
               { key: "key", label: t("Key"), render: (p) => <StatusPill value={p.key} /> },
-              { key: "priceTzs", label: t("Price"), align: "right", render: (p) => `${formatTZS(p.priceTzs, true)}/${p.interval}` },
+              { key: "priceTzs", label: t("Price"), align: "right", render: (p) => `${formatTZS(p.priceTzs)}/${p.interval}` },
               { key: "highlighted", label: t("Popular"), render: (p) => (p.highlighted ? <StatusPill value="business" /> : <span className="text-ud-text-faint"></span>) },
               { key: "subscriberCount", label: t("Active subs"), align: "right" },
               { key: "isActive", label: t("Status"), render: (p) => (

@@ -120,7 +120,7 @@ export default function FixedAssetsPage() {
         <Badge variant={r.status === "Active" ? "success" : r.status === "Disposed" ? "default" : "warning"}>{r.status}</Badge>
         {r.status === "Disposed" && r.gainLoss !== undefined && (
           <span className={`text-[10px] font-mono ${r.gainLoss >= 0 ? "text-ud-success" : "text-ud-danger"}`}>
-            {r.gainLoss >= 0 ? t("Gain") : t("Loss")}: {formatTZS(Math.abs(r.gainLoss), true)}
+            {r.gainLoss >= 0 ? t("Gain") : t("Loss")}: {formatTZS(Math.abs(r.gainLoss))}
           </span>
         )}
       </div>
@@ -150,8 +150,8 @@ export default function FixedAssetsPage() {
     const gl = res.data.gainLoss;
     toast.success(
       gl >= 0
-        ? t("Asset disposed at a gain of {amount} posted to GL", { amount: formatTZS(gl, true) })
-        : t("Asset disposed at a loss of {amount} posted to GL", { amount: formatTZS(Math.abs(gl), true) })
+        ? t("Asset disposed at a gain of {amount} posted to GL", { amount: formatTZS(gl) })
+        : t("Asset disposed at a loss of {amount} posted to GL", { amount: formatTZS(Math.abs(gl)) })
     );
     setDisposeTarget(null);
   }

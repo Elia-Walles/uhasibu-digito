@@ -6,6 +6,7 @@ import {
   createSupplier as createSupplierAction,
   createPurchaseOrder as createPOAction,
   updatePOMatch as updatePOMatchAction,
+  recordSupplierPayment as recordSupplierPaymentAction,
 } from "@/lib/server/actions/procurement";
 import { type Result } from "@/lib/server/result";
 import type { Supplier, PurchaseOrder } from "@/types";
@@ -33,6 +34,7 @@ export interface UseProcurement {
   createSupplier: (s: Supplier) => Promise<Result<Supplier>>;
   createPurchaseOrder: (p: CreatePOPayload) => Promise<Result<PurchaseOrder>>;
   updatePOMatch: (id: string, patch: MatchPatch) => Promise<Result<PurchaseOrder | { id: string }>>;
+  recordSupplierPayment: (input: { supplierId: string; amount: number; method: string; reference?: string }) => Promise<Result<{ id: string; amount: number }>>;
 }
 
 function toSupplierInput(s: Supplier) {
@@ -89,6 +91,11 @@ export function useProcurement(): UseProcurement {
     },
     updatePOMatch: async (id, patch) => {
       const r = await updatePOMatchAction({ id, ...patch });
+      if (r.ok) await refresh();
+      return r;
+    },
+    recordSupplierPayment: async (input) => {
+      const r = await recordSupplierPaymentAction(input);
       if (r.ok) await refresh();
       return r;
     },

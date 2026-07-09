@@ -16,7 +16,6 @@ import { Select } from "@/components/ui/Select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useQuotations } from "@/lib/hooks/useQuotations";
 import { useCustomers } from "@/lib/hooks/useCustomers";
-import { useInvoices } from "@/lib/hooks/useInvoices";
 import { useT } from "@/lib/hooks/useT";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { formatDate } from "@/lib/utils/dates";
@@ -51,8 +50,7 @@ export default function QuotationsPage() {
   const t = useT();
   const router = useRouter();
   const { customers } = useCustomers();
-  const { createInvoice } = useInvoices();
-  const { quotations, createQuotation, updateQuotationStatus, loading: quotLoading } = useQuotations();
+  const { quotations, createQuotation, updateQuotationStatus, convertQuotation, loading: quotLoading } = useQuotations();
   const loading = quotLoading;
 
   const [addOpen, setAddOpen] = useState(false);
@@ -125,25 +123,11 @@ export default function QuotationsPage() {
   }
 
   async function convert(q: Quotation) {
-    const res = await createInvoice({
-      customerId: q.customerId,
-      issueDate: new Date().toISOString().split("T")[0]!,
-      dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0]!,
-      notes: `Converted from quotation ${q.number}. ${q.notes ?? ""}`.trim(),
-      status: "Sent",
-      lines: q.lines.map((l) => ({
-        description: l.description,
-        quantity: l.quantity,
-        unitPrice: l.unitPrice,
-        discountPct: l.discountPct,
-        vatPct: l.vatPct,
-      })),
-    });
+    const res = await convertQuotation(q.id);
     if (!res.ok) {
       toast.error(res.error);
       return;
     }
-    await updateQuotationStatus(q.id, "Converted", res.data.id);
     toast.success(t("Converted to {n}", { n: res.data.number }));
     router.push("/sales/invoices");
   }
@@ -231,7 +215,7 @@ export default function QuotationsPage() {
                   <div className="sm:col-span-2"><Input type="number" value={l.quantity || ""}  onChange={(e) => updateLine(l.id, { quantity:  Number(e.target.value) || 0 })} placeholder={t("Qty")} className="text-right" /></div>
                   <div className="sm:col-span-3"><Input type="number" value={l.unitPrice || ""} onChange={(e) => updateLine(l.id, { unitPrice: Number(e.target.value) || 0 })} placeholder={t("Unit Price")} className="text-right font-mono" /></div>
                   <div className="sm:col-span-2 flex items-center gap-1">
-                    <span className="font-mono text-sm tabular-nums">{formatTZS(l.lineTotal, true).replace("TSh ", "")}</span>
+                    <span className="font-mono text-sm tabular-nums">{formatTZS(l.lineTotal).replace("TSh ", "")}</span>
                     {form.lines.length > 1 && (
                       <button onClick={() => removeLine(l.id)} className="ml-auto p-1.5 rounded-lg hover:bg-ud-danger-bg text-ud-danger" aria-label={t("Remove")}>
                         <X className="w-3.5 h-3.5" />

@@ -1,7 +1,8 @@
 "use server";
 import type { POSSale as DbPOSSale, POSSaleLine as DbPOSSaleLine, InventoryItem as DbItem, Prisma } from "@prisma/client";
 import { db } from "@/lib/server/db";
-import { withAuth } from "@/lib/server/with-auth";
+import { withAuth, branchScope } from "@/lib/server/with-auth";
+import { isBranchRestricted } from "@/lib/auth/roles";
 import { applyStockMovement, StockError } from "@/lib/server/stock-movement";
 import { applyJournalEntry } from "@/lib/server/journal-posting";
 import {
@@ -109,6 +110,11 @@ export async function recordPOSSale(input: unknown): Promise<Result<POSSale>> {
   const d = parsed.data;
 
   return withAuth(async (ctx) => {
+    // Branch-restricted staff (Branch Manager / Cashier) always sell from their own branch.
+    const scope = branchScope(ctx);
+    if (isBranchRestricted(ctx.role) && !scope) return err("Your account isn't assigned to a branch. Ask an administrator.");
+    if (scope) d.branchId = scope;
+
     const stock = await loadAndCheckStock(d.lines, d.branchId);
     if (!stock.ok) return stock;
     const itemById = stock.data;
@@ -301,6 +307,8 @@ export async function refundPOSSale(input: unknown): Promise<Result<{ id: string
     const sale = await db.pOSSale.findFirst({ where: { id: saleId }, include: { lines: true } });
     if (!sale) return err("Sale not found");
     if (sale.status !== "completed") return err("This sale has already been refunded.");
+    const scope = branchScope(ctx);
+    if (scope && sale.branchId !== scope) return err("You can only refund your own branch's sales.");
 
     const saleDate = dateOnly(sale.soldAt);
     const vat = decToNum(sale.vatAmount);
@@ -350,6 +358,10 @@ export async function createPOSInvoice(input: unknown): Promise<Result<{ id: str
   const d = parsed.data;
 
   return withAuth(async (ctx) => {
+    const scope = branchScope(ctx);
+    if (isBranchRestricted(ctx.role) && !scope) return err("Your account isn't assigned to a branch. Ask an administrator.");
+    if (scope) d.branchId = scope;
+
     const stock = await loadAndCheckStock(d.lines, d.branchId);
     if (!stock.ok) return stock;
     const itemById = stock.data;
@@ -469,11 +481,14 @@ export async function createPOSInvoice(input: unknown): Promise<Result<{ id: str
 export async function listPOSSales(input?: unknown): Promise<POSSale[]> {
   const parsed = posAnalyticsFilterSchema.safeParse(input ?? {});
   const f = parsed.success ? parsed.data : {};
-  return withAuth(async () => {
+  return withAuth(async (ctx) => {
     const range = dayRange(f.from, f.to);
     const where: Prisma.POSSaleWhereInput = {};
     if (range.gte || range.lte) where.soldAt = range;
-    if (f.branchId) where.branchId = f.branchId;
+    // Branch-restricted staff only ever see their own branch's sales (overrides any client filter).
+    const scope = branchScope(ctx);
+    if (scope) where.branchId = scope;
+    else if (f.branchId) where.branchId = f.branchId;
     if (f.paymentMethod) where.paymentMethod = f.paymentMethod;
     const rows = await db.pOSSale.findMany({
       where,

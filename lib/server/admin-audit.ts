@@ -1,7 +1,7 @@
 import { adminDb } from "./admin-db";
 import type { AdminContext } from "./with-admin-auth";
 
-export type PlatformAuditTarget = "Tenant" | "User" | "Subscription" | "Payment" | "Plan";
+export type PlatformAuditTarget = "Tenant" | "User" | "Subscription" | "Payment" | "Plan" | "SubscriptionInvoice";
 
 export interface PlatformAuditInput {
   action: string; // e.g. "tenant.tier.change", "payment.record"

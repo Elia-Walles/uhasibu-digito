@@ -77,6 +77,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // bad password via getVerificationState() and offers to resend the link.
         if (!user.emailVerified) return null;
 
+        // Deactivated staff sub-accounts can't sign in.
+        if (user.disabledAt) return null;
+
         return { id: user.id, email: user.email, name: user.name };
       },
     }),
@@ -94,20 +97,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (trigger === "update" && typeof token.sub === "string") {
         const row = await authDb.user.findUnique({
           where: { id: token.sub },
-          select: { tenant: { select: { tier: true } } },
+          select: { tenant: { select: { tier: true, status: true } } },
         });
         token.tier = normalizeTier(row?.tenant?.tier);
+        token.tenantStatus = row?.tenant?.status ?? "active";
         return token;
       }
       // On sign-in, fold tenantId + role + tier from the User/Tenant rows into the token.
       if (user?.id) {
         const row = await authDb.user.findUnique({
           where: { id: user.id },
-          select: { tenantId: true, role: true, name: true, image: true, isSuperAdmin: true, tenant: { select: { tier: true } } },
+          select: { tenantId: true, role: true, branchId: true, name: true, image: true, isSuperAdmin: true, tenant: { select: { tier: true, status: true } } },
         });
         let tenantId = row?.tenantId ?? null;
         let role = (row?.role as UserRole | undefined) ?? "Accountant";
         let tier: string | undefined = row?.tenant?.tier;
+        let status = row?.tenant?.status ?? "active";
         // First-ever OAuth sign-in has no tenant yet provision one (owner = Admin, free tier).
         if (!tenantId) {
           tenantId = await provisionTenantForUser(
@@ -117,11 +122,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           );
           role = "Admin";
           tier = "free";
+          status = "active";
         }
         token.tenantId = tenantId;
         token.role = role;
+        token.branchId = row?.branchId ?? null;
         token.picture = row?.image ?? (typeof user.image === "string" ? user.image : null);
         token.tier = normalizeTier(tier);
+        token.tenantStatus = status;
         token.isSuperAdmin = row?.isSuperAdmin ?? false;
       }
       return token;
@@ -131,8 +139,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (typeof token.sub === "string") session.user.id = token.sub;
         session.user.tenantId = typeof token.tenantId === "string" ? token.tenantId : "";
         session.user.role = (token.role as UserRole | undefined) ?? "Accountant";
+        session.user.branchId = typeof token.branchId === "string" ? token.branchId : null;
         session.user.image = typeof token.picture === "string" ? token.picture : null;
         session.user.tier = normalizeTier(token.tier);
+        session.user.status = typeof token.tenantStatus === "string" ? token.tenantStatus : "active";
         session.user.isSuperAdmin = token.isSuperAdmin === true;
       }
       return session;

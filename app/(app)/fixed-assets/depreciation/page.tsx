@@ -1,10 +1,12 @@
 "use client";
-import { AlertTriangle } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, CalendarClock } from "lucide-react";
 import toast from "react-hot-toast";
 import PageWrapper from "@/components/layout/PageWrapper";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CurrencyDisplay } from "@/components/ui/CurrencyDisplay";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { ExportMenu } from "@/components/ui/ExportMenu";
 import { DepreciationChart } from "@/components/charts/DepreciationChart";
 import { useFixedAssets } from "@/lib/hooks/useFixedAssets";
@@ -17,9 +19,25 @@ const CLASSES: AssetCategory[] = ["Building", "Vehicle", "Equipment", "Computer"
 
 export default function DepreciationPage() {
   const t = useT();
-  const { assets } = useFixedAssets();
+  const { assets, runDepreciation } = useFixedAssets();
   const { exportDepreciation } = useExports();
   const active = assets.filter((a) => a.status === "Active");
+  const [running, setRunning] = useState(false);
+  const period = new Date().toISOString().slice(0, 7); // YYYY-MM
+
+  async function handleRun() {
+    setRunning(true);
+    try {
+      const res = await runDepreciation(period);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(t("Posted depreciation for {n} asset(s) · TSh {amt}", { n: res.data.assets, amt: Math.round(res.data.amount).toLocaleString() }));
+    } finally {
+      setRunning(false);
+    }
+  }
 
   async function handleExport() {
     try {
@@ -37,7 +55,14 @@ export default function DepreciationPage() {
         title="Depreciation Schedule"
         subtitle="Straight-line and reducing-balance methods per Tanzania classes"
         breadcrumbs={[{ label: "Fixed Assets", href: "/fixed-assets" }, { label: "Depreciation" }]}
-        actions={<ExportMenu fileLabel="Depreciation schedule" onExportExcel={handleExport} />}
+        actions={
+          <>
+            <Button variant="primary" icon={<CalendarClock className="w-4 h-4" />} loading={running} onClick={() => void handleRun()}>
+              {t("Run depreciation · {period}", { period })}
+            </Button>
+            <ExportMenu fileLabel="Depreciation schedule" onExportExcel={handleExport} />
+          </>
+        }
       />
 
       <div className="bg-white border border-ud-border rounded-2xl p-5 shadow-card mb-6">

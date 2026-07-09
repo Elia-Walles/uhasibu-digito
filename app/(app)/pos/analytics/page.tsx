@@ -88,7 +88,7 @@ export default function POSAnalyticsPage() {
           <StatCard label="Total sales" value={analytics.totalSales} variant="teal" prefix="TSh" format="compact" />
           <StatCard label="Gross profit" value={analytics.grossProfit} variant="emerald" prefix="TSh" format="compact" footer={t("{pct}% margin", { pct: analytics.marginPct.toFixed(1) })} />
           <StatCard label="Cost of sales" value={analytics.costOfSales} variant="amber" prefix="TSh" format="compact" />
-          <StatCard label="Transactions" value={analytics.transactionCount} variant="blue" format="raw" footer={t("Avg {amount}", { amount: formatTZS(analytics.averageBasket, true) })} />
+          <StatCard label="Transactions" value={analytics.transactionCount} variant="blue" format="raw" footer={t("Avg {amount}", { amount: formatTZS(analytics.averageBasket) })} />
         </div>
       )}
 
@@ -179,7 +179,7 @@ export default function POSAnalyticsPage() {
                         <div className="h-full rounded-full bg-ud-primary" style={{ width: `${Math.max(4, (item.sales / max) * 100)}%` }} />
                       </div>
                       <div className="w-14 text-right text-xs font-mono text-ud-text-muted">{item.quantity}×</div>
-                      <div className="w-24 text-right text-sm font-mono font-medium">{formatTZS(item.sales, true)}</div>
+                      <div className="w-24 text-right text-sm font-mono font-medium">{formatTZS(item.sales)}</div>
                     </div>
                   );
                 })}
@@ -199,7 +199,7 @@ export default function POSAnalyticsPage() {
                         <div className="h-full rounded-full bg-ud-gold" style={{ width: `${Math.max(4, (c.sales / max) * 100)}%` }} />
                       </div>
                       <div className="w-14 text-right text-xs font-mono text-ud-text-muted">{c.transactions}×</div>
-                      <div className="w-24 text-right text-sm font-mono font-medium">{formatTZS(c.sales, true)}</div>
+                      <div className="w-24 text-right text-sm font-mono font-medium">{formatTZS(c.sales)}</div>
                     </div>
                   );
                 })}

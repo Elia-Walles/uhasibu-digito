@@ -24,6 +24,7 @@ function rowToCompany(c: DbCompany): Company {
     phone: c.phone,
     website: c.website,
     financialYear: { start: c.financialYearStart, end: c.financialYearEnd },
+    fiscalYearStartMonth: c.fiscalYearStartMonth,
     baseCurrency: c.baseCurrency,
     secondaryCurrency: c.secondaryCurrency,
     ...(c.logoUrl ? { logoUrl: c.logoUrl } : {}),
@@ -50,7 +51,7 @@ export async function updateCompany(input: unknown): Promise<Result<Company>> {
   // Strip undefined keys Prisma's update input rejects `undefined` under exactOptionalPropertyTypes.
   const data: Prisma.CompanyProfileUpdateManyMutationInput = {};
   for (const [k, v] of Object.entries(parsed.data)) {
-    if (v !== undefined) (data as Record<string, string>)[k] = v;
+    if (v !== undefined) (data as Record<string, unknown>)[k] = v;
   }
   return withAuth(async (ctx) => {
     const existing = await db.companyProfile.findFirst();

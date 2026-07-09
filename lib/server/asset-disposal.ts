@@ -1,6 +1,7 @@
 import type { db } from "./db";
 import type { RequestContext } from "./request-context";
 import { applyJournalEntry, type JournalLineInput } from "./journal-posting";
+import { ensureCoaAccount } from "./gl-postings";
 
 // The interactive-transaction client for the extended `db`.
 type Tx = Omit<typeof db, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
@@ -43,9 +44,15 @@ export async function applyAssetDisposal(
     },
   });
 
+  // Ensure the contra-asset + gain/loss accounts exist (not in older tenants' seed) so the
+  // disposal actually flows into the balance sheet / income statement.
+  await ensureCoaAccount(tx, tenantId, "1590", "Accumulated Depreciation", "Asset", "1000", 1);
+  await ensureCoaAccount(tx, tenantId, "4200", "Gain on Asset Disposal", "Income", "4000", 1);
+  await ensureCoaAccount(tx, tenantId, "6500", "Loss on Asset Disposal", "Expense", "6000", 1);
+
   const lines: JournalLineInput[] = [
-    { accountCode: "1010", accountName: "CRDB Bank", description: `Proceeds ${asset.name}`, debit: input.proceeds, credit: 0 },
-    { accountCode: "1501", accountName: "Accumulated Depreciation", description: `Disposal ${asset.name}`, debit: accDep, credit: 0 },
+    { accountCode: "1110", accountName: "CRDB TZS Account", description: `Proceeds ${asset.name}`, debit: input.proceeds, credit: 0 },
+    { accountCode: "1590", accountName: "Accumulated Depreciation", description: `Disposal ${asset.name}`, debit: accDep, credit: 0 },
     { accountCode: "1500", accountName: "Property, Plant & Equipment", description: `Disposal ${asset.name}`, debit: 0, credit: cost },
   ];
   if (gainLoss > 0) {

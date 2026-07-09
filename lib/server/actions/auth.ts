@@ -4,12 +4,15 @@ import { hash } from "bcryptjs";
 import { authDb } from "@/lib/server/auth-db";
 import { db } from "@/lib/server/db";
 import { withAuth } from "@/lib/server/with-auth";
+import type { Prisma } from "@prisma/client";
 import {
   registerCredentialsSchema,
   generateCodeSchema,
   verifyEmailCodeSchema,
   resendVerificationSchema,
   onboardingProfileSchema,
+  onboardingDraftSchema,
+  type OnboardingDraftInput,
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "@/lib/server/schemas/auth";
@@ -225,33 +228,127 @@ export async function checkEmailAvailability(input: unknown): Promise<{ availabl
  * ensures a primary branch exists. Runs inside the tenant context. Plan selection is a separate
  * step (billing.selectPlan) in the wizard.
  */
+/**
+ * Maps a (partial) onboarding input onto CompanyProfile columns. Only keys present on the input are
+ * included so Prisma leaves the rest untouched (autosave sends partials). `district` mirrors into the
+ * legacy `region` column and `street` into `address` so downstream code that reads those keeps working.
+ */
+// Plain scalar shape (not Prisma's *UpdateOperationsInput union) so the same object is assignable to
+// both updateMany and create without exactOptionalPropertyTypes friction.
+interface CompanyProfileFields {
+  name?: string;
+  businessType?: string;
+  country?: string;
+  countryCode?: string;
+  district?: string;
+  region?: string;
+  street?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  heardFrom?: string;
+  phone?: string;
+  phoneCountryCode?: string;
+}
+
+function profileDataFromInput(d: OnboardingDraftInput): CompanyProfileFields {
+  const data: CompanyProfileFields = {};
+  if (d.companyName !== undefined) data.name = d.companyName;
+  if (d.businessType !== undefined) data.businessType = d.businessType;
+  if (d.country !== undefined) data.country = d.country;
+  if (d.countryCode !== undefined) data.countryCode = d.countryCode;
+  if (d.region !== undefined) data.region = d.region;
+  if (d.district !== undefined) data.district = d.district;
+  if (d.street !== undefined) {
+    data.street = d.street;
+    data.address = d.street;
+  }
+  if (d.latitude !== undefined) data.latitude = d.latitude;
+  if (d.longitude !== undefined) data.longitude = d.longitude;
+  if (d.heardFrom !== undefined) data.heardFrom = d.heardFrom;
+  if (d.phone !== undefined) data.phone = d.phone;
+  if (d.phoneCountryCode !== undefined) data.phoneCountryCode = d.phoneCountryCode;
+  return data;
+}
+
+/** Writes the provided onboarding fields to the tenant's User/Tenant/CompanyProfile. Shared by the
+ * debounced autosave (partial) and the final submit. Runs inside an established tenant context. */
+async function persistOnboarding(ctx: { userId: string; tenantId: string }, d: OnboardingDraftInput) {
+  // Owner identity + tenant name are tenancy roots not tenant-scoped, so use the raw client.
+  const userData: Prisma.UserUpdateInput = {};
+  if (d.name !== undefined) {
+    userData.name = d.name;
+    userData.initials = initialsFrom(d.name);
+  }
+  if (d.phone !== undefined) userData.phone = d.phone;
+  if (Object.keys(userData).length) {
+    await authDb.user.update({ where: { id: ctx.userId }, data: userData });
+  }
+  if (d.companyName !== undefined) {
+    await authDb.tenant.update({ where: { id: ctx.tenantId }, data: { name: d.companyName } });
+  }
+
+  // CompanyProfile is tenant-scoped go through the scoped client.
+  const profileData = profileDataFromInput(d);
+  const existingProfile = await db.companyProfile.findFirst();
+  if (existingProfile) {
+    if (Object.keys(profileData).length) await db.companyProfile.updateMany({ data: profileData });
+  } else {
+    await db.companyProfile.create({
+      data: { ...profileData, name: d.companyName ?? "", baseCurrency: "TZS", tenantId: ctx.tenantId },
+    });
+  }
+}
+
+/**
+ * Loads the current onboarding draft so the wizard can resume where the user left off. Reads the
+ * tenant's CompanyProfile plus the owner's name/phone; absent fields come back as empty strings.
+ */
+export async function getOnboardingDraft(): Promise<Result<OnboardingDraftInput>> {
+  return withAuth(async (ctx) => {
+    const profile = await db.companyProfile.findFirst();
+    const user = await authDb.user.findUnique({
+      where: { id: ctx.userId },
+      select: { name: true, phone: true },
+    });
+    return ok({
+      name: user?.name ?? "",
+      companyName: profile?.name ?? "",
+      businessType: profile?.businessType ?? "",
+      country: profile?.country ?? "",
+      countryCode: profile?.countryCode ?? "",
+      region: profile?.region ?? "",
+      district: profile?.district ?? "",
+      street: profile?.street ?? "",
+      ...(profile?.latitude != null ? { latitude: profile.latitude } : {}),
+      ...(profile?.longitude != null ? { longitude: profile.longitude } : {}),
+      heardFrom: profile?.heardFrom ?? "",
+      phone: user?.phone ?? "",
+      phoneCountryCode: profile?.phoneCountryCode ?? "",
+    });
+  });
+}
+
+/**
+ * Debounced autosave target: persists whatever partial fields the user has entered so far so the
+ * onboarding form survives a refresh or a return on another device. All fields optional.
+ */
+export async function saveOnboardingDraft(input: unknown): Promise<Result<true>> {
+  const parsed = onboardingDraftSchema.safeParse(input);
+  if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+  return withAuth(async (ctx) => {
+    await persistOnboarding(ctx, parsed.data);
+    return ok(true);
+  });
+}
+
 export async function saveOnboardingProfile(input: unknown): Promise<Result<true>> {
   const parsed = onboardingProfileSchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
-  const { name, companyName, businessType, region, phone } = parsed.data;
+  const { region } = parsed.data;
 
   return withAuth(async (ctx) => {
-    // Owner identity + tenant name are tenancy roots not tenant-scoped, so use the raw client.
-    await authDb.user.update({
-      where: { id: ctx.userId },
-      data: { name, initials: initialsFrom(name), ...(phone ? { phone } : {}) },
-    });
-    await authDb.tenant.update({ where: { id: ctx.tenantId }, data: { name: companyName } });
-
-    // CompanyProfile + Branch are tenant-scoped go through the scoped client.
-    const profileData = {
-      name: companyName,
-      businessType,
-      region,
-      baseCurrency: "TZS",
-      ...(phone ? { phone } : {}),
-    };
-    const existingProfile = await db.companyProfile.findFirst();
-    if (existingProfile) {
-      await db.companyProfile.updateMany({ data: profileData });
-    } else {
-      await db.companyProfile.create({ data: { ...profileData, tenantId: ctx.tenantId } });
-    }
+    await persistOnboarding(ctx, parsed.data);
 
     const existingBranch = await db.branch.findFirst();
     if (!existingBranch) {

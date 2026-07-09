@@ -7,6 +7,7 @@ import type {
 } from "@prisma/client";
 import { db } from "@/lib/server/db";
 import { withAuth } from "@/lib/server/with-auth";
+import { canRunPayroll } from "@/lib/auth/roles";
 import { buildPayrollRun } from "@/lib/server/payroll-run";
 import {
   employeeInputSchema,
@@ -243,6 +244,7 @@ export async function createPayrollRun(input: unknown): Promise<Result<{ id: str
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
   const p = parsed.data;
   return withAuth(async (ctx) => {
+    if (!canRunPayroll(ctx.role)) return err("Your role can't run payroll");
     const existing = await db.payrollRun.findFirst({ where: { period: p.period } });
     if (existing) return err(`Payroll for ${p.period} has already been processed`);
     const result = await db.$transaction((tx) => buildPayrollRun(tx, ctx.tenantId, ctx, p));
@@ -254,7 +256,8 @@ export async function updatePayrollRunStatus(input: unknown): Promise<Result<{ i
   const parsed = updatePayrollRunStatusSchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
   const { id, status } = parsed.data;
-  return withAuth(async () => {
+  return withAuth(async (ctx) => {
+    if (!canRunPayroll(ctx.role)) return err("Your role can't update payroll runs");
     try {
       await db.payrollRun.update({ where: { id }, data: { status } });
       return ok({ id });

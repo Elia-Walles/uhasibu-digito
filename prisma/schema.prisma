@@ -45,6 +45,7 @@ model Tenant {
   name      String
   slug      String   @unique
   tier      String   @default("free")
+  status    String   @default("active") // active | pending_approval — gates access while a bank-transfer invoice awaits admin approval
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -62,16 +63,19 @@ model User {
   image         String?
 
   // Domain extensions
-  role         String  @default("Accountant") // UserRole union
+  role         String    @default("Accountant") // UserRole union
   initials     String?
   phone        String?
-  passwordHash String? @map("password_hash")
-  tenantId     String? @map("tenant_id")
-  departmentId String? @map("department_id")
-  isSuperAdmin Boolean @default(false) @map("is_super_admin") // platform super-admin (cross-tenant operator)
+  passwordHash String?   @map("password_hash")
+  tenantId     String?   @map("tenant_id")
+  departmentId String?   @map("department_id")
+  branchId     String?   @map("branch_id") // staff sub-accounts bound to a branch (Branch Manager / Cashier)
+  disabledAt   DateTime? @map("disabled_at") // deactivated staff can't sign in; kept for history
+  isSuperAdmin Boolean   @default(false) @map("is_super_admin") // platform super-admin (cross-tenant operator)
 
   tenant              Tenant?              @relation(fields: [tenantId], references: [id])
   department          Department?          @relation(fields: [departmentId], references: [id])
+  branch                  Branch?              @relation(fields: [branchId], references: [id])
   accounts                Account[]
   sessions                Session[]
   memberships             Membership[]
@@ -83,6 +87,7 @@ model User {
 
   @@index([tenantId])
   @@index([departmentId])
+  @@index([branchId])
   @@index([isSuperAdmin])
   @@map("users")
 }
@@ -179,12 +184,22 @@ model CompanyProfile {
   address           String   @default("")
   branch            String   @default("")
   region            String   @default("")
+  country           String   @default("")
+  countryCode       String   @default("") @map("country_code")
+  district          String   @default("")
+  street            String   @default("")
+  latitude          Float?
+  longitude         Float?
+  heardFrom         String   @default("") @map("heard_from")
   businessType      String   @default("") @map("business_type")
   email             String   @default("")
   phone             String   @default("")
+  phoneCountryCode  String   @default("") @map("phone_country_code")
   website           String   @default("")
   financialYearStart String  @default("January") @map("financial_year_start")
   financialYearEnd   String  @default("December") @map("financial_year_end")
+  fiscalYearStartMonth Int    @default(1) @map("fiscal_year_start_month") // 1=Jan … 12=Dec
+  booksLockedThrough DateTime? @map("books_locked_through") // journals dated on/before this are rejected
   baseCurrency      String   @default("TZS") @map("base_currency")
   secondaryCurrency String   @default("USD") @map("secondary_currency")
   logoUrl           String?  @map("logo_url")
@@ -277,21 +292,25 @@ model COAAccount {
 }
 
 model JournalEntryGroup {
-  id          String    @id @default(cuid())
-  tenantId    String    @map("tenant_id")
-  reference   String
-  narration   String    @db.Text
-  status      String    @default("Posted") // GLStatus
-  postedById  String?   @map("posted_by_id")
-  postedAt    DateTime  @default(now()) @map("posted_at")
-  editedAt    DateTime? @map("edited_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  createdById String?   @map("created_by_id")
+  id            String    @id @default(cuid())
+  tenantId      String    @map("tenant_id")
+  reference     String
+  narration     String    @db.Text
+  status        String    @default("Posted") // Posted | Reversed
+  reversesRef   String    @default("") @map("reverses_ref")   // set on a contra entry → the reference it reverses
+  reversedByRef String    @default("") @map("reversed_by_ref") // set on the original once a contra reverses it
+  postedById    String?   @map("posted_by_id")
+  postedAt      DateTime  @default(now()) @map("posted_at")
+  editedAt      DateTime? @map("edited_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdById   String?   @map("created_by_id")
 
   entries GLEntry[]
 
-  @@unique([tenantId, reference])
+  // Reference is no longer DB-unique (append-only: original + contra + revisions may share a base
+  // reference). Active-reference uniqueness is enforced in postJournalEntry at the app layer.
+  @@index([tenantId, reference])
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@map("journal_entry_groups")
@@ -375,6 +394,27 @@ model BankTransaction {
   @@map("bank_transactions")
 }
 
+// A line imported from a bank statement, matched against the GL-mirrored BankTransaction rows
+// during reconciliation. amount is signed (+ credit/inflow, − debit/outflow).
+model BankStatementLine {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  bankAccountId String   @map("bank_account_id")
+  date          DateTime
+  description   String   @db.Text
+  amount        Decimal  @default(0) @db.Decimal(20, 2)
+  reference     String   @default("")
+  matched       Boolean  @default(false)
+  matchedTxnId  String?  @map("matched_txn_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdById   String?  @map("created_by_id")
+
+  @@index([tenantId])
+  @@index([tenantId, bankAccountId, date])
+  @@map("bank_statement_lines")
+}
+
 // ===================================================================
 // Sales
 // ===================================================================
@@ -428,17 +468,22 @@ model Invoice {
   discount     Decimal   @default(0) @db.Decimal(20, 2)
   vatAmount    Decimal   @default(0) @map("vat_amount") @db.Decimal(20, 2)
   total        Decimal   @default(0) @db.Decimal(20, 2)
+  amountPaid   Decimal   @default(0) @map("amount_paid") @db.Decimal(20, 2)
   status       String    @default("Draft") // InvoiceStatus
   efdNumber    String    @map("efd_number")
+  journalRef   String    @default("") @map("journal_ref")
+  quotationId  String?   @map("quotation_id") // set when created by converting a quotation
+  publicToken  String?   @unique @map("public_token") // unguessable token for the public invoice link
   notes        String    @db.Text
   paidAt       DateTime? @map("paid_at")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
   createdById  String?   @map("created_by_id")
 
-  customer Customer       @relation(fields: [customerId], references: [id])
+  customer Customer         @relation(fields: [customerId], references: [id])
   lines    InvoiceLine[]
   sendLog  SendLogEntry[]
+  payments InvoicePayment[]
 
   @@unique([tenantId, number])
   @@index([tenantId])
@@ -519,6 +564,66 @@ model QuotationLine {
   @@map("quotation_lines")
 }
 
+model RecurringInvoice {
+  id            String    @id @default(cuid())
+  tenantId      String    @map("tenant_id")
+  customerId    String    @map("customer_id")
+  customerName  String    @map("customer_name")
+  frequency     String // Weekly | Monthly | Quarterly | Yearly
+  interval      Int       @default(1) // every N periods
+  nextRunAt     DateTime  @map("next_run_at")
+  startDate     DateTime  @map("start_date")
+  endDate       DateTime? @map("end_date")
+  active        Boolean   @default(true)
+  notes         String    @db.Text
+  lastInvoiceId String?   @map("last_invoice_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdById   String?   @map("created_by_id")
+
+  lines RecurringInvoiceLine[]
+
+  @@index([tenantId])
+  @@index([tenantId, active, nextRunAt])
+  @@map("recurring_invoices")
+}
+
+model RecurringInvoiceLine {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id")
+  recurringId String   @map("recurring_id")
+  description String   @db.Text
+  quantity    Decimal  @default(0) @db.Decimal(20, 2)
+  unitPrice   Decimal  @default(0) @map("unit_price") @db.Decimal(20, 2)
+  discountPct Decimal  @default(0) @map("discount_pct") @db.Decimal(20, 2)
+  vatPct      Decimal  @default(18) @map("vat_pct") @db.Decimal(20, 2)
+  lineTotal   Decimal  @default(0) @map("line_total") @db.Decimal(20, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  recurring RecurringInvoice @relation(fields: [recurringId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([recurringId])
+  @@map("recurring_invoice_lines")
+}
+
+// User-targeted in-app notification (bell/inbox). Deliberately NOT tenant-scoped: it also serves
+// tenant-less platform super-admins, and is always queried by the recipient's userId.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  tenantId  String?  @map("tenant_id")
+  type      String   @default("info") // info | success | warning | error | payment
+  title     String
+  body      String   @db.Text
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, read, createdAt])
+  @@map("notifications")
+}
+
 model SendLogEntry {
   id            String   @id @default(cuid())
   tenantId      String   @map("tenant_id")
@@ -539,6 +644,56 @@ model SendLogEntry {
   @@index([tenantId, createdAt])
   @@index([invoiceId])
   @@map("send_log_entries")
+}
+
+// A payment received against a customer invoice (accounts receivable). Posts to the GL
+// (Dr Cash/Bank, Cr Trade Receivables) via journalRef, which enables reversal.
+model InvoicePayment {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  invoiceId     String   @map("invoice_id")
+  invoiceNumber String   @map("invoice_number")
+  customerId    String   @map("customer_id")
+  customerName  String   @map("customer_name")
+  amount        Decimal  @default(0) @db.Decimal(20, 2)
+  method        String // PaymentMethod: cash | mpesa | bank | cheque | card
+  reference     String   @default("")
+  paidAt        DateTime @map("paid_at")
+  journalRef    String   @default("") @map("journal_ref")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdById   String?  @map("created_by_id")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, paidAt])
+  @@index([invoiceId])
+  @@map("invoice_payments")
+}
+
+// A business expense/payment. Posts to the GL (Dr expense account, Cr cash/bank or Trade
+// Payables) via journalRef, which enables reversal on delete.
+model Expense {
+  id            String   @id @default(cuid())
+  tenantId      String   @map("tenant_id")
+  date          DateTime
+  category      String // COA expense account code (e.g. 6200)
+  categoryName  String   @map("category_name")
+  payee         String   @default("")
+  description   String   @db.Text
+  amount        Decimal  @default(0) @db.Decimal(20, 2)
+  vatAmount     Decimal  @default(0) @map("vat_amount") @db.Decimal(20, 2)
+  paymentMethod String   @map("payment_method") // cash | mpesa | bank | credit
+  reference     String   @default("")
+  journalRef    String   @default("") @map("journal_ref")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdById   String?  @map("created_by_id")
+
+  @@index([tenantId])
+  @@index([tenantId, date])
+  @@map("expenses")
 }
 
 // ===================================================================
@@ -689,6 +844,8 @@ model Branch {
   updatedAt   DateTime @updatedAt @map("updated_at")
   createdById String?  @map("created_by_id")
 
+  users User[]
+
   @@unique([tenantId, code])
   @@index([tenantId])
   @@index([tenantId, createdAt])
@@ -808,6 +965,7 @@ model PurchaseOrder {
   poConfirmed      Boolean  @default(false) @map("po_confirmed")
   grnReceived      Boolean  @default(false) @map("grn_received")
   invoiceReceived  Boolean  @default(false) @map("invoice_received")
+  journalRef       String   @default("") @map("journal_ref")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
   createdById      String?  @map("created_by_id")
@@ -917,6 +1075,7 @@ model PayrollRun {
   totalSDL    Decimal   @default(0) @map("total_sdl") @db.Decimal(20, 2)
   totalWCF    Decimal   @default(0) @map("total_wcf") @db.Decimal(20, 2)
   totalNet    Decimal   @default(0) @map("total_net") @db.Decimal(20, 2)
+  journalRef  String    @default("") @map("journal_ref")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   createdById String?   @map("created_by_id")
@@ -969,6 +1128,7 @@ model TaxFiling {
   amount      Decimal   @default(0) @db.Decimal(20, 2)
   status      String    @default("Upcoming") // TaxStatus
   filedAt     DateTime? @map("filed_at")
+  journalRef  String    @default("") @map("journal_ref")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   createdById String?   @map("created_by_id")
@@ -1061,6 +1221,7 @@ model BudgetLine {
   tenantId     String   @map("tenant_id")
   lineItem     String   @map("line_item")
   category     String
+  coaAccountCode String? @map("coa_account_code") // links actuals to a GL account (+ its children)
   annualBudget Decimal  @default(0) @map("annual_budget") @db.Decimal(20, 2)
   mtdBudget    Decimal  @default(0) @map("mtd_budget") @db.Decimal(20, 2)
   mtdActual    Decimal  @default(0) @map("mtd_actual") @db.Decimal(20, 2)
@@ -1208,6 +1369,36 @@ model Payment {
   @@index([subscriptionId])
   @@index([paidAt])
   @@map("payments")
+}
+
+// Subscription invoice — the bank-transfer proforma a tenant receives when it picks a plan during
+// onboarding (or a plan change). NOT tenant-scoped (platform-level, managed via authDb/adminDb).
+// The admin approves it, which creates the Subscription + Payment and activates the tenant.
+model SubscriptionInvoice {
+  id              String    @id @default(cuid())
+  number          String    @unique // SUB-YYYY-#####
+  tenantId        String    @map("tenant_id")
+  userId          String    @map("user_id") // the owner who generated it
+  planKey         String    @map("plan_key") // starter | business | standard | premium
+  planName        String    @map("plan_name")
+  billingInterval String    @default("year") @map("billing_interval")
+  amountTzs       Decimal   @default(0) @map("amount_tzs") @db.Decimal(20, 2) // total (no VAT)
+  currency        String    @default("TZS")
+  status          String    @default("unpaid") // unpaid | paid | cancelled
+  issuedAt        DateTime  @default(now()) @map("issued_at")
+  dueAt           DateTime  @map("due_at") // issuedAt + 24h
+  submittedAt     DateTime? @map("submitted_at") // when the user clicked Done
+  paidAt          DateTime? @map("paid_at") // when the admin approved
+  approvedById    String?   @map("approved_by_id") // super-admin User.id
+  billToCompany   String    @map("bill_to_company")
+  billToEmail     String    @map("bill_to_email")
+  billToName      String    @default("") @map("bill_to_name")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("subscription_invoices")
 }
 
 // Global, cross-tenant operator audit trail — distinct from the tenant-scoped AuditLog.

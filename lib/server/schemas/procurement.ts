@@ -35,5 +35,13 @@ export const updatePOMatchSchema = z.object({
   invoiceReceived: z.boolean().optional(),
 });
 
+export const recordSupplierPaymentSchema = z.object({
+  supplierId: z.string().min(1),
+  amount: z.number().positive("Enter a payment amount"),
+  method: z.string().trim().default("Bank Transfer"),
+  reference: z.string().trim().default(""),
+  date: z.string().optional(), // YYYY-MM-DD
+});
+
 export type CreateSupplierInput = z.infer<typeof createSupplierSchema>;
 export type CreatePurchaseOrderInput = z.infer<typeof createPurchaseOrderSchema>;

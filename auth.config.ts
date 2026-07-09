@@ -1,5 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
+import type { UserRole } from "@/types";
 import { TIER_RANK, minTierForPath, normalizeTier } from "@/lib/auth/tiers";
+import { roleCanAccess, roleLanding } from "@/lib/auth/roles";
 
 // Edge-safe Auth.js config shared with the proxy/middleware. NO Node-only imports
 // here (no Prisma, no bcrypt) it runs on the edge runtime and only decodes the JWT
@@ -32,6 +34,22 @@ export const authConfig = {
       // tenant/tier at all, and must never be bounced to /select-plan.
       if (isSuper) return true;
 
+      // A tenant awaiting payment approval is locked to the pending-approval screen (it can still
+      // view/download its invoice) until an admin activates it.
+      if (auth.user.status === "pending_approval") {
+        return pathname.startsWith("/pending-approval")
+          ? true
+          : Response.redirect(new URL("/pending-approval", nextUrl.origin));
+      }
+
+      // Role gating: branch-restricted staff (Cashier / Branch Manager) may only reach their own
+      // modules (POS, their branch's inventory, etc.); anything else bounces to their landing page.
+      // Unrestricted roles (Admin + finance personas) pass straight through. Checked before the
+      // tier-exempt allowance so a Cashier can't wander into /settings/users, etc.
+      if (!roleCanAccess(auth.user.role, pathname)) {
+        return Response.redirect(new URL(roleLanding(auth.user.role), nextUrl.origin));
+      }
+
       if (TIER_EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
         return true;
       }
@@ -47,10 +65,13 @@ export const authConfig = {
       }
       return true;
     },
-    // Edge session: surface the tier + super-admin flag from the JWT so `authorized` can read them.
+    // Edge session: surface the role/branch/tier/super-admin flags from the JWT so `authorized` can read them.
     session({ session, token }) {
       if (session.user) {
+        session.user.role = (token.role as UserRole | undefined) ?? "Accountant";
+        session.user.branchId = typeof token.branchId === "string" ? token.branchId : null;
         session.user.tier = normalizeTier(token.tier);
+        session.user.status = typeof token.tenantStatus === "string" ? token.tenantStatus : "active";
         session.user.isSuperAdmin = token.isSuperAdmin === true;
       }
       return session;

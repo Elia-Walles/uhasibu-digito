@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@/auth";
 import { getStatements } from "@/lib/server/actions/statements";
+import { getFinancialHealth, getAgedReceivables } from "@/lib/server/actions/reports";
 
 // AI assistant backed by Google Gemini, grounded in the tenant's live financial statements.
 // Session-authenticated; non-streaming JSON reply.
@@ -31,13 +32,21 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "No message provided." }, { status: 400 });
   }
 
-  // Ground the model in the current financials.
+  // Ground the model in the tenant's live financials: income statement, balance-sheet & cash-flow
+  // totals, key ratios, and receivables ageing.
   let grounding = "";
   try {
-    const view = await getStatements("FY");
+    const [view, health, ar] = await Promise.all([getStatements("FY"), getFinancialHealth(), getAgedReceivables()]);
     const fmt = (n: number) => `TZS ${Math.round(n).toLocaleString()}`;
-    const lines = view.incomeStatement.map((l) => `${l.label}: ${fmt(l.current)}`).join("; ");
-    grounding = `Company: ${view.companyName}. Income statement (${view.currentLabel}) ${lines}.`;
+    const is = view.incomeStatement.map((l) => `${l.label} ${fmt(l.current)}`).join("; ");
+    const bs = view.balanceSheet.filter((l) => l.isTotal || l.isHeader).map((l) => `${l.label} ${fmt(l.current)}`).join("; ");
+    const cf = view.cashFlow.filter((l) => l.isTotal).map((l) => `${l.label} ${fmt(l.current)}`).join("; ");
+    grounding =
+      `Company ${view.companyName}, ${view.currentLabel}. ` +
+      `Income statement — ${is}. Balance sheet — ${bs}. Cash flow — ${cf}. ` +
+      `Ratios — current ratio ${health.currentRatio.toFixed(2)}, gross margin ${health.grossMargin.toFixed(1)}%, ` +
+      `net margin ${health.netMargin.toFixed(1)}%, DSO ${Math.round(health.dso)} days, cash ${fmt(health.cash)}, ` +
+      `receivables ${fmt(health.receivables)} (of which ${fmt(ar.totals.d90plus)} over 90 days), payables ${fmt(health.payables)}.`;
   } catch {
     grounding = "No financial summary is available yet.";
   }

@@ -49,7 +49,7 @@ export default function AdminPaymentsPage() {
               { key: "method", label: t("Method"), render: (p) => <span className="capitalize">{p.method}</span> },
               { key: "reference", label: t("Reference"), render: (p) => p.reference || "" },
               { key: "status", label: t("Status"), render: (p) => <StatusPill value={p.status} /> },
-              { key: "amountTzs", label: t("Amount"), align: "right", render: (p) => formatTZS(p.amountTzs, true) },
+              { key: "amountTzs", label: t("Amount"), align: "right", render: (p) => formatTZS(p.amountTzs) },
               { key: "actions", label: "", align: "right", render: (p) =>
                 p.status === "recorded" ? (
                   <button onClick={() => onReverse(p.id)} className="text-xs text-ud-danger hover:text-red-700">{t("Reverse")}</button>

@@ -73,6 +73,24 @@ export interface AdminPaymentRow {
   note: string;
 }
 
+export interface AdminSubscriptionInvoiceRow {
+  id: string;
+  number: string;
+  tenantId: string;
+  tenantName: string | null;
+  planKey: string;
+  planName: string;
+  amountTzs: number;
+  currency: string;
+  status: string; // unpaid | paid | cancelled
+  issuedAt: string;
+  dueAt: string;
+  submittedAt: string | null;
+  paidAt: string | null;
+  billToCompany: string;
+  billToEmail: string;
+}
+
 export interface AdminAuditRow {
   id: string;
   actorEmail: string;

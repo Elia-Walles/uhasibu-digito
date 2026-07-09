@@ -8,7 +8,7 @@ import {
   ShoppingCart, Boxes, Users, Truck,
   Wallet, FileSpreadsheet, ShieldCheck, Target, Landmark,
   Sparkles, FolderOpen, Settings, X, ChevronLeft, ClipboardCheck,
-  Receipt, LineChart, FileText, ShieldHalf, Calculator,
+  Receipt, LineChart, FileText, ShieldHalf, Calculator, Repeat,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAppStore } from "@/lib/store/appStore";
@@ -18,6 +18,7 @@ import { useCurrentUser } from "@/lib/auth/client";
 import { useTier } from "@/lib/hooks/useTier";
 import { useT } from "@/lib/hooks/useT";
 import { TIER_RANK, type Tier } from "@/lib/auth/tiers";
+import { roleCanAccess } from "@/lib/auth/roles";
 import { cn } from "@/lib/utils/cn";
 
 interface NavItem {
@@ -55,6 +56,7 @@ const NAV: NavSection[] = [
     items: [
       { label: "General Ledger",       href: "/general-ledger",       icon: BookOpen,     minTier: "business" },
       { label: "Financial Statements", href: "/financial-statements", icon: FileBarChart, minTier: "business" },
+      { label: "Expenses",             href: "/expenses",             icon: Receipt,      minTier: "business" },
       { label: "Management Accounts",  href: "/management",           icon: BarChart3,    minTier: "business" },
       { label: "Financial Modeling",   href: "/modeling",             icon: TrendingUp,   minTier: "premium" },
     ],
@@ -63,6 +65,7 @@ const NAV: NavSection[] = [
     label: "OPERATIONS",
     items: [
       { label: "Sales",        href: "/sales",        icon: ShoppingCart, minTier: "business", badge: { value: "7", color: "danger" } },
+      { label: "Recurring",    href: "/sales/recurring", icon: Repeat,    minTier: "business" },
       { label: "Inventory",    href: "/inventory",    icon: Boxes,        minTier: "business" },
       { label: "CRM",          href: "/crm",          icon: Users,        minTier: "business" },
       { label: "Procurement",  href: "/procurement",  icon: Truck,        minTier: "business" },
@@ -109,11 +112,13 @@ export function Sidebar() {
 
   const width = isMobile ? "w-[260px]" : sidebarCollapsed ? "w-[68px]" : "w-[260px]";
 
-  // Only show sections/items the current plan unlocks; drop sections left empty.
+  // Only show sections/items the current plan unlocks AND the user's role may reach; drop empties.
   const sections = NAV
     .map((section) => ({
       ...section,
-      items: section.items.filter((i) => TIER_RANK[tier] >= TIER_RANK[i.minTier ?? "starter"]),
+      items: section.items.filter(
+        (i) => TIER_RANK[tier] >= TIER_RANK[i.minTier ?? "starter"] && roleCanAccess(user?.role, i.href),
+      ),
     }))
     .filter((section) => section.items.length > 0);
 

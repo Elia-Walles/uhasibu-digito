@@ -4,24 +4,17 @@ import { listBudgetLines, createBudgetLine as createAction } from "@/lib/server/
 import { type Result } from "@/lib/server/result";
 import type { BudgetLine } from "@/types";
 
+export interface NewBudgetLine {
+  lineItem: string;
+  category: string;
+  annualBudget: number;
+  coaAccountCode?: string;
+}
+
 export interface UseBudgetLines {
   budgetLines: BudgetLine[];
   loading: boolean;
-  addBudgetLine: (line: BudgetLine) => Promise<Result<BudgetLine>>;
-}
-
-function toCreateInput(b: BudgetLine) {
-  return {
-    lineItem: b.lineItem,
-    category: b.category,
-    annualBudget: b.annualBudget,
-    mtdBudget: b.mtdBudget,
-    mtdActual: b.mtdActual,
-    mtdVariance: b.mtdVariance,
-    ytdBudget: b.ytdBudget,
-    ytdActual: b.ytdActual,
-    ytdVariance: b.ytdVariance,
-  };
+  addBudgetLine: (line: NewBudgetLine) => Promise<Result<BudgetLine>>;
 }
 
 export function useBudgetLines(): UseBudgetLines {
@@ -46,7 +39,7 @@ export function useBudgetLines(): UseBudgetLines {
     budgetLines: serverLines,
     loading,
     addBudgetLine: async (line) => {
-      const r = await createAction(toCreateInput(line));
+      const r = await createAction(line);
       if (r.ok) await refresh();
       return r;
     },

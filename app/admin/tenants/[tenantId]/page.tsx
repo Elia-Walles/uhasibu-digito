@@ -127,11 +127,11 @@ export default function TenantDetailPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-ud-text-muted">{t("MRR")}</span>
-              <span className="font-mono">{formatTZS(detail.mrrTzs, true)}</span>
+              <span className="font-mono">{formatTZS(detail.mrrTzs)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-ud-text-muted">{t("Total paid")}</span>
-              <span className="font-mono">{formatTZS(detail.totalPaidTzs, true)}</span>
+              <span className="font-mono">{formatTZS(detail.totalPaidTzs)}</span>
             </div>
             <div className="pt-2 border-t border-ud-border">
               <label className="block text-[11px] uppercase tracking-[0.08em] text-ud-text-muted mb-1.5">{t("Quick tier change")}</label>
