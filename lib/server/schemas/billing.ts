@@ -6,6 +6,7 @@ export type PlanKey = (typeof PLAN_KEYS)[number];
 
 export const createSubscriptionInvoiceSchema = z.object({
   planKey: z.enum(PLAN_KEYS),
+  interval: z.enum(["year", "month"]).default("year"),
 });
 
 export const subscriptionInvoiceIdSchema = z.object({

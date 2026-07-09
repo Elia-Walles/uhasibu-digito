@@ -5,18 +5,21 @@ import { Button } from "@/components/ui/Button";
 import { formatAmount } from "@/lib/utils/currency";
 import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
-import type { Plan } from "@/lib/auth/tiers";
+import { getMonthlyPriceTzs, ANNUAL_DISCOUNT_PERCENT, type Plan, type BillingInterval } from "@/lib/auth/tiers";
 
 interface PricingCardProps {
   plan: Plan;
   isCurrent: boolean;
   loading: boolean;
   onSelect: () => void;
+  interval?: BillingInterval;
 }
 
-export function PricingCard({ plan, isCurrent, loading, onSelect }: PricingCardProps) {
+export function PricingCard({ plan, isCurrent, loading, onSelect, interval = "year" }: PricingCardProps) {
   const t = useT();
   const dark = plan.highlighted;
+  const displayPrice = interval === "month" ? getMonthlyPriceTzs(plan.priceTzs) : plan.priceTzs;
+  const periodLabel = interval === "month" ? t("/mo") : t("/year");
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -37,8 +40,13 @@ export function PricingCard({ plan, isCurrent, loading, onSelect }: PricingCardP
         {plan.name}
       </div>
       <div className="mt-3 flex items-baseline gap-1 flex-wrap">
-        <span className="font-display font-extrabold text-2xl tabular-nums break-all">TZS {formatAmount(plan.priceTzs)}</span>
-        <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>{t("/year")}</span>
+        <span className="font-display font-extrabold text-2xl tabular-nums break-all">TZS {formatAmount(displayPrice)}</span>
+        <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>{periodLabel}</span>
+        {interval === "year" && (
+          <span className={cn("text-[10px] font-semibold", dark ? "text-ud-gold" : "text-ud-success")}>
+            {t("Save {pct}%", { pct: ANNUAL_DISCOUNT_PERCENT })}
+          </span>
+        )}
       </div>
       <p className={cn("mt-1.5 text-[13px] leading-snug", dark ? "text-white/65" : "text-ud-text-secondary")}>{plan.tagline}</p>
 

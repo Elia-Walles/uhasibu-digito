@@ -398,6 +398,8 @@ export const SW: Record<string, string> = {
   "Most popular": "Maarufu zaidi",
   "Billed annually": "Hulipwa kila mwaka",
   "Billed {price} annually": "Hulipwa {price} kila mwaka",
+  "Billed monthly": "Hulipwa kila mwezi",
+  "Save {pct}%": "Okoa {pct}%",
   "/year": "/mwaka",
   "/mo": "/mwezi",
 
@@ -409,6 +411,8 @@ export const SW: Record<string, string> = {
   "Current plan": "Kifurushi cha sasa",
   "Prices in Tanzanian Shillings (TZS), billed yearly. You can change your plan at any time from Settings.":
     "Bei kwa Shilingi za Tanzania (TZS), hulipwa kila mwaka. Unaweza kubadili kifurushi wakati wowote kupitia Mipangilio.",
+  "Prices in Tanzanian Shillings (TZS), billed {interval}ly. You can change your plan at any time from Settings.":
+    "Bei kwa Shilingi za Tanzania (TZS), hulipwa kila {interval}ly. Unaweza kubadili kifurushi wakati wowote kupitia Mipangilio.",
   "You're on the {tier} plan. Welcome aboard!": "Upo kwenye kifurushi cha {tier}. Karibu!",
   "that module": "moduli hiyo",
   "needs the": "inahitaji kifurushi cha",

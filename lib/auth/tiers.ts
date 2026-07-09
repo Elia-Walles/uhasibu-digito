@@ -5,6 +5,7 @@
 // server actions. Keep it pure (types + constants + plain functions).
 
 export type Tier = "free" | "starter" | "business" | "standard" | "premium";
+export type BillingInterval = "year" | "month";
 
 /** Ordering for "at least this tier" comparisons. `free` = signed up, no plan chosen yet. */
 export const TIER_RANK: Record<Tier, number> = {
@@ -14,6 +15,17 @@ export const TIER_RANK: Record<Tier, number> = {
   standard: 2,
   premium: 3,
 };
+
+/** Annual discount when customers choose yearly billing (17% off vs. paying monthly ×12). */
+export const ANNUAL_DISCOUNT_PERCENT = 17;
+
+/** Derives the monthly-equivalent price from the canonical annual price, so that
+ *  annual = monthly × 12 × (1 − ANNUAL_DISCOUNT_PERCENT / 100).
+ *  Rounded to the nearest 100 TZS for a clean displayed number. */
+export function getMonthlyPriceTzs(annualPriceTzs: number): number {
+  const raw = annualPriceTzs / 12 / (1 - ANNUAL_DISCOUNT_PERCENT / 100);
+  return Math.round(raw / 100) * 100;
+}
 
 /** The four purchasable plans, in display order. Prices are TZS / year. */
 export interface Plan {

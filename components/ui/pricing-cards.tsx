@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Sparkles } from "lucide-react";
-import * as SwitchPrimitives from "@radix-ui/react-switch";
 import { formatTZS } from "@/lib/utils/currency";
+import { getMonthlyPriceTzs, type BillingInterval } from "@/lib/auth/tiers";
 import { useT } from "@/lib/hooks/useT";
 import { cn } from "@/lib/utils/cn";
+import { BillingIntervalToggle } from "@/components/ui/BillingIntervalToggle";
 
 // Adapted from the 21st.dev "pricing-cards" component to the Uhasibu Digito design system:
 // the light premium theme (ud-* tokens, matching the landing page), TZS pricing, and
@@ -21,7 +22,7 @@ export interface PricingPlanCard {
   id: string;
   name: string;
   description: string;
-  /** Annual price in TZS. Monthly is derived as price / 12. */
+  /** Annual price in TZS. Monthly is derived via getMonthlyPriceTzs(). */
   priceTzs: number;
   features: PricingFeature[];
   highlighted?: boolean;
@@ -34,29 +35,13 @@ interface PricingCardsProps {
   plans?: PricingPlanCard[];
 }
 
-/** Light-themed Radix switch matching the ud-* tokens. */
-function ToggleSwitch(props: React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>) {
-  return (
-    <SwitchPrimitives.Root
-      {...props}
-      className={cn(
-        "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ud-primary focus-visible:ring-offset-2",
-        "data-[state=checked]:bg-ud-primary data-[state=unchecked]:bg-ud-border",
-      )}
-    >
-      <SwitchPrimitives.Thumb className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0" />
-    </SwitchPrimitives.Root>
-  );
-}
-
 export function PricingCards({
   heading = "Plans & Pricing",
   description = "Choose the plan that matches your business and scale with ease.",
   plans = [],
 }: PricingCardsProps) {
   const t = useT();
-  const [isYearly, setIsYearly] = useState(true);
+  const [interval, setInterval] = useState<BillingInterval>("year");
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-ud-surface-3 text-ud-text-primary py-24 md:py-28">
@@ -102,15 +87,11 @@ export function PricingCards({
           <h2 className="font-display text-pretty text-4xl font-extrabold lg:text-6xl">{t(heading)}</h2>
           <p className="text-ud-text-muted lg:text-xl max-w-2xl text-balance">{t(description)}</p>
 
-          <div className="flex items-center gap-3 text-sm font-medium">
-            <span className={cn(!isYearly ? "text-ud-text-primary" : "text-ud-text-muted")}>{t("Monthly")}</span>
-            <ToggleSwitch checked={isYearly} onCheckedChange={() => setIsYearly(!isYearly)} aria-label="Toggle yearly pricing" />
-            <span className={cn(isYearly ? "text-ud-text-primary" : "text-ud-text-muted")}>{t("Yearly")}</span>
-          </div>
+          <BillingIntervalToggle interval={interval} onChange={setInterval} />
 
           <div className="mt-4 grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 items-start">
             {plans.map((plan, i) => {
-              const monthly = Math.round(plan.priceTzs / 12);
+              const displayPrice = interval === "month" ? getMonthlyPriceTzs(plan.priceTzs) : plan.priceTzs;
               const dark = plan.highlighted;
               return (
                 <div
@@ -135,13 +116,13 @@ export function PricingCards({
                     </div>
                     <div className="mt-3 flex items-baseline gap-1 flex-wrap">
                       <span className="font-display text-2xl font-extrabold tabular-nums break-all">
-                        {formatTZS(isYearly ? plan.priceTzs : monthly)}
+                        {formatTZS(displayPrice)}
                       </span>
-                      <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>{isYearly ? t("/year") : t("/mo")}</span>
+                      <span className={cn("text-xs", dark ? "text-white/55" : "text-ud-text-muted")}>{interval === "year" ? t("/year") : t("/mo")}</span>
                     </div>
                     <p className={cn("mt-1.5 text-[13px] leading-snug", dark ? "text-white/65" : "text-ud-text-secondary")}>{plan.description}</p>
                     <p className={cn("mt-1 text-[11px]", dark ? "text-white/45" : "text-ud-text-faint")}>
-                      {isYearly ? t("Billed annually") : t("Billed {price} annually", { price: formatTZS(plan.priceTzs) })}
+                      {interval === "year" ? t("Billed annually") : t("Billed monthly")}
                     </p>
 
                     <div className={cn("my-4 h-px", dark ? "bg-white/10" : "bg-ud-border")} />
@@ -160,7 +141,7 @@ export function PricingCards({
 
                   <div className="mt-5">
                     <Link
-                      href={plan.button.url}
+                      href={`${plan.button.url}&interval=${interval}`}
                       className={cn(
                         "inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors",
                         dark

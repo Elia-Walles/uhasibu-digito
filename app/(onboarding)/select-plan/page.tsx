@@ -7,7 +7,8 @@ import { motion } from "framer-motion";
 import { Lock, LogOut, Sparkles } from "lucide-react";
 import { PricingCard } from "@/components/billing/PricingCard";
 import { SubscriptionInvoiceView } from "@/components/billing/SubscriptionInvoiceView";
-import { normalizeTier, minTierForPath, type Tier } from "@/lib/auth/tiers";
+import { BillingIntervalToggle } from "@/components/ui/BillingIntervalToggle";
+import { normalizeTier, minTierForPath, type Tier, type BillingInterval } from "@/lib/auth/tiers";
 import { createSubscriptionInvoice, submitSubscriptionInvoice } from "@/lib/server/actions/billing";
 import { usePublicPlans } from "@/lib/hooks/usePublicPlans";
 import { SkeletonCard } from "@/components/ui/Skeleton";
@@ -32,6 +33,7 @@ function SelectPlanInner() {
   const [pending, setPending] = useState<Tier | null>(null);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [interval, setInterval] = useState<BillingInterval>(params.get("interval") === "month" ? "month" : "year");
 
   const currentTier = normalizeTier(session?.user?.tier);
   const from = params.get("from");
@@ -42,7 +44,7 @@ function SelectPlanInner() {
   async function choose(tier: Exclude<Tier, "free">) {
     setPending(tier);
     try {
-      const res = await createSubscriptionInvoice({ planKey: tier });
+      const res = await createSubscriptionInvoice({ planKey: tier, interval });
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -131,6 +133,8 @@ function SelectPlanInner() {
           </p>
         </motion.div>
 
+        <BillingIntervalToggle interval={interval} onChange={setInterval} className="mt-8 justify-center" />
+
         {from && requiredTier && (
           <div className="mt-6 mx-auto max-w-2xl flex items-center gap-2.5 rounded-2xl border border-ud-warning/30 bg-ud-warning-bg px-4 py-3 text-sm text-ud-text-secondary">
             <Lock className="w-4 h-4 text-ud-warning flex-shrink-0" />
@@ -151,12 +155,13 @@ function SelectPlanInner() {
                   isCurrent={currentTier === plan.id}
                   loading={pending === plan.id}
                   onSelect={() => void choose(plan.id)}
+                  interval={interval}
                 />
               ))}
         </div>
 
         <p className="mt-8 text-center text-xs text-ud-text-muted">
-          {t("Prices in Tanzanian Shillings (TZS), billed yearly. You can change your plan at any time from Settings.")}
+          {t("Prices in Tanzanian Shillings (TZS), billed {interval}ly. You can change your plan at any time from Settings.", { interval })}
         </p>
         </>
         )}

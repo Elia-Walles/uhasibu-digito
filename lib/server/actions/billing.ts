@@ -5,7 +5,7 @@ import { authDb } from "@/lib/server/auth-db";
 import { withAuth } from "@/lib/server/with-auth";
 import { ok, err, type Result } from "@/lib/server/result";
 import { decToNum, iso } from "@/lib/server/serialize";
-import { PLANS, type Tier } from "@/lib/auth/tiers";
+import { PLANS, type Tier, getMonthlyPriceTzs } from "@/lib/auth/tiers";
 import {
   createSubscriptionInvoiceSchema,
   subscriptionInvoiceIdSchema,
@@ -95,14 +95,14 @@ function isUniqueClash(e: unknown): boolean {
 export async function createSubscriptionInvoice(input: unknown): Promise<Result<SubscriptionInvoiceView>> {
   const parsed = createSubscriptionInvoiceSchema.safeParse(input);
   if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid plan");
-  const { planKey } = parsed.data;
+  const { planKey, interval } = parsed.data;
 
   return withAuth(async (ctx) => {
     const plan = await authDb.plan.findUnique({ where: { key: planKey } });
     const fallback = PLANS.find((p) => p.id === planKey);
-    const amount = plan ? decToNum(plan.priceTzs) : fallback?.priceTzs ?? 0;
+    const annualAmount = plan ? decToNum(plan.priceTzs) : fallback?.priceTzs ?? 0;
+    const amount = interval === "month" ? getMonthlyPriceTzs(annualAmount) : annualAmount;
     const planName = plan?.name ?? fallback?.name ?? planKey;
-    const interval = plan?.interval ?? "year";
     if (!amount) return err("The selected plan is unavailable. Please try another.");
 
     // Supersede any earlier unpaid invoice — only the latest selection should be payable.

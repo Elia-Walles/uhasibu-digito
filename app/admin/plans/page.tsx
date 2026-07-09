@@ -7,8 +7,10 @@ import { AdminPageTitle, AdminPanel, StatusPill } from "@/components/admin/primi
 import { AdminTable } from "@/components/admin/AdminTable";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { formatTZS } from "@/lib/utils/currency";
+import { getMonthlyPriceTzs, ANNUAL_DISCOUNT_PERCENT, type BillingInterval } from "@/lib/auth/tiers";
 import { useT } from "@/lib/hooks/useT";
 import type { AdminPlanRow } from "@/lib/server/actions/admin/types";
 
@@ -19,6 +21,7 @@ export default function AdminPlansPage() {
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [price, setPrice] = useState("");
+  const [interval, setInterval] = useState<BillingInterval>("year");
   const [features, setFeatures] = useState("");
   const [highlighted, setHighlighted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -28,6 +31,7 @@ export default function AdminPlansPage() {
     setName(p.name);
     setTagline(p.tagline);
     setPrice(String(p.priceTzs));
+    setInterval((p.interval as BillingInterval) || "year");
     setFeatures(p.features.join("\n"));
     setHighlighted(p.highlighted);
   };
@@ -40,6 +44,7 @@ export default function AdminPlansPage() {
       name,
       tagline,
       priceTzs: Number(price),
+      interval,
       highlighted,
       features: features.split("\n").map((f) => f.trim()).filter(Boolean),
     });
@@ -54,6 +59,8 @@ export default function AdminPlansPage() {
     const res = await toggleActive(p.id, !p.isActive);
     res.ok ? toast.success(p.isActive ? t("Plan deactivated") : t("Plan activated")) : toast.error(res.error);
   };
+
+  const monthlyEquivalent = price ? getMonthlyPriceTzs(Number(price)) : 0;
 
   return (
     <div>
@@ -75,7 +82,12 @@ export default function AdminPlansPage() {
                 </div>
               ) },
               { key: "key", label: t("Key"), render: (p) => <StatusPill value={p.key} /> },
-              { key: "priceTzs", label: t("Price"), align: "right", render: (p) => `${formatTZS(p.priceTzs)}/${p.interval}` },
+              { key: "priceTzs", label: t("Price"), align: "right", render: (p) => (
+                <div className="text-right text-sm">
+                  <div>{formatTZS(p.priceTzs)}/{p.interval}</div>
+                  <div className="text-ud-text-faint text-xs">{formatTZS(getMonthlyPriceTzs(p.priceTzs))}/mo</div>
+                </div>
+              ) },
               { key: "highlighted", label: t("Popular"), render: (p) => (p.highlighted ? <StatusPill value="business" /> : <span className="text-ud-text-faint"></span>) },
               { key: "subscriberCount", label: t("Active subs"), align: "right" },
               { key: "isActive", label: t("Status"), render: (p) => (
@@ -97,7 +109,26 @@ export default function AdminPlansPage() {
         <div className="space-y-4">
           <Input label={t("Name")} value={name} onChange={(e) => setName(e.target.value)} />
           <Input label={t("Tagline")} value={tagline} onChange={(e) => setTagline(e.target.value)} />
-          <Input label={t("Price (TZS)")} type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+          <div>
+            <Input label={t("Price (TZS) / year")} type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
+            {monthlyEquivalent > 0 && (
+              <p className="mt-1.5 text-xs text-ud-text-muted">
+                {t("Monthly equivalent: {amount} - customers save {pct}% paying yearly", {
+                  amount: formatTZS(monthlyEquivalent),
+                  pct: ANNUAL_DISCOUNT_PERCENT,
+                })}
+              </p>
+            )}
+          </div>
+          <Select
+            label={t("Billing interval")}
+            value={interval}
+            onValueChange={(v) => setInterval(v as BillingInterval)}
+            options={[
+              { value: "year", label: "Yearly" },
+              { value: "month", label: "Monthly" },
+            ]}
+          />
           <div>
             <label className="block text-xs font-medium tracking-[0.04em] text-ud-text-secondary mb-1.5">
               {t("Features (one per line)")}
@@ -116,7 +147,7 @@ export default function AdminPlansPage() {
               onChange={(e) => setHighlighted(e.target.checked)}
               className="w-4 h-4 rounded border-ud-border text-ud-primary focus:ring-ud-primary"
             />
-            {t("Mark as “Most popular” on pricing pages")}
+            {t("Mark as Most popular on pricing pages")}
           </label>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={() => setEditing(null)}>{t("Cancel")}</Button>
