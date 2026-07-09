@@ -5,7 +5,7 @@
 export const PLATFORM_SELLER = {
   name: "Uhasibu Digito Group",
   tagline: "Akaunti yako, nguvu yako",
-  email: "support@uhasibudigito.co.tz",
+  email: "uhasibudigito@gmail.com",
   phone: "+255 778 587 735",
   website: "https://www.uhasibudigito.com",
   address: "Dar es Salaam, Tanzania",

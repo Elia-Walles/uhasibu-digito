@@ -14,7 +14,7 @@ import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import { useT } from "@/lib/hooks/useT";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { getVerificationState, resendVerification } from "@/lib/server/actions/auth";
 import { MailWarning } from "lucide-react";
 import toast from "react-hot-toast";
@@ -55,7 +55,9 @@ export default function LoginPage() {
         return;
       }
       toast.success(t("Welcome back"));
-      router.push("/dashboard");
+      const session = await getSession();
+      const redirectPath = session?.user?.isSuperAdmin ? "/admin" : "/dashboard";
+      router.push(redirectPath);
     } catch {
       toast.error(t("Could not sign in"));
     } finally {

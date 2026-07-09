@@ -32,6 +32,7 @@ export interface AdminUserRow {
   isSuperAdmin: boolean;
   tenantId: string | null;
   tenantName: string | null;
+  disabledAt: string | null;
   createdAt: string;
 }
 

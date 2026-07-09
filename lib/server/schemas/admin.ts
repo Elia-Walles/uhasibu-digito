@@ -36,6 +36,17 @@ export const updateUserRoleSchema = z.object({
   role: z.enum(["Admin", "CFO", "Finance Manager", "Accountant", "Data Entry", "HR Manager", "Auditor"]),
 });
 
+export const updateUserSchema = z.object({
+  userId: z.string().min(1),
+  name: z.string().trim().min(1).optional(),
+  email: z.string().trim().email().optional(),
+});
+
+export const setUserDisabledSchema = z.object({
+  userId: z.string().min(1),
+  disabled: z.boolean(),
+});
+
 // ── Super-admin grants ──
 export const grantSuperAdminSchema = z.object({ userId: z.string().min(1) });
 

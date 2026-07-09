@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { listUsers, updateUserRole } from "@/lib/server/actions/admin/users";
+import { listUsers, updateUserRole, updateUser, setUserDisabled } from "@/lib/server/actions/admin/users";
 import { grantSuperAdmin, revokeSuperAdmin } from "@/lib/server/actions/admin/admins";
 import type { Result } from "@/lib/server/result";
 import type { UserRole } from "@/types";
@@ -37,5 +37,7 @@ export function useAdminUsers() {
     changeRole: (userId: string, role: UserRole) => wrap(updateUserRole({ userId, role })),
     grant: (userId: string) => wrap(grantSuperAdmin({ userId })),
     revoke: (userId: string) => wrap(revokeSuperAdmin({ userId })),
+    editUser: (userId: string, name?: string, email?: string) => wrap(updateUser({ userId, name, email })),
+    setDisabled: (userId: string, disabled: boolean) => wrap(setUserDisabled({ userId, disabled })),
   };
 }

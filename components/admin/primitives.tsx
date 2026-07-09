@@ -46,6 +46,7 @@ const PILL_TONE: Record<string, string> = {
   past_due: "bg-ud-warning-bg text-ud-warning",
   trialing: "bg-ud-info-bg text-ud-info",
   canceled: "bg-ud-surface-2 text-ud-text-muted border border-ud-border",
+  disabled: "bg-ud-surface-2 text-ud-text-muted border border-ud-border",
   reversed: "bg-ud-danger-bg text-ud-danger",
   free: "bg-ud-surface-2 text-ud-text-muted border border-ud-border",
   starter: "bg-ud-info-bg text-ud-info",

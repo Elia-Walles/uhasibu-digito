@@ -20,7 +20,7 @@ import { PricingCard } from "@/components/billing/PricingCard";
 import { usePublicPlans } from "@/lib/hooks/usePublicPlans";
 import { useSignOut } from "@/lib/auth/client";
 import { getOnboardingDraft, saveOnboardingDraft, saveOnboardingProfile } from "@/lib/server/actions/auth";
-import { createSubscriptionInvoice, submitSubscriptionInvoice } from "@/lib/server/actions/billing";
+import { createSubscriptionInvoice, submitSubscriptionInvoice, getMySubscriptionInvoice } from "@/lib/server/actions/billing";
 import { SubscriptionInvoiceView } from "@/components/billing/SubscriptionInvoiceView";
 import type { SubscriptionInvoiceView as Invoice } from "@/types/billing";
 import { BUSINESS_TYPES, HEARD_FROM_SOURCES } from "@/lib/server/schemas/auth";
@@ -97,10 +97,16 @@ function OnboardingInner() {
       .then(setCountries)
       .catch(() => {})
       .finally(() => setCountriesLoading(false));
-    getOnboardingDraft()
-      .then((res) => {
-        if (res.ok) {
-          const d = res.data;
+
+    Promise.all([getOnboardingDraft(), getMySubscriptionInvoice()])
+      .then(([draftRes, invoiceRes]) => {
+        // Check for unpaid invoice first — if one exists, jump to payment step.
+        if (invoiceRes.ok && invoiceRes.data && invoiceRes.data.status === "unpaid") {
+          setInvoice(invoiceRes.data);
+          setStep(2);
+        } else if (draftRes.ok) {
+          // No unpaid invoice; restore the draft and check if business info is complete.
+          const d = draftRes.data;
           setName(d.name ?? session?.user?.name ?? "");
           setCompanyName(d.companyName ?? "");
           setBusinessType(d.businessType ?? "");
