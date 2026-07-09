@@ -117,3 +117,31 @@ export async function setUserDisabled(input: unknown): Promise<Result<{ id: stri
     return ok({ id: userId });
   });
 }
+
+export async function deleteUser(input: unknown): Promise<Result<{ id: string }>> {
+  const parsed = updateUserRoleSchema.safeParse(input);
+  if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+  const { userId } = parsed.data;
+  return withAdminAuth(async (ctx) => {
+    if (userId === ctx.userId) return err("You can't delete your own account");
+    const target = await adminDb.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, isSuperAdmin: true, tenantId: true },
+    });
+    if (!target) return err("User not found");
+    if (target.isSuperAdmin) {
+      const superAdminCount = await adminDb.user.count({ where: { isSuperAdmin: true } });
+      if (superAdminCount <= 1) return err("Cannot delete the last super-admin");
+    }
+    const snapshot = { name: target.name, email: target.email };
+    await adminDb.user.delete({ where: { id: userId } });
+    await writePlatformAudit(ctx, {
+      action: "user.delete",
+      targetType: "User",
+      targetId: userId,
+      targetTenantId: target.tenantId ?? undefined,
+      details: snapshot,
+    });
+    return ok({ id: userId });
+  });
+}

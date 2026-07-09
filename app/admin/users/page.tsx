@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { ShieldCheck, ShieldOff, Pencil, Power } from "lucide-react";
+import { ShieldCheck, ShieldOff, Pencil, Power, Trash2 } from "lucide-react";
 import { useAdminUsers } from "@/lib/hooks/admin/useAdminUsers";
 import { AdminPageTitle, AdminPanel, StatusPill } from "@/components/admin/primitives";
 import { AdminTable } from "@/components/admin/AdminTable";
@@ -19,14 +19,16 @@ const ROLE_OPTIONS = ["Admin", "CFO", "Finance Manager", "Accountant", "Data Ent
   label: r,
 }));
 
+type PendingAction = { type: "deactivate" | "delete"; user: AdminUserRow } | null;
+
 export default function AdminUsersPage() {
   const t = useT();
-  const { users, loading, changeRole, grant, revoke, editUser, setDisabled } = useAdminUsers();
+  const { users, loading, changeRole, grant, revoke, editUser, setDisabled, deleteUser } = useAdminUsers();
   const [editing, setEditing] = useState<AdminUserRow | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
-  const [deactivating, setDeactivating] = useState<AdminUserRow | null>(null);
+  const [pending, setPending] = useState<PendingAction>(null);
 
   const openEdit = (u: AdminUserRow) => {
     setEditing(u);
@@ -60,7 +62,7 @@ export default function AdminUsersPage() {
     if (res.ok) {
       toast.success(t("User deactivated"));
     } else toast.error(res.error);
-    setDeactivating(null);
+    setPending(null);
   };
 
   const onActivate = async (u: AdminUserRow) => {
@@ -68,6 +70,14 @@ export default function AdminUsersPage() {
     if (res.ok) {
       toast.success(t("User reactivated"));
     } else toast.error(res.error);
+  };
+
+  const onDelete = async (u: AdminUserRow) => {
+    const res = await deleteUser(u.id);
+    if (res.ok) {
+      toast.success(t("User permanently deleted"));
+    } else toast.error(res.error);
+    setPending(null);
   };
 
   return (
@@ -110,10 +120,16 @@ export default function AdminUsersPage() {
                       <Power className="w-3.5 h-3.5" /> {t("Activate")}
                     </button>
                   ) : (
-                    <button onClick={() => setDeactivating(u)} className="inline-flex items-center gap-1.5 text-xs text-ud-text-muted hover:text-ud-danger">
+                    <button onClick={() => setPending({ type: "deactivate", user: u })} className="inline-flex items-center gap-1.5 text-xs text-ud-text-muted hover:text-ud-danger">
                       <Power className="w-3.5 h-3.5" /> {t("Deactivate")}
                     </button>
                   )}
+                  <button
+                    onClick={() => setPending({ type: "delete", user: u })}
+                    className="inline-flex items-center gap-1.5 text-xs text-ud-text-muted hover:text-ud-danger"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> {t("Delete")}
+                  </button>
                   <button
                     onClick={() => onToggle(u)}
                     className="inline-flex items-center gap-1.5 text-xs text-ud-text-muted hover:text-ud-text-primary"
@@ -140,13 +156,30 @@ export default function AdminUsersPage() {
       </Modal>
 
       <ConfirmDialog
-        open={deactivating !== null}
-        onOpenChange={(o) => !o && setDeactivating(null)}
-        title={t("Deactivate user?")}
-        message={t("This user will no longer be able to sign in. You can reactivate them anytime.")}
-        confirmLabel={t("Deactivate")}
+        open={pending !== null}
+        onOpenChange={(o) => !o && setPending(null)}
+        title={
+          pending?.type === "delete"
+            ? t("Permanently delete this user?")
+            : t("Deactivate user?")
+        }
+        message={
+          pending?.type === "delete"
+            ? t("This erases their name, email, login credentials and sessions forever. Invoices, sales and other records they created will remain but will no longer show their name. This cannot be undone.")
+            : t("This user will no longer be able to sign in. You can reactivate them anytime.")
+        }
+        confirmLabel={
+          pending?.type === "delete" ? t("Permanently delete") : t("Deactivate")
+        }
         variant="danger"
-        onConfirm={() => deactivating && onDeactivate(deactivating)}
+        onConfirm={() => {
+          if (!pending) return;
+          if (pending.type === "delete") {
+            onDelete(pending.user);
+          } else {
+            onDeactivate(pending.user);
+          }
+        }}
       />
     </div>
   );
